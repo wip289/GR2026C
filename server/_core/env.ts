@@ -8,3 +8,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+if (!process.env.JWT_SECRET) {
+  console.error("[Env] CRITICAL: JWT_SECRET is not set — session signing will fail!");
+}
