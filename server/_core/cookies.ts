@@ -25,14 +25,12 @@ export function getSessionCookieOptions(
   req: Request
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
   const isProduction = process.env.NODE_ENV === "production";
-  // sameSite:'none' requires secure:true or browsers silently reject the cookie.
-  // Force secure in production; in dev fall back to request detection.
   const secure = isProduction || isSecureRequest(req);
 
   return {
     httpOnly: true,
     path: "/",
-    sameSite: secure ? "none" : "lax",
+    sameSite: "lax",
     secure,
   };
 }
