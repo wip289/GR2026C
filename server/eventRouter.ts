@@ -175,6 +175,7 @@ export const eventRouter = router({
         });
         return { success: true };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("[createEmployerBooking]", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Gagal menyimpan booking" });
       }
