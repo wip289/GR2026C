@@ -145,7 +145,7 @@ export default function EmployerRegister() {
 
   const handleConfirm = () => {
     if (submitting) return;
-    const id = generateBookingId(form.pic1Name, form.industry);
+    const id = generateBookingId(pic1.name, company.industry);
     setSubmitting(true);
     createBookingMutation.mutate({
       bookingId: id,

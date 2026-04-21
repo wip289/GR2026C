@@ -232,7 +232,7 @@ export type InsertEmployerBooking = typeof employerBookings.$inferInsert;
  */
 export const jobseekers = mysqlTable("jobseekers", {
   id: int("id").autoincrement().primaryKey(),
-  registrationId: varchar("registrationId", { length: 20 }).notNull().unique(),
+  registrationId: varchar("registrationId", { length: 50 }).notNull().unique(),
   eventId: int("eventId"),
   // Data diri
   namaLengkap: varchar("namaLengkap", { length: 255 }).notNull(),
