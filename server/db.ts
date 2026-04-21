@@ -13,6 +13,7 @@ import {
   employerBookings,
   jobseekers,
   interviewBookings,
+  eventConfig,
   type Event,
   type Coordinator,
   type Employer,
@@ -351,6 +352,8 @@ export async function deleteInterviewBooking(id: number) {
 
 // ── Event Config ──────────────────────────────────────────────
 export async function getEventConfig(): Promise<Record<string, string>> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
   const rows = await db.select().from(eventConfig);
   const result: Record<string, string> = {};
   rows.forEach(r => { result[r.configKey] = r.value; });
@@ -358,6 +361,8 @@ export async function getEventConfig(): Promise<Record<string, string>> {
 }
 
 export async function setEventConfig(data: Record<string, string>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
   for (const [key, value] of Object.entries(data)) {
     await db.insert(eventConfig)
       .values({ configKey: key, value })
@@ -366,6 +371,8 @@ export async function setEventConfig(data: Record<string, string>): Promise<void
 }
 
 export async function getConfigValue(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
   const rows = await db.select().from(eventConfig).where(eq(eventConfig.configKey, key));
   return rows[0]?.value ?? null;
 }
