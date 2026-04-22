@@ -29,7 +29,7 @@ const s = {
   tab:     (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#14b8a6" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s" }) as React.CSSProperties,
 };
 
-type TabId = "status" | "booth" | "interview";
+type TabId = "status" | "booth" | "interview" | "idcard";
 
 export default function EmployerDashboard() {
   const [, navigate] = useLocation();
@@ -40,6 +40,12 @@ export default function EmployerDashboard() {
   const [selectedDay, setSelectedDay] = useState(0);
 
   const [sessionData, setSessionData] = useState<{bookingId: string; email: string} | null>(null);
+
+  // ── ID Card Staff state ──────────────────────────────────────
+  type StaffMember = { nama: string; posisi: string };
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [staffForm, setStaffForm] = useState<StaffMember>({ nama: "", posisi: "" });
+  const [staffSaved, setStaffSaved] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem("employer_session");
@@ -101,6 +107,7 @@ export default function EmployerDashboard() {
   const mainCount = booths.filter((b: any) => b.type === "main").length;
   const stdCount  = booths.filter((b: any) => b.type === "standard").length;
   const maxSlots  = (mainCount * 2) + (stdCount * 1);
+  const maxStaff  = (mainCount * 4) + (stdCount * 2);
   const totalAmount = parseFloat((booking as any).totalAmount || "0");
 
   const handleBookSlot = (key: string) => {
@@ -168,6 +175,7 @@ export default function EmployerDashboard() {
             { id: "status" as TabId, label: "📋 Status & Booking" },
             { id: "booth" as TabId, label: "🗺️ Posisi Booth" },
             { id: "interview" as TabId, label: "📅 Interview Booth" },
+            { id: "idcard" as TabId, label: "🪪 ID Card Staff" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -447,6 +455,141 @@ export default function EmployerDashboard() {
                   <h3 style={{ fontWeight: 700, marginBottom: "0.75rem" }}>Fitur Terkunci</h3>
                   <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
                     Booking interview booth hanya tersedia setelah pembayaran booth dikonfirmasi oleh panitia.
+                  </p>
+                  <button onClick={() => setActiveTab("status")}
+                    style={{ marginTop: "1.5rem", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem 1.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
+                    Lihat Instruksi Pembayaran →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: ID CARD STAFF ── */}
+        {activeTab === "idcard" && (
+          <div>
+            {booking.status === "confirmed" ? (
+              <>
+                {/* Info kuota */}
+                <div style={{ background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 12, padding: "1rem 1.5rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>Kuota ID Card Staff</div>
+                    <div style={{ fontWeight: 800, fontSize: "1.3rem", color: "#818cf8" }}>{staffList.length} <span style={{ fontSize: "0.85rem", fontWeight: 500, color: "#64748b" }}>/ {maxStaff} orang</span></div>
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: 1.7 }}>
+                    {mainCount > 0 && <div>Main Booth ({mainCount}×) → {mainCount * 4} ID Card</div>}
+                    {stdCount > 0  && <div>Standard Booth ({stdCount}×) → {stdCount * 2} ID Card</div>}
+                    <div style={{ color: "#94a3b8", fontSize: "0.75rem", marginTop: "0.25rem" }}>ID Card akan dicetak oleh vendor panitia</div>
+                  </div>
+                </div>
+
+                {/* Info banner */}
+                <div style={{ background: "rgba(212,160,23,0.06)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 10, padding: "0.9rem 1.25rem", marginBottom: "1.5rem" }}>
+                  <p style={{ fontSize: "0.82rem", color: "#D4A017", fontWeight: 700, marginBottom: "0.25rem" }}>ℹ️ Informasi</p>
+                  <p style={{ fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                    Daftar nama dan posisi staff di bawah akan dikirimkan ke panitia untuk dicetak pada ID Card. Pastikan nama dan posisi sudah benar sebelum menyimpan.
+                  </p>
+                </div>
+
+                {/* Form tambah staff */}
+                {staffList.length < maxStaff && !staffSaved && (
+                  <div style={{ ...s.card, border: "1px solid rgba(129,140,248,0.2)" }}>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#818cf8", marginBottom: "1rem" }}>➕ Tambah Staff</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                      <div>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>Nama Lengkap *</div>
+                        <input
+                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 8, padding: "0.65rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none" }}
+                          value={staffForm.nama}
+                          onChange={e => setStaffForm(p => ({ ...p, nama: e.target.value }))}
+                          placeholder="Contoh: Budi Santoso"
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>Posisi / Jabatan *</div>
+                        <input
+                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 8, padding: "0.65rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none" }}
+                          value={staffForm.posisi}
+                          onChange={e => setStaffForm(p => ({ ...p, posisi: e.target.value }))}
+                          placeholder="Contoh: HRD Manager"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!staffForm.nama.trim() || !staffForm.posisi.trim()) {
+                          toast.error("Nama dan posisi wajib diisi");
+                          return;
+                        }
+                        setStaffList(prev => [...prev, { ...staffForm }]);
+                        setStaffForm({ nama: "", posisi: "" });
+                        toast.success("Staff ditambahkan!");
+                      }}
+                      style={{ background: "linear-gradient(135deg,#6366f1,#818cf8)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer" }}>
+                      + Tambah
+                    </button>
+                  </div>
+                )}
+
+                {/* Daftar staff */}
+                {staffList.length > 0 && (
+                  <div style={s.card}>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#818cf8", marginBottom: "1rem" }}>
+                      🪪 Daftar Staff ({staffList.length}/{maxStaff})
+                    </div>
+                    {staffList.map((staff, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#f1f5f9" }}>{staff.nama}</div>
+                          <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "0.15rem" }}>{staff.posisi}</div>
+                        </div>
+                        {!staffSaved && (
+                          <button
+                            onClick={() => setStaffList(prev => prev.filter((_, idx) => idx !== i))}
+                            style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: "0.8rem", cursor: "pointer" }}>
+                            Hapus
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Simpan */}
+                    {!staffSaved ? (
+                      <button
+                        onClick={() => {
+                          if (staffList.length === 0) { toast.error("Tambah minimal 1 staff"); return; }
+                          // TODO: kirim ke backend
+                          setStaffSaved(true);
+                          toast.success("Daftar staff berhasil disimpan!", { description: "Panitia akan memproses pencetakan ID Card Anda" });
+                        }}
+                        style={{ marginTop: "1.25rem", width: "100%", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.8rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
+                        ✅ Simpan & Kirim ke Panitia
+                      </button>
+                    ) : (
+                      <div style={{ marginTop: "1.25rem", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, padding: "1rem", textAlign: "center" }}>
+                        <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>✅</div>
+                        <div style={{ fontWeight: 700, color: "#10b981", marginBottom: "0.25rem" }}>Daftar staff sudah dikirim ke panitia</div>
+                        <div style={{ fontSize: "0.8rem", color: "#64748b" }}>ID Card akan dicetak oleh vendor dan diserahkan saat hari H</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {staffList.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#64748b" }}>
+                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🪪</div>
+                    <p style={{ fontSize: "0.9rem" }}>Belum ada staff yang ditambahkan.<br/>Tambahkan nama dan posisi staff yang akan hadir di booth.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={s.card}>
+                <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
+                  <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
+                  <h3 style={{ fontWeight: 700, marginBottom: "0.75rem" }}>Fitur Terkunci</h3>
+                  <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.7, maxWidth: 400, margin: "0 auto" }}>
+                    Pengisian data ID Card Staff hanya tersedia setelah pembayaran booth dikonfirmasi oleh panitia.
                   </p>
                   <button onClick={() => setActiveTab("status")}
                     style={{ marginTop: "1.5rem", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem 1.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>

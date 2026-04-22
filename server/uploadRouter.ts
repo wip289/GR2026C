@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { getDb } from "./db";
-import { jobseekers } from "../drizzle/schema";
+import { jobseekers, employerBookings } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -133,5 +133,78 @@ uploadRouter.delete("/files/:regId/:filename", (req, res) => {
     res.json({ success: true });
   } else {
     res.status(404).json({ error: "File tidak ditemukan" });
+  }
+});
+
+// ── Employer Logo Storage ─────────────────────────────────────
+const logoStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const dest = path.join(UPLOAD_DIR, "employer-logos");
+    if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
+  },
+  filename: (req, file, cb) => {
+    const bookingId = (req.body.bookingId as string || "unknown").replace(/[^a-zA-Z0-9-]/g, "");
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${bookingId}-logo${ext}`);
+  },
+});
+
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for high-res logos
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "application/pdf"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Format tidak didukung. Gunakan PNG, JPG, atau PDF."));
+    }
+  },
+});
+
+// POST /api/upload/employer-logo
+uploadRouter.post("/employer-logo", (req, res, next) => {
+  uploadLogo.single("file")(req, res, (err: any) => {
+    if (err) {
+      res.status(400).json({ error: err.message || "Upload gagal" });
+      return;
+    }
+    next();
+  });
+}, (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "Tidak ada file yang diupload" });
+    return;
+  }
+  const bookingId = (req.body.bookingId as string || "unknown").replace(/[^a-zA-Z0-9-]/g, "");
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const filename = `${bookingId}-logo${ext}`;
+  const fileUrl = `/api/upload/files/employer-logos/${filename}`;
+
+  res.json({ success: true, url: fileUrl });
+});
+
+// POST /api/employer/update-print-info — save printName & logoUrl to DB
+uploadRouter.post("/employer-print-info", express.json(), async (req, res) => {
+  const { bookingId, printName, logoUrl } = req.body;
+
+  if (!bookingId || !printName) {
+    res.status(400).json({ error: "bookingId dan printName wajib diisi" });
+    return;
+  }
+
+  try {
+    const db = await getDb();
+    await db.update(employerBookings)
+      .set({
+        printName: printName,
+        logoUrl: logoUrl || null,
+      } as any)
+      .where(eq(employerBookings.bookingId, bookingId));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[update-print-info] Error:", err);
+    res.status(500).json({ error: "Gagal menyimpan data" });
   }
 });

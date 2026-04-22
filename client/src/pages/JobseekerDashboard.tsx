@@ -64,8 +64,21 @@ export default function JobseekerDashboard() {
     navigate("/jobseeker/login");
   };
 
-  const handlePrintIdCard = () => {
+  const handlePrintIdCard = async () => {
     if (!jobseeker) return;
+    // Convert foto URL to base64 so it works in blob popup window
+    let fotoBase64: string | undefined = undefined;
+    if (jobseeker.fotoUrl) {
+      try {
+        const res = await fetch(jobseeker.fotoUrl);
+        const blob = await res.blob();
+        fotoBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      } catch {}
+    }
     openIdCardForPrint({
       registrationId: sessionData?.registrationId || "",
       namaLengkap: jobseeker.namaLengkap,
@@ -73,6 +86,7 @@ export default function JobseekerDashboard() {
       jurusan: jobseeker.jurusan,
       bidangMinat: jobseeker.bidangMinat,
       status: jobseeker.status,
+      fotoUrl: fotoBase64,
     });
   };
 
