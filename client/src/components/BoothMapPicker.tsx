@@ -82,11 +82,13 @@ export const ALL_BOOTHS: BoothDef[] = [
   { id:"M2", label:"M2", x:228,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
   { id:"M3", label:"M3", x:342,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
   { id:"M4", label:"M4", x:440,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
-  // Interview booths — 2 kiri + 2 kanan, memanjang horizontal (4×2m real)
-  { id:"EL1",label:"L1",x:12, y:400,w:104,h:54,status:"interview",type:"interview",price:0 },
-  { id:"EL2",label:"L2",x:12, y:464,w:104,h:54,status:"interview",type:"interview",price:0 },
-  { id:"ER1",label:"R1",x:546,y:400,w:104,h:54,status:"interview",type:"interview",price:0 },
-  { id:"ER2",label:"R2",x:546,y:464,w:104,h:54,status:"interview",type:"interview",price:0 },
+  // Interview/Panel booths — P1-P4, memanjang VERTIKAL (2x4m real)
+  // Kiri: P2 atas, P1 bawah
+  { id:"P2",label:"P2",x:12,y:392,w:54,h:108,status:"interview",type:"interview",price:0 },
+  { id:"P1",label:"P1",x:12,y:510,w:54,h:108,status:"interview",type:"interview",price:0 },
+  // Kanan: P4 atas, P3 bawah
+  { id:"P4",label:"P4",x:596,y:392,w:54,h:108,status:"interview",type:"interview",price:0 },
+  { id:"P3",label:"P3",x:596,y:510,w:54,h:108,status:"interview",type:"interview",price:0 },
 ];
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -177,10 +179,6 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
 
           {/* Separator: standard booths vs main booths */}
           <line x1="12" y1="378" x2="650" y2="378" stroke="rgba(212,160,23,0.3)" strokeWidth="1" strokeDasharray="6 3"/>
-
-          {/* Label area kiri & kanan interview */}
-          <text x="64" y="392" textAnchor="middle" fill="rgba(96,165,250,0.7)" fontSize="8" fontWeight="600">INTERVIEW</text>
-          <text x="598" y="392" textAnchor="middle" fill="rgba(96,165,250,0.7)" fontSize="8" fontWeight="600">INTERVIEW</text>
         </svg>
       </div>
 
