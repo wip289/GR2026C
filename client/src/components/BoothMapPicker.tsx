@@ -82,17 +82,11 @@ export const ALL_BOOTHS: BoothDef[] = [
   { id:"M2", label:"M2", x:228,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
   { id:"M3", label:"M3", x:342,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
   { id:"M4", label:"M4", x:440,y:552,w:90,h:72,status:"available",type:"main",    price:10000000 },
-  // Interview booths
-  { id:"E1", label:"E1", x:560,y:400,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E2", label:"E2", x:560,y:440,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E3", label:"E3", x:560,y:480,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E4", label:"E4", x:560,y:520,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E5", label:"E5", x:560,y:560,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E6", label:"E6", x:12, y:560,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E7", label:"E7", x:12, y:520,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E8", label:"E8", x:12, y:480,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E9", label:"E9", x:12, y:440,w:36,h:36,status:"interview",type:"interview",price:0 },
-  { id:"E10",label:"E10",x:12, y:400,w:36,h:36,status:"interview",type:"interview",price:0 },
+  // Interview booths — 2 kiri + 2 kanan, memanjang horizontal (4×2m real)
+  { id:"EL1",label:"L1",x:12, y:400,w:104,h:54,status:"interview",type:"interview",price:0 },
+  { id:"EL2",label:"L2",x:12, y:464,w:104,h:54,status:"interview",type:"interview",price:0 },
+  { id:"ER1",label:"R1",x:546,y:400,w:104,h:54,status:"interview",type:"interview",price:0 },
+  { id:"ER2",label:"R2",x:546,y:464,w:104,h:54,status:"interview",type:"interview",price:0 },
 ];
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -100,9 +94,11 @@ const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 interface BoothMapPickerProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
+  booths?: BoothDef[];
 }
 
-export default function BoothMapPicker({ selectedIds, onChange }: BoothMapPickerProps) {
+export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp }: BoothMapPickerProps) {
+  const booths = boothsProp || ALL_BOOTHS;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ booth: BoothDef; x: number; y: number } | null>(null);
 
@@ -117,7 +113,7 @@ export default function BoothMapPicker({ selectedIds, onChange }: BoothMapPicker
     }
   };
 
-  const selectedBooths = ALL_BOOTHS.filter(b => selectedIds.includes(b.id));
+  const selectedBooths = booths.filter(b => selectedIds.includes(b.id));
   const total = selectedBooths.reduce((s, b) => s + b.price, 0);
 
   return (
@@ -130,16 +126,16 @@ export default function BoothMapPicker({ selectedIds, onChange }: BoothMapPicker
 
       {/* SVG Map */}
       <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 12, padding: "1rem", overflow: "auto", position: "relative" }}>
-        <svg viewBox="0 0 620 640" style={{ width: "100%", minWidth: 320, display: "block" }}>
-          <rect x="0" y="0" width="620" height="640" fill="#0a1628" rx="8"/>
+        <svg viewBox="0 0 662 640" style={{ width: "100%", minWidth: 340, display: "block" }}>
+          <rect x="0" y="0" width="662" height="640" fill="#0a1628" rx="8"/>
           <defs>
             <pattern id="grid2" width="30" height="30" patternUnits="userSpaceOnUse">
               <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(20,184,166,0.04)" strokeWidth="0.5"/>
             </pattern>
           </defs>
-          <rect width="620" height="640" fill="url(#grid2)" rx="8"/>
+          <rect width="662" height="640" fill="url(#grid2)" rx="8"/>
 
-          {ALL_BOOTHS.map(booth => {
+          {booths.map(booth => {
             const isSelected = selectedIds.includes(booth.id);
             const isHovered = hoveredId === booth.id;
             const clickable = booth.type !== "area" && booth.type !== "interview" &&
@@ -179,8 +175,12 @@ export default function BoothMapPicker({ selectedIds, onChange }: BoothMapPicker
             );
           })}
 
-          {/* Separator */}
-          <line x1="80" y1="378" x2="555" y2="378" stroke="rgba(212,160,23,0.3)" strokeWidth="1" strokeDasharray="6 3"/>
+          {/* Separator: standard booths vs main booths */}
+          <line x1="12" y1="378" x2="650" y2="378" stroke="rgba(212,160,23,0.3)" strokeWidth="1" strokeDasharray="6 3"/>
+
+          {/* Label area kiri & kanan interview */}
+          <text x="64" y="392" textAnchor="middle" fill="rgba(96,165,250,0.7)" fontSize="8" fontWeight="600">INTERVIEW</text>
+          <text x="598" y="392" textAnchor="middle" fill="rgba(96,165,250,0.7)" fontSize="8" fontWeight="600">INTERVIEW</text>
         </svg>
       </div>
 
