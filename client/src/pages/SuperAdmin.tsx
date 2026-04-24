@@ -46,6 +46,7 @@ interface EventConfig {
   employerRegCloseDate: string;
   jobseekerRegOpenDate: string;
   jobseekerRegCloseDate: string;
+  paymentDeadlineDate: string;
   allowWalkIn: string;
 }
 
@@ -85,6 +86,7 @@ const DEFAULT_CONFIG: EventConfig = {
   employerRegCloseDate: "2026-05-31",
   jobseekerRegOpenDate: "2026-03-01",
   jobseekerRegCloseDate: "2026-06-07",
+  paymentDeadlineDate: "2026-05-31",
   allowWalkIn: "true",
 };
 
@@ -711,6 +713,28 @@ export default function SuperAdmin() {
               </div>
               <div style={{ fontSize: "0.78rem", color: "#475569", marginTop: "0.25rem" }}>
                 Setelah tanggal tutup, form pendaftaran employer akan dikunci otomatis.
+              </div>
+            </div>
+
+            {/* Payment Deadline */}
+            <div style={{ background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#D4A017", marginBottom: "1rem" }}>💰 Batas Pembayaran Booth</div>
+              <div style={s.row2}>
+                <div>
+                  <label style={s.label}>Tanggal Deadline Absolut *</label>
+                  <input style={s.input} type="date" value={config.paymentDeadlineDate} onChange={e => upd("paymentDeadlineDate", e.target.value)}/>
+                  <div style={{ fontSize: "0.75rem", color: "#D4A017", marginTop: "0.3rem" }}>
+                    ⚠️ Booking PENDING yang melewati tanggal ini otomatis EXPIRED
+                  </div>
+                </div>
+                <div>
+                  <label style={s.label}>Atau H-X sebelum event</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <input style={{ ...s.input, maxWidth: 80 }} type="number" value={config.paymentDeadlineDays} onChange={e => upd("paymentDeadlineDays", e.target.value)}/>
+                    <span style={{ color: "#64748b", fontSize: "0.82rem" }}>hari (H-{config.paymentDeadlineDays})</span>
+                  </div>
+                  <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.3rem" }}>Dipakai di invoice jika tanggal absolut kosong</div>
+                </div>
               </div>
             </div>
 
