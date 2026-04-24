@@ -67,29 +67,29 @@ export const ALL_BOOTHS: BoothDef[] = [
   { id:"S38", label:"S38", x:600, y:267, w:49, h:36, status:"staff", type:"standard", price:0 },
 
   // ── STANDARD BOOTHS ─ Pasang 1 (r1=328, r2=367) ─────────
-  { id:"S36", label:"S36", x:cA, y:r1, w:SW, h:SH, status:"booked",    type:"standard", price:7500000 },
-  { id:"S35", label:"S35", x:cB, y:r1, w:SW, h:SH, status:"booked",    type:"standard", price:7500000 },
-  { id:"S34", label:"S34", x:cC, y:r1, w:SW, h:SH, status:"reserved",  type:"standard", price:7500000 },
-  { id:"S33", label:"S33", x:cD, y:r1, w:SW, h:SH, status:"reserved",  type:"standard", price:7500000 },
-  { id:"S32", label:"S32", x:cE, y:r1, w:SW, h:SH, status:"booked",    type:"standard", price:7500000 },
+  { id:"S36", label:"S36", x:cA, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S35", label:"S35", x:cB, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S34", label:"S34", x:cC, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S33", label:"S33", x:cD, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S32", label:"S32", x:cE, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S31", label:"S31", x:cF, y:r1, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
 
-  { id:"S25", label:"S25", x:cA, y:r2, w:SW, h:SH, status:"booked",    type:"standard", price:7500000 },
-  { id:"S26", label:"S26", x:cB, y:r2, w:SW, h:SH, status:"reserved",  type:"standard", price:7500000 },
+  { id:"S25", label:"S25", x:cA, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S26", label:"S26", x:cB, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S27", label:"S27", x:cC, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S28", label:"S28", x:cD, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S29", label:"S29", x:cE, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S30", label:"S30", x:cF, y:r2, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
 
   // ── STANDARD BOOTHS ─ Pasang 2 (r3=423, r4=462) ─────────
-  { id:"S24", label:"S24", x:cA, y:r3, w:SW, h:SH, status:"booked",    type:"standard", price:7500000 },
-  { id:"S23", label:"S23", x:cB, y:r3, w:SW, h:SH, status:"reserved",  type:"standard", price:7500000 },
+  { id:"S24", label:"S24", x:cA, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
+  { id:"S23", label:"S23", x:cB, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S22", label:"S22", x:cC, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S21", label:"S21", x:cD, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S20", label:"S20", x:cE, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S19", label:"S19", x:cF, y:r3, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
 
-  { id:"S13", label:"S13", x:cA, y:r4, w:SW, h:SH, status:"reserved",  type:"standard", price:7500000 },
+  { id:"S13", label:"S13", x:cA, y:r4, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S14", label:"S14", x:cB, y:r4, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S15", label:"S15", x:cC, y:r4, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
   { id:"S16", label:"S16", x:cD, y:r4, w:SW, h:SH, status:"available", type:"standard", price:7500000 },
@@ -113,12 +113,12 @@ export const ALL_BOOTHS: BoothDef[] = [
 
   // ── MAIN BOOTHS (dari CorelDraw) ─────────────────────────
   // Row mr1=622: M9, M10 (kiri) | M11, M12 (kanan)
-  { id:"M9",  label:"M9",  x:mA, y:mr1, w:MW, h:MH, status:"booked",    type:"main", price:10000000 },
-  { id:"M10", label:"M10", x:mB, y:mr1, w:MW, h:MH, status:"reserved",  type:"main", price:10000000 },
+  { id:"M9",  label:"M9",  x:mA, y:mr1, w:MW, h:MH, status:"available", type:"main", price:10000000 },
+  { id:"M10", label:"M10", x:mB, y:mr1, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M11", label:"M11", x:mC, y:mr1, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M12", label:"M12", x:mD, y:mr1, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   // Row mr2=739: M5, M6 | M7, M8
-  { id:"M5",  label:"M5",  x:mA, y:mr2, w:MW, h:MH, status:"booked",    type:"main", price:10000000 },
+  { id:"M5",  label:"M5",  x:mA, y:mr2, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M6",  label:"M6",  x:mB, y:mr2, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M7",  label:"M7",  x:mC, y:mr2, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M8",  label:"M8",  x:mD, y:mr2, w:MW, h:MH, status:"available", type:"main", price:10000000 },
