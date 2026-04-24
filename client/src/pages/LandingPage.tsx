@@ -45,11 +45,11 @@ export default function LandingPage() {
         background: scrollY > 50 ? "rgba(10,22,40,0.97)" : "transparent",
         backdropFilter: scrollY > 50 ? "blur(16px)" : "none",
         borderBottom: scrollY > 50 ? "1px solid rgba(20,184,166,0.15)" : "none",
-        transition:"all 0.3s ease", padding:"0 2rem",
-        display:"flex", alignItems:"center", justifyContent:"space-between", height:64,
+        transition:"all 0.3s ease", padding:"0 1.25rem",
+        display:"flex", alignItems:"center", justifyContent:"space-between", height:60,
       }}>
-        <img src="/logo-gr2026.png" alt="GR2026" style={{ height:38, objectFit:"contain" }} />
-        <div style={{ display:"flex", gap:"0.5rem" }}>
+        <img src="/logo-gr2026.png" alt="GR2026" style={{ height:34, objectFit:"contain", flexShrink:0 }} />
+        <div style={{ display:"flex", gap:"0.35rem" }}>
           <button onClick={() => scrollTo(employerRef)}  style={navBtn}>Employer</button>
           <button onClick={() => scrollTo(jobseekerRef)} style={navBtn}>Jobseeker</button>
           <button onClick={() => scrollTo(sponsorRef)}   style={{ ...navBtn, borderColor:"rgba(129,140,248,0.4)", color:"#818cf8" }}>Sponsor</button>
@@ -60,109 +60,94 @@ export default function LandingPage() {
       <section style={{
         minHeight:"100vh", display:"flex", flexDirection:"column",
         alignItems:"center", justifyContent:"center", textAlign:"center",
-        padding:"7rem 1.5rem 4rem",
+        padding:"6rem 1.25rem 3rem",
         background:"radial-gradient(ellipse at 50% 0%, rgba(20,184,166,0.13) 0%, transparent 65%), radial-gradient(ellipse at 80% 90%, rgba(180,130,20,0.09) 0%, transparent 55%), #0a1628",
         position:"relative", overflow:"hidden",
       }}>
-        {/* Grid */}
         <div style={{ position:"absolute", inset:0, opacity:0.04,
           backgroundImage:"linear-gradient(rgba(20,184,166,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.5) 1px, transparent 1px)",
           backgroundSize:"60px 60px" }} />
-
-        {/* Rings */}
         {[320, 540, 760].map((size, i) => (
-          <div key={i} style={{
-            position:"absolute", width:size, height:size, borderRadius:"50%",
-            border:"1px solid rgba(20,184,166,0.08)",
-            top:"50%", left:"50%", transform:"translate(-50%, -50%)",
-            animation:`ringPulse ${4 + i*1.5}s ease-in-out infinite alternate`,
-            pointerEvents:"none",
-          }} />
+          <div key={i} style={{ position:"absolute", width:size, height:size, borderRadius:"50%",
+            border:"1px solid rgba(20,184,166,0.08)", top:"50%", left:"50%",
+            transform:"translate(-50%, -50%)", pointerEvents:"none",
+            animation:`ringPulse ${4+i*1.5}s ease-in-out infinite alternate` }} />
         ))}
 
         <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:820 }}>
-
-          {/* Logo */}
           <img src="/logo-gr2026.png" alt="Grand Recruitment 2026"
-            style={{ width:"min(660px, 90vw)", display:"block", margin:"0 auto 0.6rem",
+            style={{ width:"min(640px, 88vw)", display:"block", margin:"0 auto 0.75rem",
               filter:"drop-shadow(0 0 32px rgba(20,184,166,0.35))" }} />
 
-          <p style={{ color:"#475569", fontSize:"0.88rem", margin:"0 0 3rem", letterSpacing:"0.05em" }}>
-            <span style={{ color:"#14b8a6", fontWeight:600 }}>June 8–9, 2026</span>
-            <span style={{ margin:"0 0.6rem", color:"#1e3a5f" }}>·</span>
-            Gedung Dome NHI Bandung
+          {/* ✅ FIX: subtitle lebih terang & readable */}
+          <p style={{ margin:"0 0 2.75rem", letterSpacing:"0.04em", lineHeight:1.6 }}>
+            <span style={{ color:"#14b8a6", fontWeight:600, fontSize:"1rem" }}>June 8–9, 2026</span>
+            <span style={{ margin:"0 0.5rem", color:"#334155" }}>·</span>
+            <span style={{ color:"#94a3b8", fontSize:"0.9rem" }}>Gedung Dome NHI Bandung</span>
           </p>
 
           {/* ── THREE ORBS ── */}
-          <div style={{ marginBottom:"2rem" }}>
+          <div style={{ marginBottom:"1.75rem" }}>
 
-            {/* Orb row */}
+            {/* ✅ FIX MOBILE: setiap orb punya wrapper fixed 130×130 agar tidak loncat */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"2.5rem" }}>
               {stories.map((s, i) => {
                 const isActive  = activeStory === i;
-                const isHovered = hoveredOrb === i;
-                const lit       = isActive || isHovered;
+                const isHov     = hoveredOrb === i;
+                const lit       = isActive || isHov;
+                const orbSize   = isActive ? 110 : isHov ? 94 : 76;
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center" }}>
-
-                    {/* Orb + backlight wrapper */}
-                    <div style={{ position:"relative", display:"flex", alignItems:"center", justifyContent:"center" }}
+                    {/* Fixed 130×130 wrapper — prevents layout shift on mobile */}
+                    <div style={{ width:130, height:130, position:"relative", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
                       onMouseEnter={() => setHoveredOrb(i)}
                       onMouseLeave={() => setHoveredOrb(null)}>
 
-                      {/* Backlight — scoped only around this orb */}
+                      {/* Backlight — scoped to this orb only */}
                       <div style={{
-                        position:"absolute", borderRadius:"50%", pointerEvents:"none", zIndex:0,
-                        width:  lit ? 180 : 90,
-                        height: lit ? 180 : 90,
-                        background: `radial-gradient(circle, ${s.color}${lit ? "38" : "0a"} 0%, transparent 70%)`,
+                        position:"absolute", borderRadius:"50%", pointerEvents:"none",
+                        width: lit ? 170 : 80, height: lit ? 170 : 80,
+                        background:`radial-gradient(circle, ${s.color}${lit?"38":"0a"} 0%, transparent 70%)`,
                         transition:"all 0.5s ease",
                       }} />
 
-                      {/* Orb button — clickable, navigates to URL */}
+                      {/* Orb button */}
                       <button
                         onClick={() => { setActiveStory(i); navigate(s.url); }}
-                        title={`${s.cta} →`}
                         style={{
-                          position:"relative", zIndex:1,
-                          width:  isActive ? 114 : isHovered ? 98 : 76,
-                          height: isActive ? 114 : isHovered ? 98 : 76,
-                          borderRadius:"50%",
-                          border:`2px solid ${lit ? s.color : "rgba(255,255,255,0.1)"}`,
+                          width: orbSize, height: orbSize, borderRadius:"50%",
+                          border:`2px solid ${lit ? s.color : "rgba(255,255,255,0.12)"}`,
                           background: lit
                             ? `radial-gradient(circle at 35% 35%, ${s.color}55, ${s.color}15)`
-                            : "rgba(255,255,255,0.03)",
+                            : "rgba(255,255,255,0.04)",
                           display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                          cursor:"pointer", flexShrink:0, outline:"none",
+                          cursor:"pointer", outline:"none", flexShrink:0,
                           transition:"width 0.4s cubic-bezier(0.34,1.56,0.64,1), height 0.4s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, background 0.3s, box-shadow 0.3s",
-                          boxShadow: isActive
-                            ? `0 0 32px ${s.color}55, 0 0 64px ${s.color}20`
-                            : isHovered ? `0 0 20px ${s.color}35` : "none",
+                          boxShadow: isActive ? `0 0 30px ${s.color}55, 0 0 60px ${s.color}20` : isHov ? `0 0 18px ${s.color}35` : "none",
+                          position:"relative", zIndex:1,
                         }}>
-                        <div style={{ fontSize: isActive ? "2.2rem" : "1.5rem", lineHeight:1, transition:"font-size 0.35s ease", pointerEvents:"none" }}>{s.icon}</div>
-                        <div style={{ fontSize:"0.6rem", color: lit ? s.color : "#334155", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginTop:4, transition:"color 0.3s", pointerEvents:"none" }}>{s.role}</div>
+                        <span style={{ fontSize: isActive ? "2rem" : "1.35rem", lineHeight:1, transition:"font-size 0.35s ease" }}>{s.icon}</span>
+                        <span style={{ fontSize:"0.58rem", color: lit ? s.color : "#475569", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.08em", marginTop:3, transition:"color 0.3s" }}>{s.role}</span>
                       </button>
 
-                      {/* CTA tooltip bawah orb saat hover */}
+                      {/* CTA tooltip */}
                       <div style={{
-                        position:"absolute", bottom:-30, left:"50%", transform:"translateX(-50%)",
-                        fontSize:"0.62rem", color:s.color, fontWeight:700, whiteSpace:"nowrap",
+                        position:"absolute", bottom:2, left:"50%", transform:"translateX(-50%)",
+                        fontSize:"0.6rem", color:s.color, fontWeight:700, whiteSpace:"nowrap",
                         background:`${s.color}18`, border:`1px solid ${s.color}35`,
-                        borderRadius:20, padding:"0.15rem 0.65rem",
-                        opacity: isHovered ? 1 : 0,
-                        transition:"opacity 0.25s ease",
+                        borderRadius:20, padding:"0.12rem 0.6rem",
+                        opacity: isHov ? 1 : 0, transition:"opacity 0.25s",
                         pointerEvents:"none", zIndex:2,
-                      }}>
-                        {s.cta} →
-                      </div>
+                      }}>{s.cta} →</div>
                     </div>
 
+                    {/* Connector line — perfectly centered because wrapper is fixed */}
                     {i < 2 && (
-                      <div style={{ width:54, height:2, flexShrink:0, margin:"0 4px",
+                      <div style={{ width:"clamp(20px,5vw,48px)", height:2, flexShrink:0,
                         background:`linear-gradient(90deg, ${stories[i].color}45, ${stories[i+1].color}45)`, position:"relative" }}>
                         <div style={{ position:"absolute", top:"50%", left:"50%",
-                          transform:"translate(-50%,-50%)", width:6, height:6, borderRadius:"50%",
-                          background:"#14b8a6", boxShadow:"0 0 8px #14b8a6",
+                          transform:"translate(-50%,-50%)", width:5, height:5, borderRadius:"50%",
+                          background:"#14b8a6", boxShadow:"0 0 7px #14b8a6",
                           animation:"dotPulse 2s ease-in-out infinite" }} />
                       </div>
                     )}
@@ -172,18 +157,15 @@ export default function LandingPage() {
             </div>
 
             {/* Slider card */}
-            <div style={{ overflow:"hidden", borderRadius:18 }}>
-              <div style={{ display:"flex", transform:`translateX(-${activeStory * 100}%)`, transition:"transform 0.58s cubic-bezier(0.77,0,0.18,1)" }}>
+            <div style={{ overflow:"hidden", borderRadius:16 }}>
+              <div style={{ display:"flex", transform:`translateX(-${activeStory*100}%)`, transition:"transform 0.55s cubic-bezier(0.77,0,0.18,1)" }}>
                 {stories.map((s, i) => (
-                  <div key={i} style={{
-                    minWidth:"100%", boxSizing:"border-box",
+                  <div key={i} style={{ minWidth:"100%", boxSizing:"border-box",
                     background:`linear-gradient(135deg, ${s.color}0e, ${s.color}04)`,
-                    border:`1px solid ${s.color}28`, borderRadius:18,
-                    padding:"1.75rem 2.25rem", textAlign:"left",
-                  }}>
-                    <div style={{ fontSize:"0.68rem", color:s.color, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.2em", marginBottom:"0.65rem" }}>{s.sub}</div>
-                    <p style={{ color:"#dde4ef", fontSize:"1rem", lineHeight:1.85, margin:"0 0 1rem", fontStyle:"italic" }}>"{s.quote}"</p>
-                    <button onClick={() => navigate(s.url)} style={{ background:`${s.color}20`, border:`1px solid ${s.color}50`, color:s.color, borderRadius:8, padding:"0.45rem 1.1rem", fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>
+                    border:`1px solid ${s.color}28`, borderRadius:16, padding:"1.5rem 1.75rem", textAlign:"left" }}>
+                    <div style={{ fontSize:"0.66rem", color:s.color, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.2em", marginBottom:"0.6rem" }}>{s.sub}</div>
+                    <p style={{ color:"#dde4ef", fontSize:"0.95rem", lineHeight:1.8, margin:"0 0 0.9rem", fontStyle:"italic" }}>"{s.quote}"</p>
+                    <button onClick={() => navigate(s.url)} style={{ background:`${s.color}20`, border:`1px solid ${s.color}50`, color:s.color, borderRadius:8, padding:"0.4rem 1rem", fontSize:"0.8rem", fontWeight:700, cursor:"pointer" }}>
                       {s.cta} →
                     </button>
                   </div>
@@ -192,40 +174,37 @@ export default function LandingPage() {
             </div>
 
             {/* Dots */}
-            <div style={{ display:"flex", justifyContent:"center", gap:"0.55rem", marginTop:"1.1rem" }}>
+            <div style={{ display:"flex", justifyContent:"center", gap:"0.55rem", marginTop:"1rem" }}>
               {stories.map((s, i) => (
                 <div key={i} onClick={() => setActiveStory(i)} style={{
-                  width: i === activeStory ? 26 : 6, height:6, borderRadius:3,
-                  background: i === activeStory ? stories[i].color : "rgba(255,255,255,0.12)",
-                  cursor:"pointer",
-                  transition:"width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s",
-                  boxShadow: i === activeStory ? `0 0 7px ${stories[i].color}70` : "none",
-                }} />
+                  width: i===activeStory ? 24 : 6, height:6, borderRadius:3,
+                  background: i===activeStory ? stories[i].color : "rgba(255,255,255,0.12)",
+                  cursor:"pointer", transition:"width 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s",
+                  boxShadow: i===activeStory ? `0 0 7px ${stories[i].color}70` : "none" }} />
               ))}
             </div>
           </div>
 
           {/* CTA Buttons */}
-          <div style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap", marginBottom:"3.5rem" }}>
+          <div style={{ display:"flex", gap:"0.75rem", justifyContent:"center", flexWrap:"wrap", marginBottom:"3rem" }}>
             <button onClick={() => scrollTo(employerRef)}  style={heroBtnTeal}>Daftar sebagai Employer</button>
             <button onClick={() => scrollTo(jobseekerRef)} style={heroBtnGold}>Daftar sebagai Jobseeker</button>
           </div>
 
           {/* Stats */}
-          <div style={{ display:"flex", gap:"2.5rem", justifyContent:"center", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:"2rem", justifyContent:"center", flexWrap:"wrap" }}>
             {[{num:"50+",label:"Perusahaan"},{num:"3,000+",label:"Jobseeker"},{num:"2 Hari",label:"Pelaksanaan"},{num:"38+",label:"Booth"}].map(s=>(
               <div key={s.label} style={{ textAlign:"center" }}>
-                <div style={{ fontSize:"1.9rem", fontWeight:800, color:"#D4A017" }}>{s.num}</div>
-                <div style={{ fontSize:"0.75rem", color:"#475569", textTransform:"uppercase", letterSpacing:"0.1em", marginTop:2 }}>{s.label}</div>
+                <div style={{ fontSize:"1.75rem", fontWeight:800, color:"#D4A017" }}>{s.num}</div>
+                <div style={{ fontSize:"0.72rem", color:"#64748b", textTransform:"uppercase", letterSpacing:"0.1em", marginTop:2 }}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{ position:"absolute", bottom:"1.75rem", left:"50%", transform:"translateX(-50%)", animation:"bounce 2s infinite" }}>
-          <div style={{ width:22, height:38, border:"2px solid rgba(20,184,166,0.35)", borderRadius:11, display:"flex", justifyContent:"center", paddingTop:5 }}>
-            <div style={{ width:3, height:7, background:"#14b8a6", borderRadius:2, animation:"scrollDot 2s infinite" }} />
+        <div style={{ position:"absolute", bottom:"1.5rem", left:"50%", transform:"translateX(-50%)", animation:"bounce 2s infinite" }}>
+          <div style={{ width:20, height:34, border:"2px solid rgba(20,184,166,0.35)", borderRadius:10, display:"flex", justifyContent:"center", paddingTop:4 }}>
+            <div style={{ width:3, height:6, background:"#14b8a6", borderRadius:2, animation:"scrollDot 2s infinite" }} />
           </div>
         </div>
       </section>
@@ -237,7 +216,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1100, margin:"0 auto", width:"100%", display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%,460px),1fr))", gap:"3rem", alignItems:"center" }}>
           <div>
             <div style={badge("#14b8a6")}>Untuk Perusahaan</div>
-            <p style={{ fontSize:"0.83rem", color:"#334155", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Dulu saya berdiri di sisi sana, mencari peluang. Sekarang giliran saya membuka pintu untuk mereka."</p>
+            <p style={{ fontSize:"0.83rem", color:"#475569", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Dulu saya berdiri di sisi sana, mencari peluang. Sekarang giliran saya membuka pintu untuk mereka."</p>
             <h2 style={sectionH2}>Panggung Rekrutmen<br /><span style={{ color:"#14b8a6" }}>yang Serius & Terlihat</span></h2>
             <p style={sectionP}>Akses langsung ke {">"} 3,000 jobseeker berkualitas dari bidang hospitality, tourism, MICE, kuliner, dan manajemen perhotelan. Booth tersedia terbatas.</p>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"2.5rem" }}>
@@ -255,28 +234,16 @@ export default function LandingPage() {
               <button onClick={() => navigate("/employer/booth-map")} style={heroBtnOutline}>Lihat Denah Booth</button>
             </div>
             <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginTop:"1rem" }}>
-              <span style={{ fontSize:"0.83rem", color:"#334155" }}>Sudah punya Booking ID?</span>
+              <span style={{ fontSize:"0.83rem", color:"#475569" }}>Sudah punya Booking ID?</span>
               <button onClick={() => navigate("/employer/login")} style={{ background:"transparent", border:"1px solid rgba(20,184,166,0.4)", color:"#14b8a6", borderRadius:8, padding:"0.45rem 1.1rem", fontSize:"0.83rem", fontWeight:600, cursor:"pointer" }}>Login Employer →</button>
             </div>
           </div>
-          {/* Mini booth map */}
-          <div style={{ background:"rgba(20,184,166,0.03)", border:"1px solid rgba(20,184,166,0.15)", borderRadius:16, padding:"2rem", textAlign:"center" }}>
+
+          {/* ✅ FIX: Mini booth map akurat sesuai layout CorelDraw */}
+          <div style={{ background:"rgba(20,184,166,0.03)", border:"1px solid rgba(20,184,166,0.15)", borderRadius:16, padding:"1.5rem", textAlign:"center" }}>
             <div style={{ fontSize:"0.72rem", color:"#14b8a6", letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:"1rem" }}>Preview Denah Event</div>
-            <svg viewBox="0 0 300 380" style={{ width:"100%", maxWidth:280, margin:"0 auto", display:"block" }}>
-              <rect x="60" y="10" width="180" height="30" rx="4" fill="#D4A017" opacity="0.8"/>
-              <text x="150" y="30" textAnchor="middle" fill="#0a1628" fontSize="11" fontWeight="700">STAGE</text>
-              <rect x="10" y="50" width="55" height="25" rx="3" fill="#1e3a5f" stroke="#14b8a6" strokeWidth="0.5"/>
-              <text x="37" y="67" textAnchor="middle" fill="#14b8a6" fontSize="8">LOUNGE</text>
-              {[[10,85],[75,85],[100,85],[175,85],[200,85],[245,85],[265,85],[10,110],[75,110],[100,110],[175,110],[200,110],[245,110],[265,110],[10,140],[75,140],[100,140],[175,140],[200,140],[245,140],[10,165],[75,165],[100,165],[175,165],[200,165],[245,165],[10,195],[75,195],[100,195],[175,195],[200,195],[245,195],[10,220],[75,220],[100,220],[175,220],[200,220],[245,220]].map(([x,y],i)=>(
-                <rect key={i} x={x} y={y} width="22" height="22" rx="2" fill="#14b8a6" opacity="0.85" stroke="#0a1628" strokeWidth="0.5"/>
-              ))}
-              {[[75,255],[135,255],[185,255],[245,255],[75,295],[135,295],[185,295],[245,295],[75,335],[135,335],[185,335],[245,335]].map(([x,y],i)=>(
-                <rect key={i} x={x} y={y} width="45" height="38" rx="3" fill="#14b8a6" opacity="0.85" stroke="#0a1628" strokeWidth="0.5"/>
-              ))}
-              <rect x="100" y="370" width="100" height="8" rx="2" fill="#D4A017" opacity="0.6"/>
-              <text x="150" y="368" textAnchor="middle" fill="#D4A017" fontSize="9">ENTRANCE</text>
-            </svg>
-            <div style={{ marginTop:"1rem", padding:"0.7rem 1rem", background:"rgba(20,184,166,0.06)", border:"1px solid rgba(20,184,166,0.2)", borderRadius:8, fontSize:"0.82rem", color:"#14b8a6" }}>
+            <MiniBoothMap />
+            <div style={{ marginTop:"1rem", padding:"0.65rem 1rem", background:"rgba(20,184,166,0.06)", border:"1px solid rgba(20,184,166,0.2)", borderRadius:8, fontSize:"0.8rem", color:"#14b8a6" }}>
               ✅ Semua booth tersedia — pesan sekarang!
             </div>
           </div>
@@ -298,7 +265,7 @@ export default function LandingPage() {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
                     <span style={{ fontWeight:700, fontSize:"0.85rem", color:lv.prog===100?"#D4A017":"#475569" }}>Lv.{lv.level} {lv.name}</span>
-                    <span style={{ fontSize:"0.7rem", color:"#334155" }}>+{lv.xp} XP</span>
+                    <span style={{ fontSize:"0.7rem", color:"#475569" }}>+{lv.xp} XP</span>
                   </div>
                   <div style={{ fontSize:"0.75rem", color:"#475569", marginTop:"0.15rem" }}>{lv.desc}</div>
                   <div style={{ height:3, background:"rgba(255,255,255,0.06)", borderRadius:2, marginTop:"0.3rem" }}>
@@ -309,20 +276,20 @@ export default function LandingPage() {
             ))}
             <div style={{ marginTop:"1.25rem", padding:"0.9rem", background:"rgba(20,184,166,0.06)", border:"1px solid rgba(20,184,166,0.2)", borderRadius:10, textAlign:"center" }}>
               <div style={{ fontSize:"0.75rem", color:"#14b8a6", fontWeight:700 }}>Daftar dalam 60 detik 🚀</div>
-              <div style={{ fontSize:"0.7rem", color:"#334155", marginTop:"0.2rem" }}>Hanya nama & email untuk mulai</div>
+              <div style={{ fontSize:"0.7rem", color:"#64748b", marginTop:"0.2rem" }}>Hanya nama & email untuk mulai</div>
             </div>
           </div>
           <div>
             <div style={badge("#D4A017")}>Untuk Jobseeker</div>
-            <p style={{ fontSize:"0.83rem", color:"#334155", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Semua orang memulai dari sini. Ini bukan akhir — ini awal dari segalanya."</p>
+            <p style={{ fontSize:"0.83rem", color:"#475569", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Semua orang memulai dari sini. Ini bukan akhir — ini awal dari segalanya."</p>
             <h2 style={sectionH2}>Ini Momen Besarmu.<br /><span style={{ color:"#D4A017" }}>Ambil Peluangnya.</span></h2>
             <p style={sectionP}>Daftar <strong style={{ color:"#f1f5f9" }}>gratis</strong> — cukup nama & email untuk mulai. Upload dokumen bisa nanti. Semakin lengkap profilmu, semakin tinggi levelmu di mata employer.</p>
             <button onClick={() => navigate("/jobseeker/register")} style={heroBtnGold}>Mulai Perjalananmu →</button>
             <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginTop:"1rem" }}>
-              <span style={{ fontSize:"0.83rem", color:"#334155" }}>Sudah punya Registration ID?</span>
+              <span style={{ fontSize:"0.83rem", color:"#475569" }}>Sudah punya Registration ID?</span>
               <button onClick={() => navigate("/jobseeker/login")} style={{ background:"transparent", border:"1px solid rgba(212,160,23,0.4)", color:"#D4A017", borderRadius:8, padding:"0.45rem 1.1rem", fontSize:"0.83rem", fontWeight:600, cursor:"pointer" }}>Login →</button>
             </div>
-            <p style={{ color:"#334155", fontSize:"0.73rem", marginTop:"0.75rem" }}>Pendaftaran gratis · Data dilindungi UU PDP · Dapat ditarik kapan saja</p>
+            <p style={{ color:"#475569", fontSize:"0.73rem", marginTop:"0.75rem" }}>Pendaftaran gratis · Data dilindungi UU PDP · Dapat ditarik kapan saja</p>
           </div>
         </div>
       </section>
@@ -335,9 +302,9 @@ export default function LandingPage() {
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%,480px),1fr))", gap:"4rem", alignItems:"center" }}>
             <div>
               <div style={badge("#818cf8")}>Untuk Sponsor & Kampus</div>
-              <p style={{ fontSize:"0.83rem", color:"#334155", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Saya melihat jobseeker datang dan employer membuka pintu — dan saya berjanji memberi yang terbaik untuk ekosistem ini."</p>
+              <p style={{ fontSize:"0.83rem", color:"#475569", fontStyle:"italic", margin:"0.75rem 0 0.5rem", lineHeight:1.6 }}>"Saya melihat jobseeker datang dan employer membuka pintu — dan saya berjanji memberi yang terbaik."</p>
               <h2 style={sectionH2}>Flagship Event<br /><span style={{ color:"#818cf8" }}>Rekrutmen Pariwisata</span><br /><span style={{ fontSize:"clamp(1.2rem,2.5vw,2rem)", color:"#94a3b8" }}>Indonesia</span></h2>
-              <p style={sectionP}>Bukan event kecil harian. GR2026 adalah <strong style={{ color:"#f1f5f9" }}>Grand Recruitment tahunan</strong> yang mempertemukan ribuan talenta terbaik hospitality & tourism dengan industri.</p>
+              <p style={sectionP}>Bukan event kecil harian. GR2026 adalah <strong style={{ color:"#f1f5f9" }}>Grand Recruitment tahunan</strong> yang mempertemukan ribuan talenta hospitality & tourism dengan industri.</p>
               <div style={{ display:"grid", gap:"1rem", marginBottom:"2.5rem" }}>
                 {[{tier:"🥇 Gold Sponsor",color:"#D4A017",perks:["Logo semua materi","Booth premium","Speaking slot","Database jobseeker"]},{tier:"🥈 Silver Sponsor",color:"#94a3b8",perks:["Logo banner & backdrop","Booth strategis","Mention sosmed"]},{tier:"🥉 Bronze / Media Partner",color:"#c2773a",perks:["Logo digital","Branding venue","Laporan pasca event"]}].map((t,i)=>(
                   <div key={i} style={{ background:"rgba(255,255,255,0.02)", border:`1px solid ${t.color}25`, borderRadius:12, padding:"1.1rem", borderLeft:`3px solid ${t.color}` }}>
@@ -361,7 +328,7 @@ export default function LandingPage() {
                     <div style={{ fontSize:"1.6rem", flexShrink:0 }}>{item.icon}</div>
                     <div>
                       <div style={{ fontSize:"1.6rem", fontWeight:800, color:"#818cf8", lineHeight:1 }}>{item.num}</div>
-                      <div style={{ fontSize:"0.8rem", color:"#475569", marginTop:"0.15rem" }}>{item.label}</div>
+                      <div style={{ fontSize:"0.8rem", color:"#64748b", marginTop:"0.15rem" }}>{item.label}</div>
                     </div>
                   </div>
                 ))}
@@ -377,19 +344,22 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background:"#050d1a", borderTop:"1px solid rgba(20,184,166,0.1)", padding:"2.5rem 2rem", textAlign:"center" }}>
-        <img src="/logo-gr2026.png" alt="GR2026" style={{ height:32, marginBottom:"1.25rem", opacity:0.7 }} />
-        <p style={{ color:"#1e3a5f", fontSize:"0.82rem" }}>
+      {/* ✅ FIX: teks footer lebih cerah */}
+      <footer style={{ background:"#050d1a", borderTop:"1px solid rgba(20,184,166,0.1)", padding:"2.5rem 1.5rem", textAlign:"center" }}>
+        <img src="/logo-gr2026.png" alt="GR2026" style={{ height:32, marginBottom:"1.25rem", opacity:0.75 }} />
+        <p style={{ color:"#64748b", fontSize:"0.83rem", lineHeight:1.7, marginBottom:0 }}>
           The International Tourism & Hospitality Grand Recruitment 2026<br />
-          Politeknik Pariwisata NHI Bandung · Gedung Dome · June 8–9, 2026
+          <span style={{ color:"#475569" }}>Politeknik Pariwisata NHI Bandung · Gedung Dome · June 8–9, 2026</span>
         </p>
         <div style={{ marginTop:"1.25rem", display:"flex", gap:"2rem", justifyContent:"center", flexWrap:"wrap" }}>
-          <a href="/employer/register"  style={{ color:"#14b8a6", fontSize:"0.82rem", textDecoration:"none" }}>Daftar Employer</a>
-          <a href="/jobseeker/register" style={{ color:"#D4A017",  fontSize:"0.82rem", textDecoration:"none" }}>Daftar Jobseeker</a>
-          <a href="/sponsor"            style={{ color:"#818cf8",  fontSize:"0.82rem", textDecoration:"none" }}>Sponsorship</a>
-          <a href="/boss"               style={{ color:"#1e3a5f",  fontSize:"0.82rem", textDecoration:"none" }}>Panitia</a>
+          <a href="/employer/register"  style={{ color:"#14b8a6", fontSize:"0.85rem", textDecoration:"none" }}>Daftar Employer</a>
+          <a href="/jobseeker/register" style={{ color:"#D4A017",  fontSize:"0.85rem", textDecoration:"none" }}>Daftar Jobseeker</a>
+          <a href="/sponsor"            style={{ color:"#818cf8",  fontSize:"0.85rem", textDecoration:"none" }}>Sponsorship</a>
+          <a href="/boss"               style={{ color:"#475569",  fontSize:"0.85rem", textDecoration:"none" }}>Panitia</a>
         </div>
-        <p style={{ color:"#1e293b", fontSize:"0.7rem", marginTop:"1rem" }}>Data dilindungi UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi</p>
+        <p style={{ color:"#334155", fontSize:"0.72rem", marginTop:"1.25rem" }}>
+          Data dilindungi UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi
+        </p>
       </footer>
 
       <style>{`
@@ -400,8 +370,118 @@ export default function LandingPage() {
         * { box-sizing:border-box; }
         button { transition: all 0.2s ease; }
         button:hover { opacity:0.9; }
+        a:hover { opacity:0.75; }
       `}</style>
     </div>
+  );
+}
+
+// ── Mini Booth Map — presisi sesuai CorelDraw floor plan ──────
+// Koordinat diturunkan dari hasil ekstraksi SVG CorelDraw (scale ≈ 0.42)
+function MiniBoothMap() {
+  // Grid constants (mini scale)
+  const SW=17, SH=13;
+  const cA=20, cB=64, cC=85, cD=140, cE=161, cF=202;
+  const r1=70, r2=85, r3=103, r4=118, r5=136, r6=151;
+  const MW=35, MH=26;
+  const mA=60, mB=96, mC=138, mD=174;
+  const mr1=178, mr2=208, mr3=238;
+
+  return (
+    <svg viewBox="0 0 240 285" style={{ width:"100%", maxWidth:260, margin:"0 auto", display:"block" }}>
+      <rect width="240" height="285" fill="#081220" rx="6"/>
+
+      {/* STAGE */}
+      <rect x="60" y="8" width="120" height="20" rx="3" fill="#D4A017" opacity="0.85"/>
+      <text x="120" y="21" textAnchor="middle" fill="#0a1628" fontSize="8" fontWeight="700">STAGE</text>
+
+      {/* LOUNGE */}
+      <rect x="6" y="34" width="42" height="16" rx="2" fill="#1e3a5f" stroke="#14b8a6" strokeWidth="0.5"/>
+      <text x="27" y="45" textAnchor="middle" fill="#14b8a6" fontSize="6">LOUNGE</text>
+
+      {/* S37, S38 — pojok kanan atas */}
+      <rect x="188" y="34" width="13" height="13" rx="1" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="0.5"/>
+      <text x="194" y="43" textAnchor="middle" fill="#bfdbfe" fontSize="5" fontWeight="600">37</text>
+      <rect x="203" y="34" width="13" height="13" rx="1" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="0.5"/>
+      <text x="209" y="43" textAnchor="middle" fill="#bfdbfe" fontSize="5" fontWeight="600">38</text>
+
+      {/* Standard booths — Pasang 1 */}
+      {[
+        [cA,r1],[cB,r1],[cC,r1],[cD,r1],[cE,r1],[cF,r1],
+        [cA,r2],[cB,r2],[cC,r2],[cD,r2],[cE,r2],[cF,r2],
+      ].map(([x,y],i)=>(
+        <rect key={`s1${i}`} x={x} y={y} width={SW} height={SH} rx="1.5"
+          fill="#0f766e" stroke="#14b8a6" strokeWidth="0.4" opacity="0.9"/>
+      ))}
+
+      {/* Standard booths — Pasang 2 */}
+      {[
+        [cA,r3],[cB,r3],[cC,r3],[cD,r3],[cE,r3],[cF,r3],
+        [cA,r4],[cB,r4],[cC,r4],[cD,r4],[cE,r4],[cF,r4],
+      ].map(([x,y],i)=>(
+        <rect key={`s2${i}`} x={x} y={y} width={SW} height={SH} rx="1.5"
+          fill="#0f766e" stroke="#14b8a6" strokeWidth="0.4" opacity="0.9"/>
+      ))}
+
+      {/* Standard booths — Pasang 3 */}
+      {[
+        [cA,r5],[cB,r5],[cC,r5],[cD,r5],[cE,r5],[cF,r5],
+        [cA,r6],[cB,r6],[cC,r6],[cD,r6],[cE,r6],[cF,r6],
+      ].map(([x,y],i)=>(
+        <rect key={`s3${i}`} x={x} y={y} width={SW} height={SH} rx="1.5"
+          fill="#0f766e" stroke="#14b8a6" strokeWidth="0.4" opacity="0.9"/>
+      ))}
+
+      {/* Separator line */}
+      <line x1="6" y1="170" x2="234" y2="170" stroke="rgba(212,160,23,0.35)" strokeWidth="0.8" strokeDasharray="5 3"/>
+
+      {/* P2 kiri (atas) */}
+      <rect x="6" y="178" width="16" height="26" rx="1.5" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="0.5"/>
+      <text x="14" y="194" textAnchor="middle" fill="#bfdbfe" fontSize="6" fontWeight="700">P2</text>
+      {/* P1 kiri (bawah) */}
+      <rect x="6" y="207" width="16" height="52" rx="1.5" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="0.5"/>
+      <text x="14" y="236" textAnchor="middle" fill="#bfdbfe" fontSize="6" fontWeight="700">P1</text>
+
+      {/* P4 kanan (atas) */}
+      <rect x="218" y="178" width="16" height="26" rx="1.5" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="0.5"/>
+      <text x="226" y="194" textAnchor="middle" fill="#bfdbfe" fontSize="6" fontWeight="700">P4</text>
+      {/* P3 kanan (bawah) */}
+      <rect x="218" y="207" width="16" height="52" rx="1.5" fill="#1e3a8a" stroke="#60a5fa" strokeWidth="0.5"/>
+      <text x="226" y="236" textAnchor="middle" fill="#bfdbfe" fontSize="6" fontWeight="700">P3</text>
+
+      {/* Main booths Row 1: M9,M10 | M11,M12 */}
+      {[[mA,mr1,"M9"],[mB,mr1,"M10"],[mC,mr1,"M11"],[mD,mr1,"M12"]].map(([x,y,l])=>(
+        <g key={l as string}>
+          <rect x={x as number} y={y as number} width={MW} height={MH} rx="2"
+            fill="#0f766e" stroke="#14b8a6" strokeWidth="0.5" opacity="0.95"/>
+          <text x={(x as number)+MW/2} y={(y as number)+MH/2+1} textAnchor="middle" dominantBaseline="central"
+            fill="#ccfbf1" fontSize="8" fontWeight="700">{l}</text>
+        </g>
+      ))}
+      {/* Main booths Row 2: M5,M6 | M7,M8 */}
+      {[[mA,mr2,"M5"],[mB,mr2,"M6"],[mC,mr2,"M7"],[mD,mr2,"M8"]].map(([x,y,l])=>(
+        <g key={l as string}>
+          <rect x={x as number} y={y as number} width={MW} height={MH} rx="2"
+            fill="#0f766e" stroke="#14b8a6" strokeWidth="0.5" opacity="0.95"/>
+          <text x={(x as number)+MW/2} y={(y as number)+MH/2+1} textAnchor="middle" dominantBaseline="central"
+            fill="#ccfbf1" fontSize="8" fontWeight="700">{l}</text>
+        </g>
+      ))}
+      {/* Main booths Row 3: M1,M2 | M3,M4 */}
+      {[[mA,mr3,"M1"],[mB,mr3,"M2"],[mC,mr3,"M3"],[mD,mr3,"M4"]].map(([x,y,l])=>(
+        <g key={l as string}>
+          <rect x={x as number} y={y as number} width={MW} height={MH} rx="2"
+            fill="#0f766e" stroke="#14b8a6" strokeWidth="0.5" opacity="0.95"/>
+          <text x={(x as number)+MW/2} y={(y as number)+MH/2+1} textAnchor="middle" dominantBaseline="central"
+            fill="#ccfbf1" fontSize="8" fontWeight="700">{l}</text>
+        </g>
+      ))}
+
+      {/* ENTRANCE */}
+      <rect x="80" y="270" width="80" height="10" rx="2" fill="#D4A017" opacity="0.65"/>
+      <text x="120" y="278" textAnchor="middle" fill="#0a1628" fontSize="6" fontWeight="700">ENTRANCE</text>
+      <polygon points="120,268 114,276 126,276" fill="rgba(212,160,23,0.7)"/>
+    </svg>
   );
 }
 
@@ -414,7 +494,7 @@ const badge = (color: string): React.CSSProperties => ({
 });
 const sectionH2: React.CSSProperties = { fontSize:"clamp(1.9rem,4vw,3.2rem)", fontWeight:800, color:"#f1f5f9", lineHeight:1.12, margin:"0.9rem 0 1.25rem" };
 const sectionP:  React.CSSProperties = { color:"#94a3b8", lineHeight:1.8, marginBottom:"2rem", fontSize:"1rem" };
-const navBtn:    React.CSSProperties = { background:"transparent", border:"1px solid rgba(20,184,166,0.3)", color:"#94a3b8", borderRadius:8, padding:"0.38rem 0.9rem", fontSize:"0.83rem", cursor:"pointer" };
-const heroBtnTeal:    React.CSSProperties = { background:"linear-gradient(135deg, #0d9488, #14b8a6)", border:"none", color:"#fff", borderRadius:10, padding:"0.8rem 1.9rem", fontSize:"0.97rem", fontWeight:700, cursor:"pointer", boxShadow:"0 0 28px rgba(20,184,166,0.38)" };
-const heroBtnGold:    React.CSSProperties = { background:"linear-gradient(135deg, #D4A017, #B8860B)", border:"none", color:"#fff", borderRadius:10, padding:"0.8rem 1.9rem", fontSize:"0.97rem", fontWeight:700, cursor:"pointer", boxShadow:"0 0 28px rgba(212,160,23,0.38)" };
-const heroBtnOutline: React.CSSProperties = { background:"transparent", border:"1px solid rgba(20,184,166,0.4)", color:"#14b8a6", borderRadius:10, padding:"0.8rem 1.9rem", fontSize:"0.97rem", fontWeight:600, cursor:"pointer" };
+const navBtn:    React.CSSProperties = { background:"transparent", border:"1px solid rgba(20,184,166,0.3)", color:"#94a3b8", borderRadius:8, padding:"0.35rem 0.8rem", fontSize:"0.78rem", cursor:"pointer" };
+const heroBtnTeal:    React.CSSProperties = { background:"linear-gradient(135deg, #0d9488, #14b8a6)", border:"none", color:"#fff", borderRadius:10, padding:"0.75rem 1.6rem", fontSize:"0.95rem", fontWeight:700, cursor:"pointer", boxShadow:"0 0 24px rgba(20,184,166,0.35)" };
+const heroBtnGold:    React.CSSProperties = { background:"linear-gradient(135deg, #D4A017, #B8860B)", border:"none", color:"#fff", borderRadius:10, padding:"0.75rem 1.6rem", fontSize:"0.95rem", fontWeight:700, cursor:"pointer", boxShadow:"0 0 24px rgba(212,160,23,0.35)" };
+const heroBtnOutline: React.CSSProperties = { background:"transparent", border:"1px solid rgba(20,184,166,0.4)", color:"#14b8a6", borderRadius:10, padding:"0.75rem 1.6rem", fontSize:"0.95rem", fontWeight:600, cursor:"pointer" };
