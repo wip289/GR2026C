@@ -1,0 +1,122 @@
+CREATE TABLE `employerBookings` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`bookingId` varchar(50) NOT NULL,
+	`eventId` int,
+	`companyName` varchar(255) NOT NULL,
+	`industry` varchar(100),
+	`city` varchar(100),
+	`website` varchar(255),
+	`pic1Name` varchar(255) NOT NULL,
+	`pic1Title` varchar(100),
+	`pic1Email` varchar(320) NOT NULL,
+	`pic1Whatsapp` varchar(20) NOT NULL,
+	`pic2Name` varchar(255),
+	`pic2Title` varchar(100),
+	`pic2Email` varchar(320),
+	`pic2Whatsapp` varchar(20),
+	`booths` json NOT NULL,
+	`totalAmount` decimal(15,2) NOT NULL,
+	`positions` json,
+	`needsBoothDesign` boolean DEFAULT false,
+	`specialRequest` text,
+	`status` enum('pending','confirmed','rejected') NOT NULL DEFAULT 'pending',
+	`paymentDeadline` date,
+	`confirmedAt` timestamp,
+	`confirmedBy` int,
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `employerBookings_id` PRIMARY KEY(`id`),
+	CONSTRAINT `employerBookings_bookingId_unique` UNIQUE(`bookingId`)
+);
+--> statement-breakpoint
+CREATE TABLE `employerProspects` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`eventId` int,
+	`companyName` varchar(255) NOT NULL,
+	`industry` varchar(100),
+	`picName` varchar(255),
+	`picPhone` varchar(50),
+	`picEmail` varchar(255),
+	`status` enum('potensial','dikontak','tertarik','konfirmasi','hadir') NOT NULL DEFAULT 'potensial',
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `employerProspects_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `eventConfig` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`configKey` varchar(100) NOT NULL,
+	`value` text NOT NULL,
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `eventConfig_id` PRIMARY KEY(`id`),
+	CONSTRAINT `eventConfig_configKey_unique` UNIQUE(`configKey`)
+);
+--> statement-breakpoint
+CREATE TABLE `interviewBookings` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`eventId` int,
+	`employerBookingId` varchar(50) NOT NULL,
+	`boothId` varchar(10) NOT NULL,
+	`day` int NOT NULL,
+	`slotIndex` int NOT NULL,
+	`companyName` varchar(255),
+	`status` enum('active','cancelled') NOT NULL DEFAULT 'active',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `interviewBookings_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `jobseekers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`registrationId` varchar(50) NOT NULL,
+	`eventId` int,
+	`namaLengkap` varchar(255) NOT NULL,
+	`nik` varchar(20) DEFAULT '',
+	`tempatLahir` varchar(100),
+	`tanggalLahir` date,
+	`jenisKelamin` enum('Laki-laki','Perempuan','Tidak Diisi') DEFAULT 'Tidak Diisi',
+	`whatsapp` varchar(20) DEFAULT '',
+	`email` varchar(320) NOT NULL,
+	`kota` varchar(100),
+	`status` enum('mahasiswa','fresh_graduate','alumni_nhi','umum','belum_diisi') DEFAULT 'belum_diisi',
+	`institusi` varchar(255),
+	`jurusan` varchar(255),
+	`tahunLulus` varchar(10),
+	`bidangMinat` varchar(100),
+	`fotoUrl` varchar(500),
+	`cvUrl` varchar(500),
+	`ktmUrl` varchar(500),
+	`sertifikatUrl` varchar(500),
+	`consent1` boolean NOT NULL DEFAULT false,
+	`consent2` boolean DEFAULT false,
+	`consent1At` timestamp,
+	`consent2At` timestamp,
+	`verified` boolean DEFAULT false,
+	`verifiedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `jobseekers_id` PRIMARY KEY(`id`),
+	CONSTRAINT `jobseekers_registrationId_unique` UNIQUE(`registrationId`)
+);
+--> statement-breakpoint
+CREATE TABLE `sponsors` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`eventId` int,
+	`companyName` varchar(255) NOT NULL,
+	`industry` varchar(100),
+	`picName` varchar(255),
+	`picPhone` varchar(50),
+	`picEmail` varchar(255),
+	`package` enum('platinum','gold','silver','custom','inkind') NOT NULL DEFAULT 'silver',
+	`boothType` enum('with_booth','supporting_only') NOT NULL DEFAULT 'supporting_only',
+	`amount` decimal(15,2) DEFAULT '0',
+	`inkindDesc` text,
+	`inkindValue` decimal(15,2) DEFAULT '0',
+	`status` enum('prospek','dikontak','tertarik','konfirmasi','lunas') NOT NULL DEFAULT 'prospek',
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `sponsors_id` PRIMARY KEY(`id`)
+);

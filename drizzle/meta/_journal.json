@@ -15,6 +15,13 @@
       "when": 1775239291516,
       "tag": "0001_noisy_nightmare",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777058592044,
+      "tag": "0002_regular_prism",
+      "breakpoints": true
     }
   ]
 }
