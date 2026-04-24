@@ -454,10 +454,18 @@ function StepExpenses() {
               <div className="flex items-center gap-3">
                 <span className="font-display text-lg font-bold text-charcoal">{cat.name}</span>
                 <span className="font-body text-xs text-charcoal-light bg-paper-dark px-2 py-0.5 rounded-full">{cat.items.length} items</span>
-              </div>
-              <div className="flex items-center gap-3">
+                </div>
+                <div className="flex items-center gap-3">
                 <span className="font-display text-lg font-bold text-terracotta">{formatRupiah(catTotal)}</span>
-                {isExpanded ? <ChevronUp className="w-4 h-4 text-charcoal-light" /> : <ChevronDown className="w-4 h-4 text-charcoal-light" />}
+                {cat.id.startsWith("custom-cat-") && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (confirm(`Hapus kategori "${cat.name}"?`)) dispatch({ type: "REMOVE_EXPENSE_CATEGORY", categoryId: cat.id }); }}
+                      className="text-red-400 hover:text-red-500 p-1 rounded transition-colors"
+                      title="Hapus kategori ini">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {isExpanded ? <ChevronUp className="w-4 h-4 text-charcoal-light" /> : <ChevronDown className="w-4 h-4 text-charcoal-light" />}
               </div>
             </button>
 
@@ -481,6 +489,24 @@ function StepExpenses() {
           </div>
         );
       })}
+
+      {/* ── Tambah Kategori Baru ── */}
+      <button
+        onClick={() => {
+          const name = prompt("Nama kategori baru:");
+          if (!name || !name.trim()) return;
+          const newCat = {
+            id: `custom-cat-${Date.now()}`,
+            name: name.trim(),
+            icon: "Folder",
+            isAutoCalculated: false,
+            items: [],
+          };
+          dispatch({ type: "ADD_EXPENSE_CATEGORY", category: newCat });
+        }}
+        className="w-full py-3 rounded-xl border-2 border-dashed border-border hover:border-terracotta/60 flex items-center justify-center gap-2 font-body text-sm text-charcoal-light hover:text-terracotta transition-colors bg-white">
+        <Plus className="w-4 h-4" /> Tambah Kategori Biaya Baru
+      </button>
 
       {/* Contingency */}
       <div className="bg-white rounded-xl border border-border p-6 space-y-4">

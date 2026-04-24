@@ -47,6 +47,8 @@ type EventAction =
   | { type: "UPDATE_EXPENSE_ITEM"; categoryId: string; itemId: string; updates: Partial<import("@/lib/financialPlanner").ExpenseItem> }
   | { type: "ADD_EXPENSE_ITEM"; categoryId: string; item: import("@/lib/financialPlanner").ExpenseItem }
   | { type: "REMOVE_EXPENSE_ITEM"; categoryId: string; itemId: string }
+  | { type: "ADD_EXPENSE_CATEGORY"; category: import("@/lib/financialPlanner").ExpenseCategory }
+  | { type: "REMOVE_EXPENSE_CATEGORY"; categoryId: string }
   | { type: "SET_FILL_RATE"; rate: number }
   | { type: "SET_CONTINGENCY"; percent: number }
   | { type: "SET_TARGET_MARGIN"; margin: number }
@@ -162,6 +164,12 @@ function eventReducer(state: EventState, action: EventAction): EventState {
             : cat
         ),
       };
+
+    case "ADD_EXPENSE_CATEGORY":
+      return { ...state, expenses: [...state.expenses, action.category] };
+
+    case "REMOVE_EXPENSE_CATEGORY":
+      return { ...state, expenses: state.expenses.filter(cat => cat.id !== action.categoryId) };
 
     case "SET_FILL_RATE":
       return { ...state, fillRate: action.rate };

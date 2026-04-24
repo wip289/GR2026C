@@ -294,6 +294,32 @@ export function createDefaultExpenses(eventDuration: number): ExpenseCategory[] 
         { id: "registration-system", name: "Registration System", description: "Digital registration & check-in", quantity: 1, unit: "license", unitCost: 3000000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
       ],
     },
+    {
+      id: "secretariat",
+      name: "Secretariat & Administration",
+      icon: "ClipboardList",
+      isAutoCalculated: false,
+      items: [
+        { id: "atk", name: "ATK & Office Supplies", description: "Alat tulis kantor, kertas, tinta", quantity: 1, unit: "packg", unitCost: 2500000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "surat-izin", name: "Surat Izin & Perizinan", description: "Pengurusan izin keramaian, keamanan", quantity: 1, unit: "packg", unitCost: 1500000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "akomodasi", name: "Akomodasi Panitia", description: "Hotel/penginapan panitia dari luar kota", quantity: 0, unit: "room", unitCost: 500000, frequency: eventDuration, frequencyUnit: "day", subtotal: 0, isEditable: true },
+        { id: "komunikasi", name: "Komunikasi & Pulsa", description: "Biaya komunikasi, HT, pulsa panitia", quantity: 1, unit: "packg", unitCost: 1000000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "rapat", name: "Biaya Rapat & Koordinasi", description: "Konsumsi rapat persiapan", quantity: 1, unit: "packg", unitCost: 500000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "p3k", name: "P3K & Kesehatan", description: "Kotak P3K, tenaga medis standby", quantity: 1, unit: "packg", unitCost: 1000000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+      ],
+    },
+    {
+      id: "tax",
+      name: "Pajak & Biaya Lain",
+      icon: "Receipt",
+      isAutoCalculated: false,
+      items: [
+        { id: "ppn", name: "PPN (11%)", description: "Pajak Pertambahan Nilai atas transaksi kena pajak", quantity: 1, unit: "item", unitCost: 0, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "pph23", name: "PPh 23", description: "Pajak penghasilan atas jasa (2% dari bruto)", quantity: 1, unit: "item", unitCost: 0, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "biaya-bank", name: "Biaya Administrasi Bank", description: "Transfer fee, VA, payment gateway", quantity: 1, unit: "packg", unitCost: 500000, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+        { id: "asuransi", name: "Asuransi Event", description: "Event liability insurance", quantity: 1, unit: "packg", unitCost: 0, frequency: 1, frequencyUnit: "event", subtotal: 0, isEditable: true },
+      ],
+    },
   ];
 }
 
@@ -323,8 +349,8 @@ export function calculateTotalExpenses(expenses: ExpenseCategory[], venueCost: n
   contingency: number;
   total: number;
 } {
-  const supplierIds = ["stage", "dome"];
-  const operationalIds = ["merchandise", "printing", "catering", "staffing", "it"];
+  const supplierIds      = ["stage", "dome"];
+  const operationalIds   = ["merchandise", "printing", "catering", "staffing", "it", "secretariat", "tax"];
 
   let supplierCosts = venueCost;
   let operationalCosts = 0;
