@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getDb } from "./db";
-import { jobseekers, sponsors, employerProspects } from "../drizzle/schema";
+import { jobseekers, sponsors, employerProspects, employerBookings } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
@@ -213,6 +213,32 @@ export const eventRouter = router({
     }))
     .mutation(async ({ input }) => {
       await updateEmployerBookingStatus(input.bookingId, input.status);
+      return { success: true };
+    }),
+
+  deleteEmployerBooking: publicProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .mutation(async ({ input }) => {
+      await db.delete(employerBookings).where(eq(employerBookings.bookingId, input.bookingId));
+      return { success: true };
+    }),
+
+  deleteAllEmployerBookings: publicProcedure
+    .mutation(async () => {
+      await db.delete(employerBookings);
+      return { success: true };
+    }),
+
+  deleteJobseeker: publicProcedure
+    .input(z.object({ registrationId: z.string() }))
+    .mutation(async ({ input }) => {
+      await db.delete(jobseekers).where(eq(jobseekers.registrationId, input.registrationId));
+      return { success: true };
+    }),
+
+  deleteAllJobseekers: publicProcedure
+    .mutation(async () => {
+      await db.delete(jobseekers);
       return { success: true };
     }),
 

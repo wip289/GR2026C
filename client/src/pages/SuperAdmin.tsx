@@ -159,7 +159,165 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────
+// ── Data Management Component ────────────────────────────────
+function DataManagement() {
+  const [tab, setTab] = useState<"employer" | "jobseeker">("employer");
+  const [confirmAction, setConfirmAction] = useState<string | null>(null);
+
+  const bookingsQuery   = trpc.event.getAllEmployerBookings.useQuery();
+  const jobseekersQuery = trpc.event.getAllJobseekers.useQuery();
+
+  const deleteBooking     = trpc.event.deleteEmployerBooking.useMutation({ onSuccess: () => { toast.success("Booking dihapus"); bookingsQuery.refetch(); } });
+  const deleteAllBookings = trpc.event.deleteAllEmployerBookings.useMutation({ onSuccess: () => { toast.success("Semua booking dihapus — semua booth tersedia kembali!"); bookingsQuery.refetch(); setConfirmAction(null); } });
+  const deleteJS          = trpc.event.deleteJobseeker.useMutation({ onSuccess: () => { toast.success("Jobseeker dihapus"); jobseekersQuery.refetch(); } });
+  const deleteAllJS       = trpc.event.deleteAllJobseekers.useMutation({ onSuccess: () => { toast.success("Semua data jobseeker dihapus!"); jobseekersQuery.refetch(); setConfirmAction(null); } });
+  const updateStatus      = trpc.event.updateEmployerBookingStatus.useMutation({ onSuccess: () => bookingsQuery.refetch() });
+
+  const bookings   = (bookingsQuery.data   || []) as any[];
+  const jsList     = (jobseekersQuery.data  || []) as any[];
+
+  const statusColor: Record<string, string> = { pending:"#f97316", confirmed:"#14b8a6", rejected:"#ef4444" };
+  const statusLabel: Record<string, string> = { pending:"Menunggu", confirmed:"Confirmed", rejected:"Ditolak" };
+
+  return (
+    <div>
+      {/* Confirm dialog */}
+      {confirmAction && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem" }}>
+          <div style={{ background:"#0d1f35", border:"1px solid rgba(239,68,68,0.4)", borderRadius:16, padding:"2rem", maxWidth:420, width:"100%", textAlign:"center" }}>
+            <div style={{ fontSize:"2.5rem", marginBottom:"0.5rem" }}>⚠️</div>
+            <h3 style={{ color:"#ef4444", marginBottom:"0.75rem" }}>Konfirmasi Hapus</h3>
+            <p style={{ color:"#94a3b8", fontSize:"0.88rem", lineHeight:1.7, marginBottom:"1.5rem" }}>
+              {confirmAction === "all-bookings"
+                ? "Hapus SEMUA data pemesanan booth? Semua booth akan kembali tersedia. Tindakan ini tidak bisa dibatalkan."
+                : "Hapus SEMUA data jobseeker? Tindakan ini tidak bisa dibatalkan."}
+            </p>
+            <div style={{ display:"flex", gap:"0.75rem", justifyContent:"center" }}>
+              <button onClick={() => setConfirmAction(null)}
+                style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.15)", color:"#64748b", borderRadius:8, padding:"0.6rem 1.5rem", cursor:"pointer", fontWeight:600 }}>
+                Batal
+              </button>
+              <button onClick={() => confirmAction === "all-bookings" ? deleteAllBookings.mutate() : deleteAllJS.mutate()}
+                style={{ background:"linear-gradient(135deg,#dc2626,#b91c1c)", border:"none", color:"#fff", borderRadius:8, padding:"0.6rem 1.5rem", cursor:"pointer", fontWeight:700 }}>
+                Ya, Hapus Semua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab switcher */}
+      <div style={{ display:"flex", gap:"0.5rem", marginBottom:"1.5rem" }}>
+        <button onClick={() => setTab("employer")}
+          style={{ padding:"0.5rem 1.25rem", borderRadius:8, border:`1px solid ${tab==="employer"?"#14b8a6":"rgba(255,255,255,0.1)"}`, background:tab==="employer"?"rgba(20,184,166,0.12)":"transparent", color:tab==="employer"?"#14b8a6":"#64748b", fontWeight:600, fontSize:"0.85rem", cursor:"pointer" }}>
+          🏢 Employer Bookings ({bookings.length})
+        </button>
+        <button onClick={() => setTab("jobseeker")}
+          style={{ padding:"0.5rem 1.25rem", borderRadius:8, border:`1px solid ${tab==="jobseeker"?"#D4A017":"rgba(255,255,255,0.1)"}`, background:tab==="jobseeker"?"rgba(212,160,23,0.12)":"transparent", color:tab==="jobseeker"?"#D4A017":"#64748b", fontWeight:600, fontSize:"0.85rem", cursor:"pointer" }}>
+          🎓 Jobseeker ({jsList.length})
+        </button>
+      </div>
+
+      {/* ── EMPLOYER BOOKINGS ── */}
+      {tab === "employer" && (
+        <div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem", flexWrap:"wrap", gap:"0.75rem" }}>
+            <div>
+              <div style={{ fontSize:"0.95rem", fontWeight:700, color:"#f1f5f9" }}>Data Pemesanan Booth</div>
+              <div style={{ fontSize:"0.78rem", color:"#475569", marginTop:"0.15rem" }}>
+                {bookings.filter((b:any)=>b.status!=="rejected").length} aktif · {bookings.filter((b:any)=>b.status==="confirmed").length} confirmed · {bookings.filter((b:any)=>b.status==="pending").length} pending
+              </div>
+            </div>
+            <button onClick={() => setConfirmAction("all-bookings")}
+              style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"0.5rem 1rem", fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>
+              🗑️ Hapus Semua Booking (Reset Booth)
+            </button>
+          </div>
+
+          {bookingsQuery.isLoading ? (
+            <div style={{ textAlign:"center", color:"#475569", padding:"2rem" }}>Memuat data...</div>
+          ) : bookings.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"3rem", background:"rgba(255,255,255,0.02)", borderRadius:12, color:"#475569" }}>
+              ✅ Tidak ada booking — semua booth tersedia
+            </div>
+          ) : (
+            <div style={{ display:"grid", gap:"0.75rem" }}>
+              {bookings.map((b: any) => (
+                <div key={b.bookingId} style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${statusColor[b.status] || "rgba(255,255,255,0.08)"}25`, borderRadius:12, padding:"1rem 1.25rem", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.75rem" }}>
+                  <div style={{ flex:1, minWidth:200 }}>
+                    <div style={{ fontWeight:700, color:"#f1f5f9", fontSize:"0.9rem" }}>{b.companyName}</div>
+                    <div style={{ fontSize:"0.78rem", color:"#64748b", marginTop:"0.2rem" }}>
+                      {b.bookingId} · {b.pic1Email}
+                    </div>
+                    <div style={{ fontSize:"0.75rem", color:"#475569", marginTop:"0.15rem" }}>
+                      {(() => { try { const booths = typeof b.booths==="string" ? JSON.parse(b.booths) : (b.booths||[]); return booths.map((bt:any)=>bt.label||bt.id).join(", "); } catch { return "-"; } })()}
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:"0.6rem" }}>
+                    <span style={{ fontSize:"0.72rem", fontWeight:700, color:statusColor[b.status]||"#64748b", background:`${statusColor[b.status]||"#64748b"}18`, border:`1px solid ${statusColor[b.status]||"#64748b"}35`, borderRadius:20, padding:"0.2rem 0.7rem" }}>
+                      {statusLabel[b.status] || b.status}
+                    </span>
+                    <select value={b.status}
+                      onChange={e => updateStatus.mutate({ bookingId:b.bookingId, status:e.target.value as any })}
+                      style={{ background:"#0d1f35", border:"1px solid rgba(255,255,255,0.15)", color:"#94a3b8", borderRadius:6, padding:"0.25rem 0.5rem", fontSize:"0.75rem", cursor:"pointer" }}>
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                    <button onClick={() => deleteBooking.mutate({ bookingId:b.bookingId })}
+                      style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171", borderRadius:6, padding:"0.25rem 0.6rem", fontSize:"0.75rem", cursor:"pointer", fontWeight:700 }}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── JOBSEEKER ── */}
+      {tab === "jobseeker" && (
+        <div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.25rem", flexWrap:"wrap", gap:"0.75rem" }}>
+            <div>
+              <div style={{ fontSize:"0.95rem", fontWeight:700, color:"#f1f5f9" }}>Data Jobseeker Terdaftar</div>
+              <div style={{ fontSize:"0.78rem", color:"#475569", marginTop:"0.15rem" }}>{jsList.length} jobseeker terdaftar</div>
+            </div>
+            <button onClick={() => setConfirmAction("all-jobseekers")}
+              style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.3)", color:"#f87171", borderRadius:8, padding:"0.5rem 1rem", fontSize:"0.82rem", fontWeight:700, cursor:"pointer" }}>
+              🗑️ Hapus Semua Data Jobseeker
+            </button>
+          </div>
+
+          {jobseekersQuery.isLoading ? (
+            <div style={{ textAlign:"center", color:"#475569", padding:"2rem" }}>Memuat data...</div>
+          ) : jsList.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"3rem", background:"rgba(255,255,255,0.02)", borderRadius:12, color:"#475569" }}>
+              Belum ada jobseeker terdaftar
+            </div>
+          ) : (
+            <div style={{ display:"grid", gap:"0.6rem" }}>
+              {jsList.map((j: any) => (
+                <div key={j.registrationId} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:"0.85rem 1.1rem", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
+                  <div style={{ flex:1, minWidth:180 }}>
+                    <div style={{ fontWeight:700, color:"#f1f5f9", fontSize:"0.88rem" }}>{j.namaLengkap}</div>
+                    <div style={{ fontSize:"0.75rem", color:"#64748b", marginTop:"0.15rem" }}>{j.registrationId} · {j.email}</div>
+                    {j.institusi && <div style={{ fontSize:"0.72rem", color:"#475569" }}>{j.institusi}</div>}
+                  </div>
+                  <button onClick={() => deleteJS.mutate({ registrationId:j.registrationId })}
+                    style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171", borderRadius:6, padding:"0.25rem 0.65rem", fontSize:"0.75rem", cursor:"pointer", fontWeight:700 }}>
+                    ✕ Hapus
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 export default function SuperAdmin() {
   const [, navigate] = useLocation();
   const [authed, setAuthed] = useState(() => sessionStorage.getItem("sa_auth") === "1");
@@ -238,6 +396,7 @@ export default function SuperAdmin() {
     { id: "payment", label: "🏦 Pembayaran",       color: "#10b981" },
     { id: "contact", label: "📞 Kontak",            color: "#f97316" },
     { id: "dates",   label: "🗓️ Jadwal Registrasi", color: "#ec4899" },
+    { id: "data",    label: "🗄️ Kelola Data",       color: "#ef4444" },
   ];
 
   const fmt = (n: string) => {
@@ -589,6 +748,11 @@ export default function SuperAdmin() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── KELOLA DATA ── */}
+        {activeSection === "data" && (
+          <DataManagement />
         )}
 
         {/* Save button */}
