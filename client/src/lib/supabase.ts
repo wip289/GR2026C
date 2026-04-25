@@ -5,7 +5,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export const BUCKET = "gr2026";
+export const BUCKET = "gr2026c";
 
 /**
  * Upload file ke Supabase Storage
@@ -27,3 +27,4 @@ export async function uploadToSupabase(
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+

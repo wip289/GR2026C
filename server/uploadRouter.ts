@@ -9,7 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 // ── Supabase client (server-side) ─────────────────────────────
 const SUPABASE_URL      = process.env.SUPABASE_URL      || "";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
-const BUCKET            = "gr2026";
+const BUCKET            = "gr2026c";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -192,3 +192,4 @@ uploadRouter.post("/employer-print-info", express.json(), async (req, res) => {
     res.status(500).json({ error: "Gagal menyimpan" });
   }
 });
+
