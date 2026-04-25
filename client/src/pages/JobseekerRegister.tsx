@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { generateJobseekerId, generateIdCardHTML, openIdCardForPrint } from "@/lib/invoiceGenerator";
+import { supabase, BUCKET } from "@/lib/supabase";
 
 // ── Constants ─────────────────────────────────────────────────
 const SUMBER_OPTIONS = [
@@ -157,23 +158,28 @@ export default function JobseekerRegister() {
     setUploadingFoto(true);
     toast.loading("Mengupload foto...", { id: "foto" });
     try {
-      const fd = new FormData();
-      fd.append("file", fotoFile);
-      const res = await fetch(`/api/upload?type=foto&registrationId=${finalId}`, { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.url) {
-        setFotoUrl(data.url);
-        // Update DB
-        await fetch("/api/upload/update-doc", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ registrationId: finalId, type: "foto", url: data.url }),
-        });
-        toast.success("Foto berhasil diupload!", { id: "foto" });
-      } else {
-        toast.error("Upload gagal", { id: "foto" });
-      }
-    } catch {
-      toast.error("Upload gagal", { id: "foto" });
+      const ext  = fotoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `jobseeker/${finalId}/foto.${ext}`;
+
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, fotoFile, { upsert: true, contentType: fotoFile.type });
+
+      if (error) throw new Error(error.message);
+
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const url = data.publicUrl;
+      setFotoUrl(url);
+
+      // Simpan URL ke DB
+      await fetch("/api/upload/update-doc", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationId: finalId, type: "foto", url }),
+      });
+      toast.success("Foto berhasil diupload!", { id: "foto" });
+    } catch (err: any) {
+      console.error("[foto upload]", err);
+      toast.error("Upload gagal: " + err.message, { id: "foto" });
     }
     setUploadingFoto(false);
     setShowFotoStep(false);

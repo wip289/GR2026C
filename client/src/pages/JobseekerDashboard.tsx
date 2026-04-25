@@ -3,17 +3,29 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { openIdCardForPrint } from "@/lib/invoiceGenerator";
+import { supabase, BUCKET } from "@/lib/supabase";
 
-// ── Upload helper ─────────────────────────────────────────────
+// ── Upload langsung ke Supabase dari browser (bypass server) ──
 async function uploadFile(file: File, type: "foto" | "cv" | "ktm" | "sertifikat", registrationId: string): Promise<string | null> {
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch(`/api/upload?type=${type}&registrationId=${registrationId}`, { method: "POST", body: formData });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.url || null;
-  } catch { return null; }
+    const ext  = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `jobseeker/${registrationId}/${type}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      console.error("[Supabase upload error]", error.message);
+      return null;
+    }
+
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  } catch (err) {
+    console.error("[upload exception]", err);
+    return null;
+  }
 }
 
 const fmt = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "—";
