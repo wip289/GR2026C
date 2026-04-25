@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { generateJobseekerId, generateIdCardHTML, openIdCardForPrint } from "@/lib/invoiceGenerator";
+import { uploadToSupabase } from "@/lib/supabase";
 
 // ── Styles ────────────────────────────────────────────────────
 const css = {
@@ -297,3 +298,4 @@ export default function JobseekerRegister() {
     </div>
   );
 }
+
