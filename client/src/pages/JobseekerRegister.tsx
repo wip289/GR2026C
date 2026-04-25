@@ -1,38 +1,101 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { generateJobseekerId, generateIdCardHTML, openIdCardForPrint } from "@/lib/invoiceGenerator";
-import { uploadToSupabase } from "@/lib/supabase";
+
+// ── Constants ─────────────────────────────────────────────────
+const SUMBER_OPTIONS = [
+  { val: "instagram",  label: "📸 Instagram",   hasIG: true  },
+  { val: "tiktok",     label: "🎵 TikTok",       hasIG: false },
+  { val: "teman",      label: "👥 Teman/Keluarga",hasIG: false },
+  { val: "kampus",     label: "🏫 Kampus/Dosen", hasIG: false },
+  { val: "poster",     label: "🪧 Poster/Brosur", hasIG: false },
+  { val: "website",    label: "🌐 Website",       hasIG: false },
+  { val: "lainnya",    label: "💬 Lainnya",       hasIG: false },
+];
+
+const MINAT_OPTIONS = [
+  { val: "dalam_negeri", label: "🇮🇩 Dalam Negeri" },
+  { val: "luar_negeri",  label: "✈️ Luar Negeri"  },
+  { val: "keduanya",     label: "🌏 Keduanya"      },
+];
+
+const STATUS_OPTIONS = [
+  { val: "belum_bekerja",  label: "🔍 Belum Bekerja"  },
+  { val: "sedang_bekerja", label: "💼 Sedang Bekerja"  },
+  { val: "pernah_bekerja", label: "📋 Pernah Bekerja" },
+];
+
+const YEARS = Array.from({ length: 15 }, (_, i) => String(2026 - i));
 
 // ── Styles ────────────────────────────────────────────────────
 const css = {
   page:  { minHeight: "100vh", background: "#0a1628", fontFamily: "system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
   nav:   { background: "rgba(10,22,40,0.97)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(212,160,23,0.15)", padding: "0 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60, position: "sticky" as const, top: 0, zIndex: 50 },
-  wrap:  { maxWidth: 520, margin: "0 auto", padding: "2.5rem 1.25rem 5rem" },
-  label: { display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#64748b", marginBottom: "0.4rem", textTransform: "uppercase" as const, letterSpacing: "0.07em" },
-  input: { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "0.9rem 1rem", fontSize: "0.97rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" as const, transition: "border-color 0.2s" },
+  wrap:  { maxWidth: 560, margin: "0 auto", padding: "2rem 1.25rem 5rem" },
+  label: { display: "block", fontSize: "0.73rem", fontWeight: 600, color: "#64748b", marginBottom: "0.4rem", textTransform: "uppercase" as const, letterSpacing: "0.07em" },
+  input: { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "0.8rem 1rem", fontSize: "0.95rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" as const },
+  select:{ width: "100%", background: "#0c1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "0.8rem 1rem", fontSize: "0.95rem", color: "#f1f5f9", outline: "none" },
   row2:  { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" } as React.CSSProperties,
-  hint:  { fontSize: "0.7rem", color: "#334155", marginTop: "0.3rem", lineHeight: 1.5 },
-  btnPri:{ background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", color: "#fff", borderRadius: 12, padding: "1rem 2rem", fontSize: "1rem", fontWeight: 700, cursor: "pointer", width: "100%", transition: "opacity 0.2s, transform 0.2s" } as React.CSSProperties,
+  hint:  { fontSize: "0.7rem", color: "#334155", marginTop: "0.3rem" },
+  btnPri:{ background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", color: "#fff", borderRadius: 12, padding: "0.95rem 2rem", fontSize: "1rem", fontWeight: 700, cursor: "pointer", width: "100%" } as React.CSSProperties,
+  req:   { color: "#ef4444" },
+  card:  { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1.75rem", marginBottom: "1.25rem" },
 };
 
+// ── Chip selector ─────────────────────────────────────────────
+function ChipGroup({ options, value, onChange, color = "#D4A017" }: {
+  options: { val: string; label: string }[];
+  value: string; onChange: (v: string) => void; color?: string;
+}) {
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      {options.map(o => (
+        <button key={o.val} type="button" onClick={() => onChange(o.val)} style={{
+          padding: "0.5rem 1rem", borderRadius: 20, fontSize: "0.82rem", fontWeight: 600,
+          border: `1.5px solid ${value === o.val ? color : "rgba(255,255,255,0.1)"}`,
+          background: value === o.val ? `${color}18` : "transparent",
+          color: value === o.val ? color : "#64748b", cursor: "pointer", transition: "all 0.15s",
+        }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────
 export default function JobseekerRegister() {
   const [, navigate] = useLocation();
+  const fotoInputRef = useRef<HTMLInputElement>(null);
 
-  // Form fields
-  const [namaLengkap, setNama]     = useState("");
-  const [email, setEmail]          = useState("");
-  const [institusi, setInstitusi]  = useState("");
-  const [jurusan, setJurusan]      = useState("");
-  const [kota, setKota]            = useState("");
+  // Form state
+  const [nama,        setNama]        = useState("");
+  const [email,       setEmail]       = useState("");
+  const [phone,       setPhone]       = useState("");
+  const [kota,        setKota]        = useState("");
+  const [minat,       setMinat]       = useState("");
+  const [statusKerja, setStatusKerja] = useState("");
+  const [tahunLulus,  setTahunLulus]  = useState("");
+  const [jurusan,     setJurusan]     = useState("");
+  const [institusi,   setInstitusi]   = useState("");
+  const [sumber,      setSumber]      = useState("");
+  const [igUser,      setIgUser]      = useState("");
 
-  // State
-  const [emailErr, setEmailErr]    = useState("");
-  const [checking, setChecking]    = useState(false);
-  const [submitting, setSubmitting]= useState(false);
-  const [submitted, setSubmitted]  = useState(false);
-  const [finalId, setFinalId]      = useState("");
+  // UI state
+  const [emailErr,   setEmailErr]   = useState("");
+  const [checking,   setChecking]   = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted,  setSubmitted]  = useState(false);
+  const [finalId,    setFinalId]    = useState("");
+
+  // Foto upload state (setelah submit)
+  const [showFotoStep, setShowFotoStep] = useState(false);
+  const [fotoFile,     setFotoFile]     = useState<File | null>(null);
+  const [fotoPreview,  setFotoPreview]  = useState<string | null>(null);
+  const [uploadingFoto,setUploadingFoto]= useState(false);
+  const [fotoUrl,      setFotoUrl]      = useState<string | null>(null);
 
   const allJobseekersQuery = trpc.event.getAllJobseekers.useQuery(undefined, { enabled: false });
 
@@ -40,6 +103,7 @@ export default function JobseekerRegister() {
     onSuccess: () => {
       setSubmitting(false);
       setSubmitted(true);
+      setShowFotoStep(true); // langsung tanya foto
     },
     onError: (err) => {
       toast.error("Gagal mendaftar", { description: err.message });
@@ -58,100 +122,158 @@ export default function JobseekerRegister() {
     setChecking(false);
   };
 
-  const canSubmit = namaLengkap.trim().length > 1
-    && email.includes("@")
-    && !emailErr
-    && !checking
+  const canSubmit = nama.trim().length > 1
+    && email.includes("@") && !emailErr && !checking
+    && minat && statusKerja && tahunLulus && jurusan && sumber
     && !submitting;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!canSubmit) return;
     setSubmitting(true);
     const id = generateJobseekerId({
-      namaLengkap,
-      institusi: institusi || "",
-      tahunLulus: "",
-      isAlumniNHI: institusi.toLowerCase().includes("nhi"),
+      namaLengkap: nama, institusi: institusi || "",
+      tahunLulus, isAlumniNHI: institusi.toLowerCase().includes("nhi"),
     });
     setFinalId(id);
     createMutation.mutate({
-      registrationId: id,
-      namaLengkap,
-      email,
-      institusi:  institusi  || undefined,
-      jurusan:    jurusan    || undefined,
-      kota:       kota       || undefined,
-      consent1: true,
-      consent2: false,
+      registrationId: id, namaLengkap: nama, email,
+      phone: phone || undefined,
+      kota: kota || undefined,
+      institusi: institusi || undefined,
+      jurusan,
+      tahunLulus,
+      minatKerja: minat as any,
+      statusKerja: statusKerja as any,
+      sumberInfo: sumber || undefined,
+      igUsername: igUser || undefined,
+      consent1: true, consent2: false,
     });
   };
 
-  // ── SUCCESS SCREEN ───────────────────────────────────────────
-  if (submitted) {
+  // Upload foto ke server
+  const handleFotoUpload = async (skip = false) => {
+    if (skip) { setShowFotoStep(false); return; }
+    if (!fotoFile) return;
+    setUploadingFoto(true);
+    toast.loading("Mengupload foto...", { id: "foto" });
+    try {
+      const fd = new FormData();
+      fd.append("file", fotoFile);
+      const res = await fetch(`/api/upload?type=foto&registrationId=${finalId}`, { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) {
+        setFotoUrl(data.url);
+        // Update DB
+        await fetch("/api/upload/update-doc", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registrationId: finalId, type: "foto", url: data.url }),
+        });
+        toast.success("Foto berhasil diupload!", { id: "foto" });
+      } else {
+        toast.error("Upload gagal", { id: "foto" });
+      }
+    } catch {
+      toast.error("Upload gagal", { id: "foto" });
+    }
+    setUploadingFoto(false);
+    setShowFotoStep(false);
+  };
+
+  const sumberHasIG = SUMBER_OPTIONS.find(s => s.val === sumber)?.hasIG;
+
+  // ── FOTO STEP ─────────────────────────────────────────────────
+  if (submitted && showFotoStep) {
+    return (
+      <div style={{ ...css.page, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.25rem" }}>
+        <div style={{ maxWidth: 420, width: "100%", textAlign: "center" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>📸</div>
+          <h2 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.5rem" }}>Tambah Foto Profil</h2>
+          <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+            ID Card dengan foto terlihat lebih profesional di mata employer.<br/>
+            <span style={{ color: "#D4A017" }}>Opsional</span> — bisa diupload nanti lewat portal.
+          </p>
+
+          {/* Preview area */}
+          <div onClick={() => fotoInputRef.current?.click()} style={{
+            width: 140, height: 140, borderRadius: "50%", margin: "0 auto 1.5rem",
+            border: `2px dashed ${fotoFile ? "#D4A017" : "rgba(255,255,255,0.2)"}`,
+            background: fotoFile ? "transparent" : "rgba(255,255,255,0.03)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", overflow: "hidden", transition: "all 0.2s",
+          }}>
+            {fotoPreview
+              ? <img src={fotoPreview} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+              : <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem" }}>📷</div>
+                  <div style={{ fontSize: "0.7rem", color: "#475569", marginTop: "0.25rem" }}>Klik untuk pilih</div>
+                </div>
+            }
+          </div>
+          <input ref={fotoInputRef} type="file" accept="image/*" style={{ display: "none" }}
+            onChange={e => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setFotoFile(f);
+              setFotoPreview(URL.createObjectURL(f));
+            }}/>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <button onClick={() => handleFotoUpload(false)}
+              disabled={!fotoFile || uploadingFoto}
+              style={{ ...css.btnPri, opacity: fotoFile && !uploadingFoto ? 1 : 0.4 }}>
+              {uploadingFoto ? "⏳ Mengupload..." : "📤 Upload Foto & Lanjut"}
+            </button>
+            <button onClick={() => handleFotoUpload(true)}
+              style={{ ...css.btnPri, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "#64748b" }}>
+              Lewati — upload nanti
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── SUCCESS SCREEN ────────────────────────────────────────────
+  if (submitted && !showFotoStep) {
+    const idCardParams = { registrationId: finalId, namaLengkap: nama, institusi: institusi || undefined, jurusan: jurusan || undefined, status: "Jobseeker", fotoUrl: fotoUrl || undefined };
     return (
       <div style={{ ...css.page, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.25rem" }}>
         <div style={{ maxWidth: 440, width: "100%", textAlign: "center" }}>
-
-          {/* Celebration */}
           <div style={{ fontSize: "3.5rem", marginBottom: "0.25rem" }}>🎉</div>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, margin: "0 0 0.4rem" }}>Pendaftaran Berhasil!</h1>
-          <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.7, marginBottom: "1.75rem" }}>
-            Selamat, <strong style={{ color: "#f1f5f9" }}>{namaLengkap}</strong>!<br />
-            Kamu sudah terdaftar di GR2026. Simpan ID & gunakan email untuk login kapan saja.
+          <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+            Selamat, <strong style={{ color: "#f1f5f9" }}>{nama}</strong>!<br/>
+            Kamu sudah terdaftar di GR2026.
           </p>
 
-          {/* ID Card */}
+          {/* ID Card preview */}
           <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, overflow: "hidden", marginBottom: "1.25rem" }}>
-            <div style={{ fontSize: "0.65rem", color: "#475569", padding: "0.5rem 1rem 0.1rem", textAlign: "center", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              ID Card GR2026
-            </div>
+            <div style={{ fontSize: "0.65rem", color: "#475569", padding: "0.5rem 1rem 0.1rem", textAlign: "center", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>ID Card GR2026</div>
             <iframe
-              srcDoc={generateIdCardHTML({
-                registrationId: finalId,
-                namaLengkap,
-                institusi:  institusi  || undefined,
-                jurusan:    jurusan    || undefined,
-                status:     "Jobseeker",
-              }).replace(/<script[\s\S]*?<\/script>/g, "")}
+              srcDoc={generateIdCardHTML(idCardParams).replace(/<script[\s\S]*?<\/script>/g, "")}
               style={{ width: "100%", height: 290, border: "none", display: "block" }}
               title="ID Card"
             />
           </div>
 
-          {/* Registration ID box */}
+          {/* Registration ID */}
           <div style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.25rem", textAlign: "left" }}>
             <div style={{ fontSize: "0.68rem", color: "#D4A017", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>Registration ID</div>
-            <div style={{ fontWeight: 800, color: "#D4A017", fontSize: "1.2rem", fontFamily: "monospace", letterSpacing: "0.05em" }}>{finalId}</div>
+            <div style={{ fontWeight: 800, color: "#D4A017", fontSize: "1.2rem", fontFamily: "monospace" }}>{finalId}</div>
             <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.4rem", lineHeight: 1.6 }}>
-              Gunakan <strong style={{ color: "#f1f5f9" }}>{email}</strong> + ID ini untuk login.<br />
-              Upload CV, foto, dan dokumen lain kapan saja kamu siap — tidak wajib sekarang.
+              Login dengan <strong style={{ color: "#f1f5f9" }}>{email}</strong> + ID ini.
             </div>
           </div>
 
-          {/* Level badge */}
-          <div style={{ background: "rgba(100,116,139,0.1)", border: "1px solid rgba(100,116,139,0.2)", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.75rem", textAlign: "left" }}>
-            <div style={{ fontSize: "1.5rem" }}>🌱</div>
-            <div>
-              <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Level 1 · Pejuang Baru</div>
-              <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginTop: "0.15rem" }}>
-                Login & upload CV/foto untuk naik ke Level 3 — <span style={{ color: "#D4A017" }}>Siap Interview</span> 🏆
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <button
-            onClick={() => openIdCardForPrint({ registrationId: finalId, namaLengkap, institusi: institusi || undefined, jurusan: jurusan || undefined, status: "Jobseeker" })}
-            style={{ ...css.btnPri, background: "linear-gradient(135deg, #0d9488, #0f766e)", marginBottom: "0.75rem" }}>
-            📥 Download ID Card
+          <button onClick={() => openIdCardForPrint(idCardParams)}
+            style={{ ...css.btnPri, background: "linear-gradient(135deg,#0d9488,#0f766e)", marginBottom: "0.75rem" }}>
+            📥 Download & Print ID Card
           </button>
-          <button
-            onClick={() => navigate("/jobseeker/login")}
+          <button onClick={() => navigate("/jobseeker/login")}
             style={{ ...css.btnPri, marginBottom: "0.75rem" }}>
-            Login ke Portal Jobseeker →
+            Login ke Portal →
           </button>
-          <button
-            onClick={() => navigate("/")}
+          <button onClick={() => navigate("/")}
             style={{ ...css.btnPri, background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b" }}>
             Kembali ke Beranda
           </button>
@@ -160,142 +282,166 @@ export default function JobseekerRegister() {
     );
   }
 
-  // ── FORM ─────────────────────────────────────────────────────
+  // ── FORM ──────────────────────────────────────────────────────
   return (
     <div style={css.page}>
       <nav style={css.nav}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           <button onClick={() => navigate("/")} style={{ background: "none", border: "none", color: "#D4A017", cursor: "pointer", fontSize: "0.88rem" }}>← Kembali</button>
-          <img src="/logo-gr2026.png" alt="GR2026" style={{ height: 30 }} />
+          <img src="/logo-gr2026.png" alt="GR2026" style={{ height: 30 }}/>
         </div>
         <div style={{ fontSize: "0.75rem", color: "#334155" }}>Pendaftaran Jobseeker · GRATIS</div>
       </nav>
 
       <div style={css.wrap}>
-
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <h1 style={{ fontSize: "clamp(1.6rem,4vw,2rem)", fontWeight: 800, marginBottom: "0.4rem" }}>
+        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+          <h1 style={{ fontSize: "clamp(1.5rem,4vw,1.9rem)", fontWeight: 800, marginBottom: "0.4rem" }}>
             Daftar sebagai <span style={{ color: "#D4A017" }}>Jobseeker</span>
           </h1>
-          <p style={{ color: "#475569", fontSize: "0.85rem" }}>
-            GR2026 · June 8–9 · Dome NHI Bandung ·{" "}
-            <strong style={{ color: "#14b8a6" }}>GRATIS</strong>
+          <p style={{ color: "#475569", fontSize: "0.83rem" }}>
+            GR2026 · June 8–9 · Dome NHI Bandung · <strong style={{ color: "#14b8a6" }}>GRATIS</strong>
           </p>
         </div>
 
-        {/* Form card */}
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "2rem" }}>
-
-          {/* Nama */}
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label style={css.label}>Nama Lengkap <span style={{ color: "#ef4444" }}>*</span></label>
-            <input
-              style={css.input}
-              value={namaLengkap}
-              onChange={e => setNama(e.target.value)}
-              placeholder="Nama sesuai KTP / Kartu Mahasiswa"
-              autoComplete="name"
-            />
+        <div style={css.card}>
+          {/* ── Nama ── */}
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={css.label}>Nama Lengkap <span style={css.req}>*</span></label>
+            <input style={css.input} value={nama} onChange={e => setNama(e.target.value)}
+              placeholder="Sesuai KTP / Kartu Mahasiswa" autoComplete="name"/>
           </div>
 
-          {/* Email */}
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label style={css.label}>Email Aktif <span style={{ color: "#ef4444" }}>*</span></label>
-            <input
-              style={{ ...css.input, borderColor: emailErr ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)" }}
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setEmailErr(""); }}
-              onBlur={e => checkEmail(e.target.value)}
-              placeholder="contoh@email.com"
-              autoComplete="email"
-            />
-            {checking && <p style={{ ...css.hint, color: "#14b8a6" }}>⏳ Memeriksa email...</p>}
-            {emailErr && (
-              <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "0.6rem 0.9rem", marginTop: "0.4rem" }}>
-                <p style={{ fontSize: "0.78rem", color: "#f87171", margin: 0 }}>⚠️ {emailErr}
-                  {emailErr.includes("login") && (
-                    <button onClick={() => navigate("/jobseeker/login")} style={{ marginLeft: "0.5rem", background: "none", border: "none", color: "#D4A017", cursor: "pointer", fontWeight: 700, fontSize: "0.78rem", textDecoration: "underline" }}>Login →</button>
-                  )}
-                </p>
-              </div>
-            )}
-            <p style={css.hint}>Dipakai untuk login ke portal jobseeker</p>
+          {/* ── Email + Phone ── */}
+          <div style={{ ...css.row2, marginBottom: "1.1rem" }}>
+            <div>
+              <label style={css.label}>Email <span style={css.req}>*</span></label>
+              <input style={{ ...css.input, borderColor: emailErr ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.1)" }}
+                type="email" value={email}
+                onChange={e => { setEmail(e.target.value); setEmailErr(""); }}
+                onBlur={e => checkEmail(e.target.value)}
+                placeholder="contoh@email.com"/>
+              {checking && <p style={{ ...css.hint, color: "#14b8a6" }}>⏳ Memeriksa...</p>}
+              {emailErr && <p style={{ ...css.hint, color: "#f87171" }}>⚠️ {emailErr}</p>}
+            </div>
+            <div>
+              <label style={css.label}>No. HP / WhatsApp</label>
+              <input style={css.input} value={phone} onChange={e => setPhone(e.target.value)}
+                placeholder="08xx-xxxx-xxxx" type="tel"/>
+            </div>
           </div>
 
-          {/* Divider */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "1.5rem 0", position: "relative" }}>
-            <span style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#0d1f35", padding: "0 0.75rem", fontSize: "0.7rem", color: "#334155", textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
-              Opsional — isi jika mau
-            </span>
-          </div>
-
-          {/* Institusi + Jurusan */}
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label style={css.label}>Asal Institusi / Universitas</label>
-            <input
-              style={css.input}
-              value={institusi}
-              onChange={e => setInstitusi(e.target.value)}
-              placeholder="Contoh: Politeknik Pariwisata NHI Bandung"
-            />
-          </div>
-
-          <div style={{ marginBottom: "1.25rem" }}>
-            <label style={css.label}>Program Studi / Jurusan</label>
-            <input
-              style={css.input}
-              value={jurusan}
-              onChange={e => setJurusan(e.target.value)}
-              placeholder="Contoh: D4 Manajemen Perhotelan"
-            />
-          </div>
-
-          {/* Kota */}
-          <div style={{ marginBottom: "2rem" }}>
+          {/* ── Kota ── */}
+          <div style={{ marginBottom: "1.1rem" }}>
             <label style={css.label}>Kota / Asal Daerah</label>
-            <input
-              style={css.input}
-              value={kota}
-              onChange={e => setKota(e.target.value)}
-              placeholder="Contoh: Bandung, Jawa Barat"
-            />
+            <input style={css.input} value={kota} onChange={e => setKota(e.target.value)}
+              placeholder="Contoh: Bandung, Jawa Barat"/>
           </div>
 
-          {/* Info consent mini */}
+          {/* divider */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "1.25rem 0" }}/>
+
+          {/* ── Minat Kerja ── */}
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={css.label}>Minat Kerja <span style={css.req}>*</span></label>
+            <ChipGroup options={MINAT_OPTIONS} value={minat} onChange={setMinat}/>
+          </div>
+
+          {/* ── Status Kerja ── */}
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={css.label}>Status Saat Ini <span style={css.req}>*</span></label>
+            <ChipGroup options={STATUS_OPTIONS} value={statusKerja} onChange={setStatusKerja} color="#14b8a6"/>
+          </div>
+
+          {/* ── Tahun Lulus + Program Studi ── */}
+          <div style={{ ...css.row2, marginBottom: "1.1rem" }}>
+            <div>
+              <label style={css.label}>Tahun Lulus <span style={css.req}>*</span></label>
+              <select style={css.select} value={tahunLulus} onChange={e => setTahunLulus(e.target.value)}>
+                <option value="">-- Pilih --</option>
+                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                <option value="sebelum_2011">Sebelum 2011</option>
+              </select>
+            </div>
+            <div>
+              <label style={css.label}>Institusi</label>
+              <input style={css.input} value={institusi} onChange={e => setInstitusi(e.target.value)}
+                placeholder="Nama kampus"/>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "1.25rem" }}>
+            <label style={css.label}>Program Studi <span style={css.req}>*</span></label>
+            <input style={css.input} value={jurusan} onChange={e => setJurusan(e.target.value)}
+              placeholder="Contoh: D4 Manajemen Perhotelan"/>
+          </div>
+
+          {/* divider */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "1.25rem 0" }}/>
+
+          {/* ── Sumber Info ── */}
+          <div style={{ marginBottom: sumberHasIG ? "0.75rem" : "1.5rem" }}>
+            <label style={css.label}>Tahu GR2026 dari mana? <span style={css.req}>*</span></label>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {SUMBER_OPTIONS.map(o => (
+                <button key={o.val} type="button" onClick={() => { setSumber(o.val); if (!o.hasIG) setIgUser(""); }} style={{
+                  padding: "0.5rem 1rem", borderRadius: 20, fontSize: "0.82rem", fontWeight: 600,
+                  border: `1.5px solid ${sumber === o.val ? "#818cf8" : "rgba(255,255,255,0.1)"}`,
+                  background: sumber === o.val ? "rgba(129,140,248,0.15)" : "transparent",
+                  color: sumber === o.val ? "#818cf8" : "#64748b", cursor: "pointer", transition: "all 0.15s",
+                }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Instagram username (conditional) ── */}
+          {sumberHasIG && (
+            <div style={{ marginBottom: "1.5rem", background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 10, padding: "1rem" }}>
+              <label style={{ ...css.label, color: "#818cf8" }}>Username Instagram <span style={{ color: "#64748b", fontWeight: 400, textTransform: "none" }}>(opsional)</span></label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ color: "#818cf8", fontWeight: 700, fontSize: "1.1rem" }}>@</span>
+                <input style={{ ...css.input, flex: 1 }} value={igUser} onChange={e => setIgUser(e.target.value.replace("@", ""))}
+                  placeholder="username_kamu"/>
+              </div>
+              <p style={{ ...css.hint, color: "#64748b", marginTop: "0.4rem" }}>
+                Untuk mengukur engagement GR2026 di Instagram 📊
+              </p>
+            </div>
+          )}
+
+          {/* ── Consent ── */}
           <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 10, padding: "0.85rem 1rem", marginBottom: "1.5rem", fontSize: "0.75rem", color: "#475569", lineHeight: 1.7 }}>
-            🔒 Dengan mendaftar, kamu menyetujui data dapat dilihat oleh employer resmi GR2026 sesuai{" "}
-            <strong style={{ color: "#94a3b8" }}>UU PDP No. 27/2022</strong>.
-            Dapat ditarik kapan saja via portal.
+            🔒 Dengan mendaftar, data kamu dapat dilihat oleh employer resmi GR2026 sesuai <strong style={{ color: "#94a3b8" }}>UU PDP No. 27/2022</strong>. Dapat ditarik kapan saja via portal.
           </div>
 
-          {/* Submit */}
-          <button
-            style={{ ...css.btnPri, opacity: canSubmit ? 1 : 0.4, transform: canSubmit ? "none" : "none" }}
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
+          {/* ── Submit ── */}
+          <button style={{ ...css.btnPri, opacity: canSubmit ? 1 : 0.4 }}
+            onClick={handleSubmit} disabled={!canSubmit}>
             {submitting ? "⏳ Mendaftarkan..." : "Daftar & Dapatkan ID Card 🎉"}
           </button>
 
-          {/* Login link */}
+          {!canSubmit && nama && email && (
+            <p style={{ textAlign: "center", fontSize: "0.72rem", color: "#ef4444", marginTop: "0.75rem" }}>
+              Lengkapi field wajib: {[
+                !minat && "Minat Kerja",
+                !statusKerja && "Status",
+                !tahunLulus && "Tahun Lulus",
+                !jurusan && "Program Studi",
+                !sumber && "Sumber Info",
+              ].filter(Boolean).join(", ")}
+            </p>
+          )}
+
           <div style={{ textAlign: "center", marginTop: "1.25rem" }}>
             <span style={{ fontSize: "0.82rem", color: "#334155" }}>Sudah pernah daftar? </span>
-            <button onClick={() => navigate("/jobseeker/login")} style={{ background: "none", border: "none", color: "#D4A017", cursor: "pointer", fontWeight: 700, fontSize: "0.82rem", textDecoration: "underline" }}>
+            <button onClick={() => navigate("/jobseeker/login")}
+              style={{ background: "none", border: "none", color: "#D4A017", cursor: "pointer", fontWeight: 700, fontSize: "0.82rem", textDecoration: "underline" }}>
               Login ke portal →
             </button>
           </div>
         </div>
-
-        {/* Bottom note */}
-        <p style={{ textAlign: "center", fontSize: "0.72rem", color: "#1e3a5f", marginTop: "1.5rem", lineHeight: 1.6 }}>
-          Upload CV, foto, dan dokumen lain bisa dilakukan kapan saja setelah login.<br />
-          Tidak ada yang diwajibkan — semua bisa dilengkapi di waktu yang tepat untukmu.
-        </p>
-
       </div>
     </div>
   );
 }
-

@@ -249,6 +249,12 @@ export const jobseekers = mysqlTable("jobseekers", {
   jurusan: varchar("jurusan", { length: 255 }),
   tahunLulus: varchar("tahunLulus", { length: 10 }),
   bidangMinat: varchar("bidangMinat", { length: 100 }),
+  // Field baru GR2026
+  phone: varchar("phone", { length: 20 }),
+  minatKerja: mysqlEnum("minatKerja", ["dalam_negeri", "luar_negeri", "keduanya"]),
+  statusKerja: mysqlEnum("statusKerja", ["belum_bekerja", "sedang_bekerja", "pernah_bekerja"]),
+  sumberInfo: varchar("sumberInfo", { length: 100 }),
+  igUsername: varchar("igUsername", { length: 100 }),
   // Dokumen (path/URL file)
   fotoUrl: varchar("fotoUrl", { length: 500 }),
   cvUrl: varchar("cvUrl", { length: 500 }),
