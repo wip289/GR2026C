@@ -8,10 +8,10 @@ import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase client (server-side) ─────────────────────────────
 const SUPABASE_URL      = process.env.SUPABASE_URL      || "";
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 const BUCKET            = "gr2026c";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false } });
 
 // ── Multer — simpan di memori, lalu upload ke Supabase ────────
 const memStorage = multer.memoryStorage();
@@ -192,5 +192,7 @@ uploadRouter.post("/employer-print-info", express.json(), async (req, res) => {
     res.status(500).json({ error: "Gagal menyimpan" });
   }
 });
+
+
 
 
