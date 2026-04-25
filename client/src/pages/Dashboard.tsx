@@ -8,6 +8,8 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useEvent } from "@/contexts/EventContext";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -239,6 +241,54 @@ tr:hover td{background:#fafafa}
 </body></html>`;
 }
 
+// ─── Lock RAB Button ───────────────────────────────────────
+function LockRABButton({ state }: { state: any }) {
+  const [locked, setLocked] = useState(false);
+  const configQuery = trpc.event.getEventConfig.useQuery();
+  const saveMutation = trpc.event.saveEventConfig.useMutation({
+    onSuccess: () => {
+      toast.success("RAB berhasil dikunci & dipublikasikan ke panitia! 🔒", {
+        description: "Finance dashboard panitia sekarang menampilkan RAB ini."
+      });
+      setLocked(true);
+    },
+    onError: () => toast.error("Gagal mengunci RAB"),
+  });
+
+  const isAlreadyLocked = !!(configQuery.data as any)?.rab_locked;
+
+  const handleLock = () => {
+    if (!confirm(isAlreadyLocked
+      ? "RAB sudah pernah dikunci. Apakah Anda yakin ingin menimpa dengan versi RAB terbaru?"
+      : "Kunci RAB ini dan publikasikan ke Finance panitia? RAB tidak bisa diubah oleh panitia."
+    )) return;
+
+    const snapshot = {
+      eventName:    state.eventInfo.eventName,
+      lockedAt:     new Date().toISOString(),
+      lockedBy:     "SuperAdmin",
+      expenses:     state.expenses,
+      boothTypes:   state.boothTypes,
+      sponsorTiers: state.sponsorTiers,
+      venueCost:    state.eventInfo.venueCost,
+      venueIsFree:  state.eventInfo.venueIsFree,
+      contingency:  state.contingencyPercent,
+      fillRate:     state.fillRate,
+    };
+    saveMutation.mutate({ rab_locked: JSON.stringify(snapshot) });
+  };
+
+  return (
+    <Button onClick={handleLock}
+      disabled={saveMutation.isPending}
+      size="sm"
+      className="gap-2 font-body text-xs"
+      style={{ background: isAlreadyLocked || locked ? "#0d9488" : "#7c3aed", color: "white" }}>
+      {saveMutation.isPending ? "⏳ Mengunci..." : isAlreadyLocked || locked ? "🔒 RAB Terkunci" : "🔒 Kunci & Publikasi RAB"}
+    </Button>
+  );
+}
+
 export default function Dashboard() {
   const { state, dispatch } = useEvent();
   const [, navigate] = useLocation();
@@ -310,6 +360,7 @@ export default function Dashboard() {
             }} size="sm" className="gap-2 font-body text-xs bg-terracotta hover:bg-terracotta/90 text-white">
               <FileDown className="w-3 h-3" /> Export P&L
             </Button>
+            <LockRABButton state={state} />
           </div>
         </div>
       </nav>
