@@ -74,6 +74,30 @@ function handleUpload(req: any, res: any, next: any) {
   });
 }
 
+// ── DEBUG: Test Supabase connection ─────────────────────────
+uploadRouter.get("/test-supabase", async (_req, res) => {
+  try {
+    const url    = process.env.SUPABASE_URL || "";
+    const key    = process.env.SUPABASE_SERVICE_KEY || "";
+    const hasUrl = url.length > 10;
+    const hasKey = key.length > 10;
+    const keyType = key.startsWith("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9") ? "anon" : "service_role";
+    
+    // Try listing bucket
+    const { data, error } = await supabase.storage.from(BUCKET).list("");
+    
+    res.json({
+      supabaseUrl: hasUrl ? url.slice(0, 30) + "..." : "MISSING",
+      keyPresent: hasKey,
+      keyType,
+      bucket: BUCKET,
+      listResult: error ? `ERROR: ${error.message}` : `OK (${data?.length} files)`,
+    });
+  } catch (err: any) {
+    res.json({ error: err.message });
+  }
+});
+
 // POST /api/upload?registrationId=JS-xxx&type=foto
 uploadRouter.post("/", handleUpload, async (req, res) => {
   if (!req.file) { res.status(400).json({ error: "Tidak ada file" }); return; }
