@@ -238,6 +238,22 @@ export default function JobseekerDashboard() {
         {/* ── TAB: PROFIL ── */}
         {activeTab === "profil" && (
           <div>
+            {/* ── Notifikasi Interview Banner ── */}
+            <div style={{ background: "rgba(37,211,102,0.07)", border: "1px solid rgba(37,211,102,0.25)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1.25rem", display: "flex", gap: "0.85rem", alignItems: "flex-start" }}>
+              <div style={{ fontSize: "1.5rem", flexShrink: 0 }}>📲</div>
+              <div>
+                <div style={{ fontWeight: 700, color: "#25d366", fontSize: "0.88rem", marginBottom: "0.3rem" }}>Notifikasi Panggilan Interview via WhatsApp</div>
+                <div style={{ fontSize: "0.78rem", color: "#64748b", lineHeight: 1.7 }}>
+                  Jika employer memanggil kamu untuk interview pada hari H, kamu akan mendapat notifikasi langsung ke WhatsApp.
+                  Pastikan nomor WhatsApp di profil kamu <strong style={{ color: "#f1f5f9" }}>aktif dan benar</strong>.
+                </div>
+                {!jobseeker?.whatsapp && (
+                  <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#f97316", fontWeight: 600 }}>
+                    ⚠️ Nomor WhatsApp belum diisi — klik Edit Data untuk menambahkan.
+                  </div>
+                )}
+              </div>
+            </div>
             <div style={s.card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
                 <div style={s.secHd}>👤 Data Diri</div>

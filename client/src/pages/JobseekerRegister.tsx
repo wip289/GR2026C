@@ -330,9 +330,10 @@ export default function JobseekerRegister() {
               {emailErr && <p style={{ ...css.hint, color: "#f87171" }}>⚠️ {emailErr}</p>}
             </div>
             <div>
-              <label style={css.label}>No. HP / WhatsApp</label>
+              <label style={css.label}>No. WhatsApp Aktif</label>
               <input style={css.input} value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="08xx-xxxx-xxxx" type="tel"/>
+              <p style={css.hint}>📲 Untuk info jadwal interview & pengumuman saat event</p>
             </div>
           </div>
 
@@ -410,9 +411,6 @@ export default function JobseekerRegister() {
                 <input style={{ ...css.input, flex: 1 }} value={igUser} onChange={e => setIgUser(e.target.value.replace("@", ""))}
                   placeholder="username_kamu"/>
               </div>
-              <p style={{ ...css.hint, color: "#64748b", marginTop: "0.4rem" }}>
-                Untuk mengukur engagement GR2026 di Instagram 📊
-              </p>
             </div>
           )}
 
