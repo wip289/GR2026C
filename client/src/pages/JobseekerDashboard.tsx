@@ -127,10 +127,12 @@ export default function JobseekerDashboard() {
     type: "foto" | "cv" | "ktm" | "sertifikat"
   ) => {
     if (uploadingRef.current) return; // prevent concurrent uploads
+    console.log([upload] start type= regId=);
     uploadingRef.current = true;
     setDocUploading(type);
     toast.loading(`Mengupload ${type}...`, { id: `upload-${type}` });
     const url = await uploadFile(file, type, sessionData?.registrationId || "");
+    console.log([upload] result url=);
     toast.dismiss(`upload-${type}`);
     if (!url) {
       toast.error("Upload gagal", { description: "Format harus JPG, PNG, WEBP, atau PDF. Maks 20MB." });
@@ -478,3 +480,5 @@ export default function JobseekerDashboard() {
     </div>
   );
 }
+
+
