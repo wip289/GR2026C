@@ -138,8 +138,9 @@ export default function JobseekerRegister() {
     setFinalId(id);
     createMutation.mutate({
       registrationId: id, namaLengkap: nama, email,
-      phone: phone || undefined,
-      kota: kota || undefined,
+      phone:    phone    || undefined,
+      whatsapp: phone    || undefined,
+      kota:     kota     || undefined,
       institusi: institusi || undefined,
       jurusan,
       tahunLulus,

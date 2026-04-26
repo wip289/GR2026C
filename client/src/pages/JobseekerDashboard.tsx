@@ -105,12 +105,12 @@ export default function JobseekerDashboard() {
   const [docUploading, setDocUploading] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({
-    institusi: "", jurusan: "", bidangMinat: "", kota: "", whatsapp: "", phone: "",
+    institusi: "", jurusan: "", bidangMinat: "", kota: "", whatsapp: "",
   });
 
   const updateMutation = trpc.event.updateJobseeker.useMutation({
     onSuccess: () => {
-      setJobseeker((prev: any) => ({ ...prev, ...editForm }));
+      setJobseeker((prev: any) => ({ ...prev, ...editForm, phone: editForm.whatsapp }));
       setEditMode(false);
       toast.success("Data diri berhasil diperbarui!");
     },
@@ -131,15 +131,19 @@ export default function JobseekerDashboard() {
       jurusan:     jobseeker?.jurusan     || "",
       bidangMinat: jobseeker?.bidangMinat || "",
       kota:        jobseeker?.kota        || "",
-      whatsapp:    jobseeker?.whatsapp    || "",
-      phone:       jobseeker?.phone       || "",
+      whatsapp:    jobseeker?.whatsapp    || jobseeker?.phone || "",
     });
     setEditMode(true);
   };
 
   const handleSaveEdit = () => {
     if (!sessionData?.registrationId) return;
-    updateMutation.mutate({ registrationId: sessionData.registrationId, ...editForm });
+    // Simpan whatsapp ke keduanya
+    updateMutation.mutate({
+      registrationId: sessionData.registrationId,
+      ...editForm,
+      phone: editForm.whatsapp,
+    });
   };
   const uploadingRef = useRef(false);
 
@@ -301,8 +305,7 @@ export default function JobseekerDashboard() {
                   {/* Editable fields */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
                     {[
-                      { label: "WhatsApp", key: "whatsapp", placeholder: "08xx-xxxx-xxxx" },
-              { label: "No. HP / Phone", key: "phone", placeholder: "08xx-xxxx-xxxx" },
+                      { label: "No. WhatsApp / HP", key: "whatsapp", placeholder: "08xx-xxxx-xxxx" },
                       { label: "Kota", key: "kota", placeholder: "Bandung" },
                       { label: "Institusi", key: "institusi", placeholder: "Nama universitas/sekolah" },
                       { label: "Program Studi", key: "jurusan", placeholder: "Nama jurusan" },
@@ -336,7 +339,7 @@ export default function JobseekerDashboard() {
                   {[
                     { label: "Nama Lengkap", val: jobseeker.namaLengkap },
                     { label: "Email", val: jobseeker.email },
-                    { label: "WhatsApp", val: jobseeker.whatsapp },
+                    { label: "No. WhatsApp / HP", val: jobseeker.whatsapp || jobseeker.phone },
                     { label: "Status", val: statusLabel[jobseeker.status] || jobseeker.status },
                     { label: "Kota", val: jobseeker.kota || "—" },
                     { label: "Institusi", val: jobseeker.institusi || "—" },
@@ -460,6 +463,17 @@ export default function JobseekerDashboard() {
         {activeTab === "dokumen" && (
           <div style={s.card}>
             <div style={s.secHd}>📎 Dokumen Saya</div>
+
+            {/* Info consent dokumen */}
+            <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 12, padding: "1.1rem 1.25rem", marginBottom: "1.5rem" }}>
+              <div style={{ fontWeight: 700, color: "#14b8a6", marginBottom: "0.5rem", fontSize: "0.88rem" }}>📄 Informasi Penyimpanan Dokumen</div>
+              <p style={{ fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.75, margin: 0 }}>
+                Dokumen yang kamu upload akan digunakan untuk proses rekrutmen di GR2026.
+                Jika kamu <strong style={{ color: "#f1f5f9" }}>tidak keberatan</strong> dokumen kamu disimpan dan dihubungi apabila ada lowongan kerja baru, silakan klik <strong style={{ color: "#14b8a6" }}>Simpan Dokumen</strong>.<br/>
+                Jika kamu <strong style={{ color: "#f1f5f9" }}>keberatan</strong>, silakan klik <strong style={{ color: "#f87171" }}>Hapus Dokumen</strong> kapan saja — data kamu akan dihapus sepenuhnya.
+              </p>
+            </div>
+
             <p style={{ color: "#64748b", fontSize: "0.85rem", marginBottom: "1.5rem", lineHeight: 1.7 }}>
               Upload atau ganti dokumen di sini. Format yang diterima: <strong style={{ color: "#f1f5f9" }}>JPG, PNG, WEBP, PDF</strong> · Maks 20MB per file.
             </p>
@@ -508,16 +522,16 @@ export default function JobseekerDashboard() {
                             <a href={fileUrl!} target="_blank" rel="noopener noreferrer"
                               style={{ fontSize: "0.72rem", color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>👁️ Lihat →</a>
                             <button
-                              onClick={() => { if (confirm(`Hapus ${doc.label}?`)) deleteDocMutation.mutate({ registrationId: sessionData?.registrationId || "", type: doc.type }); }}
-                              style={{ fontSize: "0.72rem", color: "#f87171", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
-                              🗑️ Hapus
+                              onClick={() => { if (confirm(`Hapus ${doc.label}? Dokumen tidak bisa dikembalikan.`)) deleteDocMutation.mutate({ registrationId: sessionData?.registrationId || "", type: doc.type }); }}
+                              style={{ fontSize: "0.72rem", color: "#f87171", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 6, cursor: "pointer", fontWeight: 700, padding: "0.15rem 0.5rem" }}>
+                              Hapus Dokumen
                             </button>
                           </div>
                         )}
                       </div>
                     </div>
                     <label style={{ background: uploaded ? "transparent" : "linear-gradient(135deg,#0d9488,#14b8a6)", border: uploaded ? "1px solid rgba(20,184,166,0.4)" : "none", color: uploaded ? "#14b8a6" : "#fff", borderRadius: 8, padding: "0.45rem 1rem", fontSize: "0.78rem", fontWeight: 700, cursor: isUploading ? "not-allowed" : "pointer", opacity: isUploading ? 0.6 : 1, whiteSpace: "nowrap" as const, flexShrink: 0, alignSelf: "center" as const }}>
-                      {isUploading ? "⏳ Uploading..." : uploaded ? "🔄 Ganti" : "📎 Upload"}
+                      {isUploading ? "⏳ Uploading..." : uploaded ? "🔄 Ganti" : "Simpan Dokumen"}
                       <input type="file" accept={doc.accept} style={{ display: "none" }} disabled={!!docUploading}
                         onChange={(e) => { if (docUploading) return; const file = e.target.files?.[0]; if (file) handleDocUpload(file, doc.type); e.target.value = ""; }}/>
                     </label>
