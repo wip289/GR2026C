@@ -300,19 +300,56 @@ function DataManagement() {
             </div>
           ) : (
             <div style={{ display:"grid", gap:"0.6rem" }}>
-              {jsList.map((j: any) => (
-                <div key={j.registrationId} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:"0.85rem 1.1rem", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
-                  <div style={{ flex:1, minWidth:180 }}>
-                    <div style={{ fontWeight:700, color:"#f1f5f9", fontSize:"0.88rem" }}>{j.namaLengkap}</div>
-                    <div style={{ fontSize:"0.75rem", color:"#64748b", marginTop:"0.15rem" }}>{j.registrationId} · {j.email}</div>
-                    {j.institusi && <div style={{ fontSize:"0.72rem", color:"#475569" }}>{j.institusi}</div>}
+              {jsList.map((j: any) => {
+                const minatLabel: Record<string,string> = { dalam_negeri:"🇮🇩 Dalam Negeri", luar_negeri:"✈️ Luar Negeri", keduanya:"🌏 Keduanya" };
+                const statusLabel: Record<string,string> = { belum_bekerja:"🔍 Belum Bekerja", sedang_bekerja:"💼 Sedang Bekerja", pernah_bekerja:"📋 Pernah Bekerja" };
+                const sumberLabel: Record<string,string> = { instagram:"📸 Instagram", tiktok:"🎵 TikTok", teman:"👥 Teman/Keluarga", kampus:"🏫 Kampus", poster:"🪧 Poster", website:"🌐 Website", lainnya:"💬 Lainnya" };
+                return (
+                  <div key={j.registrationId} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:10, padding:"1rem 1.1rem", display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:"0.5rem" }}>
+                    <div style={{ flex:1, minWidth:200 }}>
+                      {/* Row 1: nama + ID */}
+                      <div style={{ display:"flex", gap:"0.75rem", alignItems:"center", flexWrap:"wrap", marginBottom:"0.35rem" }}>
+                        <div style={{ fontWeight:700, color:"#f1f5f9", fontSize:"0.9rem" }}>{j.namaLengkap}</div>
+                        <div style={{ fontSize:"0.68rem", color:"#D4A017", fontFamily:"monospace", background:"rgba(212,160,23,0.1)", padding:"0.1rem 0.5rem", borderRadius:4 }}>{j.registrationId}</div>
+                      </div>
+                      {/* Row 2: email + phone */}
+                      <div style={{ fontSize:"0.75rem", color:"#64748b", marginBottom:"0.3rem" }}>
+                        📧 {j.email}
+                        {(j.whatsapp || j.phone) && <span style={{ marginLeft:"0.75rem" }}>📱 {j.whatsapp || j.phone}</span>}
+                      </div>
+                      {/* Row 3: institusi + jurusan + tahun */}
+                      {(j.institusi || j.jurusan) && (
+                        <div style={{ fontSize:"0.72rem", color:"#475569", marginBottom:"0.3rem" }}>
+                          🎓 {[j.jurusan, j.institusi, j.tahunLulus].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
+                      {/* Row 4: minat + status + sumber */}
+                      <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap", marginTop:"0.25rem" }}>
+                        {j.minatKerja && <span style={{ fontSize:"0.68rem", background:"rgba(20,184,166,0.1)", color:"#14b8a6", border:"1px solid rgba(20,184,166,0.2)", borderRadius:20, padding:"0.1rem 0.55rem" }}>{minatLabel[j.minatKerja] || j.minatKerja}</span>}
+                        {j.statusKerja && <span style={{ fontSize:"0.68rem", background:"rgba(212,160,23,0.1)", color:"#D4A017", border:"1px solid rgba(212,160,23,0.2)", borderRadius:20, padding:"0.1rem 0.55rem" }}>{statusLabel[j.statusKerja] || j.statusKerja}</span>}
+                        {j.sumberInfo && <span style={{ fontSize:"0.68rem", background:"rgba(129,140,248,0.1)", color:"#818cf8", border:"1px solid rgba(129,140,248,0.2)", borderRadius:20, padding:"0.1rem 0.55rem" }}>{sumberLabel[j.sumberInfo] || j.sumberInfo}</span>}
+                        {j.igUsername && <span style={{ fontSize:"0.68rem", color:"#c084fc" }}>@{j.igUsername}</span>}
+                        {j.kota && <span style={{ fontSize:"0.68rem", color:"#475569" }}>📍 {j.kota}</span>}
+                      </div>
+                      {/* Row 5: dokumen */}
+                      <div style={{ display:"flex", gap:"0.4rem", marginTop:"0.35rem" }}>
+                        {[{key:"fotoUrl",label:"Foto"},{key:"cvUrl",label:"CV"},{key:"ktmUrl",label:"KTM"},{key:"sertifikatUrl",label:"Sertifikat"}].map(d => (
+                          j[d.key] ? (
+                            <a key={d.key} href={j[d.key]} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize:"0.68rem", color:"#60a5fa", background:"rgba(96,165,250,0.1)", border:"1px solid rgba(96,165,250,0.2)", borderRadius:20, padding:"0.1rem 0.55rem", textDecoration:"none" }}>
+                              📎 {d.label}
+                            </a>
+                          ) : null
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => deleteJS.mutate({ registrationId:j.registrationId })}
+                      style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171", borderRadius:6, padding:"0.25rem 0.65rem", fontSize:"0.75rem", cursor:"pointer", fontWeight:700, flexShrink:0 }}>
+                      ✕ Hapus
+                    </button>
                   </div>
-                  <button onClick={() => deleteJS.mutate({ registrationId:j.registrationId })}
-                    style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171", borderRadius:6, padding:"0.25rem 0.65rem", fontSize:"0.75rem", cursor:"pointer", fontWeight:700 }}>
-                    ✕ Hapus
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
