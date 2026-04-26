@@ -306,9 +306,9 @@ export const eventRouter = router({
           consent2At: input.consent2 ? new Date() : null,
         });
         return { success: true };
-      } catch (error) {
-        console.error("[createJobseeker]", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Gagal menyimpan data jobseeker" });
+      } catch (error: any) {
+        console.error("[createJobseeker] DETAIL:", error?.message, error?.code, JSON.stringify(error));
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Gagal menyimpan: ${error?.message || error}` });
       }
     }),
 
@@ -744,6 +744,11 @@ export const eventRouter = router({
       bidangMinat:  z.string().optional(),
       kota:         z.string().optional(),
       whatsapp:     z.string().optional(),
+      phone:        z.string().optional(),
+      minatKerja:   z.enum(["dalam_negeri","luar_negeri","keduanya"]).optional(),
+      statusKerja:  z.enum(["belum_bekerja","sedang_bekerja","pernah_bekerja"]).optional(),
+      sumberInfo:   z.string().optional(),
+      igUsername:   z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const { registrationId, ...updates } = input;
@@ -751,6 +756,25 @@ export const eventRouter = router({
       await db.update(jobseekers)
         .set({ ...updates, updatedAt: new Date() })
         .where(eq(jobseekers.registrationId, registrationId));
+      return { success: true };
+    }),
+
+  deleteJobseekerDocument: publicProcedure
+    .input(z.object({
+      registrationId: z.string(),
+      type: z.enum(["foto","cv","ktm","sertifikat"]),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      const fieldMap: Record<string, any> = {
+        foto:       { fotoUrl: null },
+        cv:         { cvUrl: null },
+        ktm:        { ktmUrl: null },
+        sertifikat: { sertifikatUrl: null },
+      };
+      await db.update(jobseekers)
+        .set({ ...fieldMap[input.type], updatedAt: new Date() })
+        .where(eq(jobseekers.registrationId, input.registrationId));
       return { success: true };
     }),
 });

@@ -7,11 +7,18 @@ import { eq } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase client (server-side) ─────────────────────────────
-const SUPABASE_URL      = process.env.SUPABASE_URL      || "";
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
-const BUCKET            = "gr2026c";
+const BUCKET = "gr2026c";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false } });
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    const url = process.env.SUPABASE_URL || "";
+    const key = process.env.SUPABASE_SERVICE_KEY || "";
+    if (!url || !key) throw new Error("SUPABASE_URL dan SUPABASE_SERVICE_KEY harus dikonfigurasi.");
+    _supabase = createClient(url, key, { auth: { persistSession: false } });
+  }
+  return _supabase;
+}
 
 // ── Multer — simpan di memori, lalu upload ke Supabase ────────
 const memStorage = multer.memoryStorage();
@@ -45,7 +52,8 @@ async function uploadToSupabase(
 ): Promise<string> {
   const filePath = `${folder}/${filename}`;
 
-  const { error } = await supabase.storage
+  const sb = getSupabase();
+  const { error } = await sb.storage
     .from(BUCKET)
     .upload(filePath, buffer, {
       upsert:      true,
@@ -54,7 +62,7 @@ async function uploadToSupabase(
 
   if (error) throw new Error(`Supabase upload gagal: ${error.message}`);
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+  const { data } = sb.storage.from(BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }
 
@@ -84,7 +92,7 @@ uploadRouter.get("/test-supabase", async (_req, res) => {
     const keyType = key.startsWith("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9") ? "anon" : "service_role";
     
     // Try listing bucket
-    const { data, error } = await supabase.storage.from(BUCKET).list("");
+    const { data, error } = await getSupabase().storage.from(BUCKET).list("");
     
     res.json({
       supabaseUrl: hasUrl ? url.slice(0, 30) + "..." : "MISSING",

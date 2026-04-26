@@ -105,7 +105,7 @@ export default function JobseekerDashboard() {
   const [docUploading, setDocUploading] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({
-    institusi: "", jurusan: "", bidangMinat: "", kota: "", whatsapp: "",
+    institusi: "", jurusan: "", bidangMinat: "", kota: "", whatsapp: "", phone: "",
   });
 
   const updateMutation = trpc.event.updateJobseeker.useMutation({
@@ -117,6 +117,14 @@ export default function JobseekerDashboard() {
     onError: () => toast.error("Gagal menyimpan perubahan"),
   });
 
+  const deleteDocMutation = trpc.event.deleteJobseekerDocument.useMutation({
+    onSuccess: (_, vars) => {
+      setJobseeker((prev: any) => ({ ...prev, [`${vars.type}Url`]: null }));
+      toast.success("Dokumen dihapus!");
+    },
+    onError: () => toast.error("Gagal menghapus dokumen"),
+  });
+
   const handleEdit = () => {
     setEditForm({
       institusi:   jobseeker?.institusi   || "",
@@ -124,6 +132,7 @@ export default function JobseekerDashboard() {
       bidangMinat: jobseeker?.bidangMinat || "",
       kota:        jobseeker?.kota        || "",
       whatsapp:    jobseeker?.whatsapp    || "",
+      phone:       jobseeker?.phone       || "",
     });
     setEditMode(true);
   };
@@ -149,16 +158,24 @@ export default function JobseekerDashboard() {
     if (!url) {
       toast.error("Upload gagal", { description: "Format harus JPG, PNG, WEBP, atau PDF. Maks 20MB." });
       setDocUploading(null);
+      uploadingRef.current = false;
       return;
     }
     // Update jobseeker doc URL in DB
     try {
-      await fetch("/api/upload/update-doc", {
+      const res = await fetch("/api/upload/update-doc", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ registrationId: sessionData?.registrationId, type, url }),
       });
-    } catch {}
+      const json = await res.json().catch(() => ({ success: false }));
+      if (!json.success) throw new Error("DB update gagal");
+    } catch {
+      toast.error("Upload berhasil tapi gagal disimpan ke database. Coba lagi.");
+      setDocUploading(null);
+      uploadingRef.current = false;
+      return;
+    }
     // Update local state
     setJobseeker((prev: any) => ({ ...prev, [`${type}Url`]: url }));
     toast.success(`${type === "foto" ? "Foto" : type === "cv" ? "CV" : type === "ktm" ? "KTP/KTM" : "Sertifikat"} berhasil diupload!`);
@@ -285,6 +302,7 @@ export default function JobseekerDashboard() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
                     {[
                       { label: "WhatsApp", key: "whatsapp", placeholder: "08xx-xxxx-xxxx" },
+              { label: "No. HP / Phone", key: "phone", placeholder: "08xx-xxxx-xxxx" },
                       { label: "Kota", key: "kota", placeholder: "Bandung" },
                       { label: "Institusi", key: "institusi", placeholder: "Nama universitas/sekolah" },
                       { label: "Program Studi", key: "jurusan", placeholder: "Nama jurusan" },
@@ -448,7 +466,7 @@ export default function JobseekerDashboard() {
 
             {([
               { label: "Pas Foto Terbaru", field: "fotoUrl", type: "foto" as const, required: true, hint: "Foto formal · JPG/PNG/WEBP · Maks 20MB", accept: "image/*", isImg: true },
-              { label: "CV / Resume", field: "cvUrl", type: "cv" as const, required: true, hint: "Maks 2 halaman · PDF · Maks 20MB", accept: ".pdf,.doc,.docx", isImg: false },
+              { label: "CV / Resume", field: "cvUrl", type: "cv" as const, required: true, hint: "Maks 5 halaman · PDF · Maks 20MB", accept: ".pdf", isImg: false },
               { label: "KTP / Kartu Mahasiswa", field: "ktmUrl", type: "ktm" as const, required: true, hint: "Scan atau foto jelas · JPG/PNG/PDF", accept: "image/*,.pdf", isImg: false },
               { label: "Sertifikat Pendukung", field: "sertifikatUrl", type: "sertifikat" as const, required: false, hint: "Opsional · PDF/JPG", accept: "image/*,.pdf", isImg: false },
             ] as any[]).map((doc: any) => {
@@ -489,6 +507,11 @@ export default function JobseekerDashboard() {
                             <span style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700 }}>✅ Terupload</span>
                             <a href={fileUrl!} target="_blank" rel="noopener noreferrer"
                               style={{ fontSize: "0.72rem", color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>👁️ Lihat →</a>
+                            <button
+                              onClick={() => { if (confirm(`Hapus ${doc.label}?`)) deleteDocMutation.mutate({ registrationId: sessionData?.registrationId || "", type: doc.type }); }}
+                              style={{ fontSize: "0.72rem", color: "#f87171", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}>
+                              🗑️ Hapus
+                            </button>
                           </div>
                         )}
                       </div>
