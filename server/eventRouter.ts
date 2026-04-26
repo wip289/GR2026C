@@ -219,12 +219,14 @@ export const eventRouter = router({
   deleteEmployerBooking: publicProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input }) => {
+      const db = await getDb();
       await db.delete(employerBookings).where(eq(employerBookings.bookingId, input.bookingId));
       return { success: true };
     }),
 
   deleteAllEmployerBookings: publicProcedure
     .mutation(async () => {
+      const db = await getDb();
       await db.delete(employerBookings);
       return { success: true };
     }),
@@ -232,12 +234,14 @@ export const eventRouter = router({
   deleteJobseeker: publicProcedure
     .input(z.object({ registrationId: z.string() }))
     .mutation(async ({ input }) => {
+      const db = await getDb();
       await db.delete(jobseekers).where(eq(jobseekers.registrationId, input.registrationId));
       return { success: true };
     }),
 
   deleteAllJobseekers: publicProcedure
     .mutation(async () => {
+      const db = await getDb();
       await db.delete(jobseekers);
       return { success: true };
     }),

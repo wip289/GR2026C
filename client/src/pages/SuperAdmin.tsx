@@ -169,11 +169,26 @@ function DataManagement() {
   const bookingsQuery   = trpc.event.getAllEmployerBookings.useQuery();
   const jobseekersQuery = trpc.event.getAllJobseekers.useQuery();
 
-  const deleteBooking     = trpc.event.deleteEmployerBooking.useMutation({ onSuccess: () => { toast.success("Booking dihapus"); bookingsQuery.refetch(); } });
-  const deleteAllBookings = trpc.event.deleteAllEmployerBookings.useMutation({ onSuccess: () => { toast.success("Semua booking dihapus — semua booth tersedia kembali!"); bookingsQuery.refetch(); setConfirmAction(null); } });
-  const deleteJS          = trpc.event.deleteJobseeker.useMutation({ onSuccess: () => { toast.success("Jobseeker dihapus"); jobseekersQuery.refetch(); } });
-  const deleteAllJS       = trpc.event.deleteAllJobseekers.useMutation({ onSuccess: () => { toast.success("Semua data jobseeker dihapus!"); jobseekersQuery.refetch(); setConfirmAction(null); } });
-  const updateStatus      = trpc.event.updateEmployerBookingStatus.useMutation({ onSuccess: () => bookingsQuery.refetch() });
+  const deleteBooking     = trpc.event.deleteEmployerBooking.useMutation({
+    onSuccess: () => { toast.success("Booking dihapus"); bookingsQuery.refetch(); },
+    onError: (e) => toast.error("Gagal hapus booking: " + e.message),
+  });
+  const deleteAllBookings = trpc.event.deleteAllEmployerBookings.useMutation({
+    onSuccess: () => { toast.success("Semua booking dihapus!"); bookingsQuery.refetch(); setConfirmAction(null); },
+    onError: (e) => { toast.error("Gagal hapus semua booking: " + e.message); setConfirmAction(null); },
+  });
+  const deleteJS          = trpc.event.deleteJobseeker.useMutation({
+    onSuccess: () => { toast.success("Jobseeker dihapus"); jobseekersQuery.refetch(); },
+    onError: (e) => toast.error("Gagal hapus jobseeker: " + e.message),
+  });
+  const deleteAllJS       = trpc.event.deleteAllJobseekers.useMutation({
+    onSuccess: () => { toast.success("Semua data jobseeker dihapus!"); jobseekersQuery.refetch(); setConfirmAction(null); },
+    onError: (e) => { toast.error("Gagal hapus semua jobseeker: " + e.message); setConfirmAction(null); },
+  });
+  const updateStatus      = trpc.event.updateEmployerBookingStatus.useMutation({
+    onSuccess: () => bookingsQuery.refetch(),
+    onError: (e) => toast.error("Gagal update status: " + e.message),
+  });
 
   const bookings   = (bookingsQuery.data   || []) as any[];
   const jsList     = (jobseekersQuery.data  || []) as any[];
