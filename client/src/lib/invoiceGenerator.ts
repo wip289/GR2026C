@@ -101,7 +101,7 @@ export function generateInvoiceHTML(data: BookingData): string {
   <div class="logo-area">
     <h1>GRAND RECRUITMENT 2026</h1>
     <p>The International Hospitality and Tourism Job Fair</p>
-    <p>June 8–9, 2026 · Gedung Dome NHI Bandung</p>
+    <p>10–11 Juni 2026 · Gedung Dome NHI Bandung</p>
     <p style="margin-top:6px;font-size:10px;color:#666">Politeknik Pariwisata NHI Bandung</p>
   </div>
   <div class="invoice-meta">
@@ -202,7 +202,7 @@ ${data.specialRequest ? `
 <div class="footer">
   Invoice ini dibuat secara otomatis oleh sistem Grand Recruitment 2026.<br/>
   Pertanyaan? Hubungi kami di grandrecruitment@nhi.ac.id | WhatsApp: 0812-xxxx-xxxx<br/>
-  Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · June 8–9, 2026
+  Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 10–11 Juni 2026
 </div>
 
 </body></html>`;
@@ -309,7 +309,7 @@ export function generateJobseekerId(params: {
 }
 
 export function getPaymentDeadline(): string {
-  // H-7 before June 8, 2026 = June 1, 2026
+  // H-7 before June 10, 2026 = June 3, 2026
   return "1 Juni 2026";
 }
 
@@ -333,7 +333,7 @@ export function generateIdCardHTML(data: {
   };
 
   const fotoSection = data.fotoUrl
-    ? `<img src="${data.fotoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" />`
+    ? `<img src="${data.fotoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;display:block;" />`
     : `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2mm;">
         <div style="width:14mm;height:14mm;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
         <div style="font-size:4px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.5;">Tempel<br/>foto<br/>3×4 cm</div>
@@ -382,6 +382,11 @@ export function generateIdCardHTML(data: {
     align-items: center;
     gap: 1mm;
     flex-shrink: 0;
+    max-height: 18mm;
+    overflow: hidden;
+  }
+  .logo-img, .header-bar img {
+    height: 8mm; width: auto; object-fit: contain;
   }
   .logo-row { display: flex; align-items: center; gap: 1.5mm; }
   .logo-dot {
@@ -419,14 +424,14 @@ export function generateIdCardHTML(data: {
     background: white;
   }
   .name {
-    font-size: 9px; font-weight: 900;
+    font-size: 13px; font-weight: 900;
     color: #0a1628; line-height: 1.2;
     margin-bottom: 2mm;
     word-break: break-word;
     text-align: center;
   }
   .info-line {
-    font-size: 5px; color: #4b5563;
+    font-size: 7.5px; color: #4b5563;
     line-height: 1.8;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -514,7 +519,7 @@ export function generateIdCardHTML(data: {
           onerror="this.outerHTML='<div style=\'width:14mm;height:14mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
         <div class="qr-label">Scan untuk verifikasi</div>
       </div>
-      <div class="event-info">June 8–9, 2026 · Dome NHI Bandung</div>
+      <div class="event-info">10–11 Juni 2026 · Dome NHI Bandung</div>
     </div>
   </div>
 

@@ -96,8 +96,8 @@ export default function JobseekerDashboard() {
       namaLengkap: jobseeker.namaLengkap,
       institusi: jobseeker.institusi,
       jurusan: jobseeker.jurusan,
-      bidangMinat: jobseeker.bidangMinat,
-      status: jobseeker.status,
+      bidangMinat: jobseeker.minatKerja || jobseeker.bidangMinat,
+      status: jobseeker.statusKerja || jobseeker.status,
       fotoUrl: fotoBase64,
     });
   };
@@ -194,6 +194,9 @@ export default function JobseekerDashboard() {
   );
 
   const statusLabel: Record<string, string> = {
+    belum_bekerja: "Baru Lulus",
+    sedang_bekerja: "Sedang Bekerja",
+    pernah_bekerja: "Pernah Bekerja",
     mahasiswa: "Mahasiswa Aktif",
     fresh_graduate: "Fresh Graduate",
     alumni_nhi: "Alumni NHI Bandung",
@@ -222,7 +225,7 @@ export default function JobseekerDashboard() {
           <h1 style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 800, marginBottom: "0.25rem" }}>
             Dashboard Jobseeker
           </h1>
-          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Grand Recruitment 2026 · June 8–9 · Dome NHI Bandung</p>
+          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Grand Recruitment 2026 · 10–11 Juni · Dome NHI Bandung</p>
         </div>
 
         {/* Registration ID card */}
@@ -293,7 +296,7 @@ export default function JobseekerDashboard() {
                     {[
                       { label: "Nama Lengkap", val: jobseeker.namaLengkap },
                       { label: "Email", val: jobseeker.email },
-                      { label: "Status", val: statusLabel[jobseeker.status] || jobseeker.status },
+                      { label: "Status", val: statusLabel[jobseeker.statusKerja || jobseeker.status] || jobseeker.statusKerja || jobseeker.status },
                     ].map(item => (
                       <div key={item.label}>
                         <div style={s.label}>{item.label} <span style={{ color: "#334155", fontSize: "0.65rem" }}>(tidak bisa diubah)</span></div>
@@ -340,11 +343,11 @@ export default function JobseekerDashboard() {
                     { label: "Nama Lengkap", val: jobseeker.namaLengkap },
                     { label: "Email", val: jobseeker.email },
                     { label: "No. WhatsApp / HP", val: jobseeker.whatsapp || jobseeker.phone },
-                    { label: "Status", val: statusLabel[jobseeker.status] || jobseeker.status },
+                    { label: "Status", val: statusLabel[jobseeker.statusKerja || jobseeker.status] || jobseeker.statusKerja || jobseeker.status },
                     { label: "Kota", val: jobseeker.kota || "—" },
                     { label: "Institusi", val: jobseeker.institusi || "—" },
                     { label: "Program Studi", val: jobseeker.jurusan || "—" },
-                    { label: "Bidang Minat", val: jobseeker.bidangMinat || "—" },
+                    { label: "Bidang Minat", val: jobseeker.minatKerja || jobseeker.bidangMinat || "—" },
                   ].map(item => (
                     <div key={item.label}>
                       <div style={s.label}>{item.label}</div>
@@ -361,7 +364,7 @@ export default function JobseekerDashboard() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", fontSize: "0.88rem" }}>
                 {[
                   { label: "Nama Event", val: "Grand Recruitment 2026" },
-                  { label: "Tanggal", val: "8–9 Juni 2026" },
+                  { label: "Tanggal", val: "10–11 Juni 2026" },
                   { label: "Lokasi", val: "Gedung Dome NHI Bandung" },
                   { label: "Jam Buka", val: "08.00 – 17.00 WIB" },
                   { label: "Dress Code", val: "Formal / Business Casual" },

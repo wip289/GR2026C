@@ -472,7 +472,6 @@ export default function LandingPage() {
           <a href="/employer/register"  style={{ color: "#14b8a6", fontSize: "0.82rem", textDecoration: "none" }}>Daftar Employer</a>
           <a href="/jobseeker/register" style={{ color: "#D4A017",  fontSize: "0.82rem", textDecoration: "none" }}>Daftar Jobseeker</a>
           <a href="/sponsor"            style={{ color: "#818cf8",  fontSize: "0.82rem", textDecoration: "none" }}>Sponsorship</a>
-          <a href="/boss"               style={{ color: "#475569",  fontSize: "0.82rem", textDecoration: "none" }}>Panitia</a>
         </div>
 
         <p style={{ color: "#1e293b", fontSize: "0.72rem" }}>

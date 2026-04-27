@@ -1,0 +1,85 @@
+04/24/26 23:39:35   
+
+***************** New Log **************************
+
+Start time: 04/24/26 23:39:35
+
+Module: c:\Program Files (x86)\Corel\CUH\v2\CUH.exe
+
+04/24/26 23:39:35   PCU_HD started
+04/24/26 23:39:35   GLHDID started
+04/24/26 23:39:35   CIMSGD elapsed time: 0.000 seconds
+04/24/26 23:39:35   MS::Init elapsed time: 0.092 seconds
+04/24/26 23:39:35   CUH: Init msgsys!
+04/24/26 23:39:35   CUH launched with -resume!
+04/24/26 23:39:37   GLHDID elapsed time: 1.146 seconds
+04/24/26 23:39:37   PCU_HD elapsed time: 1.212 seconds
+04/24/26 23:54:35   MS::CP started
+04/24/26 23:54:35   MS::CP:MD:CPC started
+04/24/26 23:54:35   MS::CP:MD:CPC:MU:VIC started
+04/24/26 23:54:35   MS::CP:MD:CPC:MU:VIC elapsed time: 0.002 seconds
+04/24/26 23:54:36   WPCB:init1 started
+04/24/26 23:54:36   PCU version : 13.0.0.639
+04/24/26 23:54:36   WPCB:genin started
+04/24/26 23:54:36   HTTP::CONNECTORG elapsed time: 0.095 seconds
+04/24/26 23:54:36   In IsInternetConnected - strURL=https://mc.corel.com/servlet/MessageCenterServer, Return=true, Reason=0, Error:0, WSAError=0
+04/24/26 23:54:36   MU::CKIT elapsed time: 0.098 seconds
+04/24/26 23:54:36   WPCB:genin elapsed time: 0.074 seconds
+04/24/26 23:54:36   WPCB:init1 elapsed time: 0.119 seconds
+04/24/26 23:54:36   MU::USI started
+04/24/26 23:54:36   MU::USI:BSI started
+04/24/26 23:54:36   MU::USI:BSI:CICT started
+04/24/26 23:54:36   MU::USI:BSI:CICT elapsed time: 0.001 seconds
+04/24/26 23:54:36   MP::GAP started
+04/24/26 23:54:36   MP::GAP elapsed time: 0.001 seconds
+04/24/26 23:54:36   MU::USI:BSI elapsed time: 0.005 seconds
+04/24/26 23:54:36   MU::USI elapsed time: 0.006 seconds
+04/24/26 23:54:36   MS::CP:MD:CPC elapsed time: 0.148 seconds
+04/24/26 23:54:36   MS::CP elapsed time: 0.152 seconds
+04/24/26 23:54:36   CSL started
+04/24/26 23:54:36   WPCB:init1 started
+04/24/26 23:54:36   PCU version : 13.0.0.639
+04/24/26 23:54:36   WPCB:genin started
+04/24/26 23:54:36   WPCB:genin elapsed time: 0.021 seconds
+04/24/26 23:54:36   WPCB:init1 elapsed time: 0.027 seconds
+04/24/26 23:54:36   CSL elapsed time: 0.030 seconds
+04/24/26 23:54:36   CSL started
+04/24/26 23:54:36   WPCB:init1 started
+04/24/26 23:54:36   PCU version : 13.0.0.639
+04/24/26 23:54:36   WPCB:genin started
+04/24/26 23:54:36   WPCB:genin elapsed time: 0.016 seconds
+04/24/26 23:54:36   WPCB:init1 elapsed time: 0.023 seconds
+04/24/26 23:54:36   CSL elapsed time: 0.025 seconds
+04/24/26 23:54:36   VA started
+04/24/26 23:54:36   VA elapsed time: 0.001 seconds
+04/24/26 23:54:36   VA started
+04/24/26 23:54:36   VA elapsed time: 0.001 seconds
+04/24/26 23:54:36   VA started
+04/24/26 23:54:36   WS_ASP started
+04/24/26 23:54:36   HTTP::CONNECTORG started
+04/24/26 23:54:36   HTTP::CONNECTORG elapsed time: 0.001 seconds
+04/24/26 23:54:36   In IsInternetConnected - strURL=https://iws.corel.com/ipmws/services/SubscriptionService, Return=true, Reason=0, Error:0, WSAError=0
+04/24/26 23:54:38   Send Request 1 failed code = 12029
+04/24/26 23:54:38   WS_ASP elapsed time: 2.072 seconds
+04/24/26 23:54:38   Error Authenticating - Error code:  Description: 
+04/24/26 23:54:38   VA elapsed time: 2.077 seconds
+04/24/26 23:54:38   MD started
+04/24/26 23:54:38   MD:ST started
+04/24/26 23:54:38   MP::GAP started
+04/24/26 23:54:38   MP::GAP elapsed time: 0.001 seconds
+04/24/26 23:54:38   MD:ST elapsed time: 0.003 seconds
+04/24/26 23:54:38   MD elapsed time: 0.041 seconds
+04/24/26 23:54:40   A connection with the server could not be established
+ URL: http://apps.corel.com/redirect?_redirect=command&app=cuh&version=2.0&function=testonline
+04/24/26 23:54:40   Can not connect to IPM server!
+04/24/26 23:54:40   CTTH:CT started
+04/24/26 23:54:40   CTTH:CT schedule create success
+04/24/26 23:54:40   CTTH:CT elapsed time: 0.035 seconds
+04/24/26 23:54:40   CTTH:CT Success: 1
+04/24/26 23:54:40   CUH: Uninit msgsys!
+04/24/26 23:54:40   MS::RL started
+04/24/26 23:54:40   MD::RL started
+04/24/26 23:54:40   MU:CTT started
+04/24/26 23:54:40   MU:CTT elapsed time: 0.001 seconds
+04/24/26 23:54:40   MD::RL elapsed time: 0.006 seconds
+04/24/26 23:54:40   MS::RL elapsed time: 0.008 seconds

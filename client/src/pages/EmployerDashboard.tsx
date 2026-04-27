@@ -189,7 +189,7 @@ export default function EmployerDashboard() {
           <h1 style={{ fontSize: "clamp(1.5rem,3vw,2rem)", fontWeight: 800, marginBottom: "0.25rem" }}>
             Dashboard Employer
           </h1>
-          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Grand Recruitment 2026 · June 8–9 · Dome NHI Bandung</p>
+          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Grand Recruitment 2026 · June 10–11 · Dome NHI Bandung</p>
         </div>
 
         {/* Status bar */}

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multipart>
+<productmanifest version="1">
+  <licenseinfolist>
+	  <licenseinfo licenseid="540111125" sourceid="707000" serialtype="1" serialnum="UH02R225KKYFGQS6CJ94VHKMVZU2" language="EN" productfingerprint="V20E882AD40348275EA949A6349B4C43C1" status="1"  totaldays="0" trialdaysleft="0" launchcount="13" totallaunchcount="0" product="1" regstatus="1" version="2.683" regtype="1" rtovalue="1" activationcode="" appcontext="Create" dayssincefirstlaunch="6" daysincurrentstate="0"   dayssincelastlaunch="0" >
+		<servercookies>
+			<cookie key="pcuversion" value="13.0.0.639" />
+		</servercookies>
+	<subscriptioninfo subscriptionid="1700100" classification="0" subscriptionremindershow="0" subscriptionreminderdays="0" currentversion="" lastusedversion="" seatcount="1" origin="1" created="false" level="0" alreadyexist="false" serialassociated="false"/>
+  </licenseinfo>
+<licenseinfo licenseid="540111163" sourceid="407007" serialtype="1" serialnum="DR24R49ATB5QP4AAJZVCXYA8JA64" language="en" productfingerprint="V20E882AD40348275EA949A6349B4C43C1" status="1"  totaldays="0" trialdaysleft="0" launchcount="1" totallaunchcount="12" product="0" regstatus="0" version="24.5.0.731" regtype="4" rtovalue="1" activationcode="" appcontext="Create" dayssincefirstlaunch="5" daysincurrentstate="0"   dayssincelastlaunch="0" >
+		<servercookies>
+		</servercookies>
+	<subscriptioninfo subscriptionid="" classification="" subscriptionremindershow="" subscriptionreminderdays="" currentversion="" lastusedversion="" seatcount="" origin="" created="" level="" alreadyexist="" serialassociated=""/>
+  </licenseinfo>
+<licenseinfo licenseid="540227504" sourceid="999924" serialtype="15" serialnum="DR24S22YRTVCQA27RM3HTHYX4KGW" language="en" productfingerprint="V20E882AD40348275EA949A6349B4C43C1" status="3"  totaldays="16" trialdaysleft="-3667" launchcount="1" totallaunchcount="0" product="0" regstatus="0" version="24.5.0.731" regtype="3" rtovalue="15" activationcode="" appcontext="Create" dayssincefirstlaunch="-1" daysincurrentstate="3667"   dayssincelastlaunch="-1" >
+		<servercookies>
+		</servercookies>
+	<subscriptioninfo subscriptionid="1700100" classification="0" subscriptionremindershow="0" subscriptionreminderdays="0" currentversion="" lastusedversion="" seatcount="1" origin="1" created="false" level="0" alreadyexist="false" serialassociated="false"/>
+  </licenseinfo>
+  </licenseinfolist>
+ </productmanifest>
+<systeminfo version="1" online="true" os_version="10.0.22621.2" arch="X86_64" hwfpid="V20E882AD40348275EA949A6349B4C43C1" countrycode="US" autoupdate="true" />
+
+<userinfo version="1" profileid="2EC1A01FC16E0501E0530100007F44FC" companyname="" nickname= "" userscore= "0" />
+
+<request version="3" type="messages">
+<filter type="timestamp" value="0" />
+</request>
+<request version="2" type="message_tracking">
+<messagetracking></messagetracking>
+</request>
+<request version="1" type="ft">
+<pbags>
+<pbag>
+<prop key="28" name="7A757079727D7179" value="7F697432796479" />
+<prop key="28" name="6A796E6F757372" value="2D2F322C322C322A2F25" />
+<prop key="28" name="7F74797F776F6971" value="2F7D242C292A" />
+</pbag>
+<pbag>
+<prop key="28" name="7A757079727D7179" value="69746C7F6972706E32787070" />
+<prop key="28" name="6A796E6F757372" value="2D2F322C322C322D2D25" />
+<prop key="28" name="7F74797F776F6971" value="782B2979" />
+</pbag>
+<pbag>
+<prop key="28" name="7A757079727D7179" value="786E6C7F6972706E32787070" />
+<prop key="28" name="6A796E6F757372" value="2E283229322C322B2F2D" />
+<prop key="28" name="7F74797F776F6971" value="2E79247D2A" />
+</pbag>
+<pbag>
+<prop key="28" name="7A757079727D7179" value="6E716C7F6972706E32787070" />
+<prop key="28" name="6A796E6F757372" value="2E283229322C322B2F2D" />
+<prop key="28" name="7F74797F776F6971" value="787D7878" />
+</pbag>
+</pbags>
+</request>
+<request version="3" type="cuhtracking">
+<cuhinfo cuhversion="2.16.683" pcuversion="13.0.0.639" country="" privacydefault="" validmessagelist="" updatefrequency="1" currentcycleviewedmessages="" cuh_msgshown="" cuh_msgnextshow="" firstlaunchdate="1776608666" startdate="1776608666" lastlaunchtimestamp="1777127067" timestamp="1777127070">
+<taskschedulers>
+<taskscheduler taskname="CorelUpdateHelperTask-FF8284FEC1DA5A7EDCD505A1380B9D84" triggertype="One Time" triggertime="943894800" action="c:\Program Files (x86)\Corel\CUH\v2\CUH.exe" argument="-resume" />
+<taskscheduler taskname="CorelUpdateHelperTaskCore" triggertype="Every Day" triggertime="1777127067" action="c:\Program Files (x86)\Corel\CUH\v2\CUH.exe" argument="/t" />
+</taskschedulers>
+<pcus>
+<pcu licenseid="540111163" sourceid="407007" />
+<pcu licenseid="540227504" sourceid="999924" />
+<pcu licenseid="540111125" sourceid="707000" />
+</pcus>
+</cuhinfo>
+</request>
+<request version="3" type="performancetracking">
+<performanceinfo system_memory="17108320256" os_name="Windows 10 Pro" os_versin="22621" os_bits="64" processor="Intel(R) Core(TM) i7-7700 CPU @ 3.60GHz" cores="8" instruction_sets="ADX,AES,AVX,AVX2,BMI1,BMI2,CLFSH,CMPXCHG16B,CX8,ERMS,F16C,FMA,FSGSBASE,FXSR,HLE,INVPCID,LAHF,LZCNT,MMX,MONITOR,MOVBE,MSR,OSXSAVE,PCLMULQDQ,POPCNT,RDRAND,RDSEED,RDTSCP,RTM,SEP,SSE,SSE2,SSE3,SSE41,SSE42,SSSE3,SYSCALL,XSAVE" GPU1="NVIDIA GeForce GTX 1070" GPU_dedicated_graphic_memory1="8458862592" GPU_dedicated_system_memory1="0" GPU_shared_system_memory1="8554160128" GPU2="NVIDIA GeForce GTX 1070" GPU_dedicated_graphic_memory2="8458862592" GPU_dedicated_system_memory2="0" GPU_shared_system_memory2="8554160128" GPU3="Microsoft Basic Render Driver" GPU_dedicated_graphic_memory3="0" GPU_dedicated_system_memory3="0" GPU_shared_system_memory3="8554160128" model="" board="" bios="" networkcard="" cardnumber="" cardvalue="" HFNCv2="" HFIv2="" hwfp=""/>
+</request>
+
+</multipart>

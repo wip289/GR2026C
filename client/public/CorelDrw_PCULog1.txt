@@ -1,0 +1,94 @@
+04/25/26 02:23:44   
+
+***************** New Log **************************
+
+Start time: 04/25/26 02:23:44
+
+Module: c:\Program Files\Corel\CorelDRAW Graphics Suite 2022\Programs64\CorelDrw.exe
+
+04/25/26 02:23:44   MS::Init started
+04/25/26 02:23:44   GLHDID started
+04/25/26 02:23:44   CIMSGD elapsed time: 0.002 seconds
+04/25/26 02:23:44   MS::Init elapsed time: 0.004 seconds
+04/25/26 02:23:44   MS::CP started
+04/25/26 02:23:44   MS::CP:MD:CPC started
+04/25/26 02:23:44   MS::CP:MD:CPC:MU:VIC started
+04/25/26 02:23:44   MU::CKIT started
+04/25/26 02:23:44   HTTP::CONNECTORG started
+04/25/26 02:23:44   WPCB:init1 started
+04/25/26 02:23:44   HTTP::CONNECTORG elapsed time: 0.014 seconds
+04/25/26 02:23:44   In IsInternetConnected - strURL=https://mc.corel.com/servlet/MessageCenterServer, Return=true, Reason=0, Error:0, WSAError=0
+04/25/26 02:23:44   MU::CKIT elapsed time: 0.019 seconds
+04/25/26 02:23:44   WPCB:genin started
+04/25/26 02:23:44   GLHDID elapsed time: 0.051 seconds
+04/25/26 02:23:44   PCU_HD elapsed time: 0.054 seconds
+04/25/26 02:23:44   WPCB:genin elapsed time: 0.039 seconds
+04/25/26 02:23:44   WPCB:init1 elapsed time: 0.055 seconds
+04/25/26 02:23:44   MU::USI started
+04/25/26 02:23:44   MU::USI:BSI started
+04/25/26 02:23:44   MU::USI:BSI:CICT started
+04/25/26 02:23:44   MU::USI:BSI:CICT elapsed time: 0.001 seconds
+04/25/26 02:23:44   MP::GAP started
+04/25/26 02:23:44   MP::GAP elapsed time: 0.001 seconds
+04/25/26 02:23:44   MU::USI:BSI elapsed time: 0.005 seconds
+04/25/26 02:23:44   MU::USI elapsed time: 0.007 seconds
+04/25/26 02:23:44   MS::CP:MD:CPC elapsed time: 0.071 seconds
+04/25/26 02:23:44   MS::CP elapsed time: 0.073 seconds
+04/25/26 02:23:44   CSL started
+04/25/26 02:23:44   WPCB:init1 started
+04/25/26 02:23:44   PCU version : 13.0.0.639
+04/25/26 02:23:44   WPCB:genin started
+04/25/26 02:23:44   WPCB:genin elapsed time: 0.018 seconds
+04/25/26 02:23:44   WPCB:init1 elapsed time: 0.029 seconds
+04/25/26 02:23:44   CSL elapsed time: 0.031 seconds
+04/25/26 02:23:44   ATE started
+04/25/26 02:23:44   ATE elapsed time: 0.002 seconds
+04/25/26 02:23:44   VA started
+04/25/26 02:23:44   VA elapsed time: 0.001 seconds
+04/25/26 02:23:44   VA started
+04/25/26 02:23:44   WS_ASP started
+04/25/26 02:23:44   HTTP::CONNECTORG started
+04/25/26 02:23:44   HTTP::CONNECTORG elapsed time: 0.001 seconds
+04/25/26 02:23:44   In IsInternetConnected - strURL=https://iws.corel.com/ipmws/services/SubscriptionService, Return=true, Reason=0, Error:0, WSAError=0
+04/25/26 02:23:46   Send Request 1 failed code = 12029
+04/25/26 02:23:46   WS_ASP elapsed time: 2.075 seconds
+04/25/26 02:23:46   Error Authenticating - Error code:  Description: 
+04/25/26 02:23:46   VA elapsed time: 2.081 seconds
+04/25/26 02:23:46   MD started
+04/25/26 02:23:46   MD:ST started
+04/25/26 02:23:46   MP::GAP started
+04/25/26 02:23:46   MP::GAP elapsed time: 0.001 seconds
+04/25/26 02:23:46   MD:ST elapsed time: 0.003 seconds
+04/25/26 02:23:46   MD elapsed time: 0.064 seconds
+04/25/26 02:23:46   MS::InPCUUI started
+04/25/26 02:23:46   IP_UI : 0 started
+04/25/26 02:23:46   IP_UI : 0 elapsed time: 0.001 seconds
+04/25/26 02:23:46   MS::InPCUUI elapsed time: 0.003 seconds
+04/25/26 02:23:46   RP started
+04/25/26 02:23:46   RP elapsed time: 0.001 seconds
+04/25/26 02:23:46   IS_UI started
+04/25/26 02:23:46   IS_UI elapsed time: 0.001 seconds
+04/25/26 02:23:46   IS_UI started
+04/25/26 02:23:46   IS_UI elapsed time: 0.001 seconds
+04/25/26 02:23:46   MS::IPushMsg(0,2) started
+04/25/26 02:23:46   MS::IPushMsg launch SlientMode
+04/25/26 02:23:46   MS::IPushMsg(0,2) elapsed time: 0.002 seconds
+04/25/26 02:23:46   MS::RPI started
+04/25/26 02:23:46   MS::RPI elapsed time: 0.001 seconds
+04/25/26 02:23:51   MS::IPushMsg(2,1) started
+04/25/26 02:23:51   MS::IPushMsg(2,1) elapsed time: 0.001 seconds
+04/25/26 02:24:12   MS::InPCUUI started
+04/25/26 02:24:12   IP_UI : 1 started
+04/25/26 02:24:12   trialScheduled: 0
+04/25/26 02:24:12   IP_UI : 1 elapsed time: 0.002 seconds
+04/25/26 02:24:12   MS::InPCUUI elapsed time: 0.003 seconds
+04/25/26 02:24:12   MS::IPushMsg(1,2) started
+04/25/26 02:24:12   MS::IPushMsg(1,2) elapsed time: 0.001 seconds
+04/25/26 02:24:12   MS::RPI started
+04/25/26 02:24:12   MS::RPI elapsed time: 0.001 seconds
+04/25/26 02:24:15   MS::RL started
+04/25/26 02:24:15   MD::RL started
+04/25/26 02:24:15   MU:CTT started
+04/25/26 02:24:15   MU:CTT elapsed time: 0.001 seconds
+04/25/26 02:24:15   MD::RL elapsed time: 0.005 seconds
+04/25/26 02:24:15   MS::RL elapsed time: 0.007 seconds

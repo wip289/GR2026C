@@ -1,0 +1,66 @@
+04/24/26 07:39:40   
+
+***************** New Log **************************
+
+Start time: 04/24/26 07:39:40
+
+Module: C:\Program Files\Corel\CorelDRAW Graphics Suite 2022\Programs64\InterprocessController.exe
+
+04/24/26 07:39:40   MS::Init started
+04/24/26 07:39:40   CIMSGD started
+04/24/26 07:39:40   CIMSGD elapsed time: 0.002 seconds
+04/24/26 07:39:40   MS::Init elapsed time: 0.005 seconds
+04/24/26 07:39:40   MS::CP started
+04/24/26 07:39:40   MS::CP:MD:CPC started
+04/24/26 07:39:40   MS::CP:MD:CPC:MU:VIC started
+04/24/26 07:39:40   MU::CKIT started
+04/24/26 07:39:40   HTTP::CONNECTORG started
+04/24/26 07:39:40   WPCB:init1 started
+04/24/26 07:39:40   PCU version : 13.0.0.639
+04/24/26 07:39:40   HTTP::CONNECTORG elapsed time: 0.016 seconds
+04/24/26 07:39:40   In IsInternetConnected - strURL=https://mc.corel.com/servlet/MessageCenterServer, Return=true, Reason=0, Error:0, WSAError=0
+04/24/26 07:39:40   MU::CKIT elapsed time: 0.019 seconds
+04/24/26 07:39:40   GLHDID elapsed time: 0.040 seconds
+04/24/26 07:39:40   PCU_HD elapsed time: 0.044 seconds
+04/24/26 07:39:40   WPCB:genin elapsed time: 0.031 seconds
+04/24/26 07:39:40   WPCB:init1 elapsed time: 0.047 seconds
+04/24/26 07:39:40   MU::USI started
+04/24/26 07:39:40   MU::USI:BSI started
+04/24/26 07:39:40   MU::USI:BSI:CICT started
+04/24/26 07:39:40   MU::USI:BSI:CICT elapsed time: 0.001 seconds
+04/24/26 07:39:40   MP::GAP started
+04/24/26 07:39:40   MP::GAP elapsed time: 0.002 seconds
+04/24/26 07:39:40   MU::USI:BSI elapsed time: 0.004 seconds
+04/24/26 07:39:40   MU::USI elapsed time: 0.006 seconds
+04/24/26 07:39:40   MS::CP:MD:CPC elapsed time: 0.062 seconds
+04/24/26 07:39:40   MS::CP elapsed time: 0.065 seconds
+04/24/26 07:39:40   CSL started
+04/24/26 07:39:40   WPCB:init1 started
+04/24/26 07:39:40   PCU version : 13.0.0.639
+04/24/26 07:39:40   WPCB:genin started
+04/24/26 07:39:40   WPCB:genin elapsed time: 0.018 seconds
+04/24/26 07:39:40   WPCB:init1 elapsed time: 0.028 seconds
+04/24/26 07:39:40   CSL elapsed time: 0.030 seconds
+04/24/26 07:39:40   VA started
+04/24/26 07:39:40   VA elapsed time: 0.001 seconds
+04/24/26 07:39:40   VA started
+04/24/26 07:39:40   WS_ASP started
+04/24/26 07:39:40   HTTP::CONNECTORG started
+04/24/26 07:39:40   HTTP::CONNECTORG elapsed time: 0.001 seconds
+04/24/26 07:39:40   In IsInternetConnected - strURL=https://iws.corel.com/ipmws/services/SubscriptionService, Return=true, Reason=0, Error:0, WSAError=0
+04/24/26 07:39:41   Send Request 1 failed code = 12045
+04/24/26 07:39:41   WS_ASP elapsed time: 0.050 seconds
+04/24/26 07:39:41   Error Authenticating - Error code:  Description: 
+04/24/26 07:39:41   VA elapsed time: 0.056 seconds
+04/24/26 07:39:41   MD started
+04/24/26 07:39:41   MD:ST started
+04/24/26 07:39:41   MP::GAP started
+04/24/26 07:39:41   MP::GAP elapsed time: 0.001 seconds
+04/24/26 07:39:41   MD:ST elapsed time: 0.003 seconds
+04/24/26 07:39:41   MD elapsed time: 0.022 seconds
+04/24/26 08:02:45   MS::RL started
+04/24/26 08:02:45   MD::RL started
+04/24/26 08:02:45   MU:CTT started
+04/24/26 08:02:45   MU:CTT elapsed time: 0.001 seconds
+04/24/26 08:02:45   MD::RL elapsed time: 0.004 seconds
+04/24/26 08:02:45   MS::RL elapsed time: 0.006 seconds

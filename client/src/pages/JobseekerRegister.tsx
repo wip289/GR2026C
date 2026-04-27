@@ -306,7 +306,7 @@ export default function JobseekerRegister() {
             Daftar sebagai <span style={{ color: "#D4A017" }}>Jobseeker</span>
           </h1>
           <p style={{ color: "#475569", fontSize: "0.83rem" }}>
-            GR2026 · June 8–9 · Dome NHI Bandung · <strong style={{ color: "#14b8a6" }}>GRATIS</strong>
+            GR2026 · June 10–11 · Dome NHI Bandung · <strong style={{ color: "#14b8a6" }}>GRATIS</strong>
           </p>
         </div>
 

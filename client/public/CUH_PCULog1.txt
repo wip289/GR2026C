@@ -1,0 +1,93 @@
+04/25/26 21:24:27   
+
+***************** New Log **************************
+
+Start time: 04/25/26 21:24:27
+
+Module: c:\Program Files (x86)\Corel\CUH\v2\CUH.exe
+
+04/25/26 21:24:27   PCU_HD started
+04/25/26 21:24:27   GLHDID started
+04/25/26 21:24:27   CIMSGD elapsed time: 0.001 seconds
+04/25/26 21:24:27   MS::Init elapsed time: 0.052 seconds
+04/25/26 21:24:27   CUH: Init msgsys!
+04/25/26 21:24:27   CUH launched with /t or -t mode!
+04/25/26 21:24:27   MS::CP started
+04/25/26 21:24:27   MS::CP:MD:CPC started
+04/25/26 21:24:27   MS::CP:MD:CPC:MU:VIC started
+04/25/26 21:24:27   MS::CP:MD:CPC:MU:VIC elapsed time: 0.004 seconds
+04/25/26 21:24:27   WPCB:init1 started
+04/25/26 21:24:27   PCU version : 13.0.0.639
+04/25/26 21:24:27   HTTP::CONNECTORG elapsed time: 0.053 seconds
+04/25/26 21:24:27   In IsInternetConnected - strURL=https://mc.corel.com/servlet/MessageCenterServer, Return=true, Reason=0, Error:0, WSAError=0
+04/25/26 21:24:27   MU::CKIT elapsed time: 0.055 seconds
+04/25/26 21:24:27   WPCB:genin started
+04/25/26 21:24:27   WPCB:genin elapsed time: 0.063 seconds
+04/25/26 21:24:27   WPCB:init1 elapsed time: 0.125 seconds
+04/25/26 21:24:27   MU::USI started
+04/25/26 21:24:27   MU::USI:BSI started
+04/25/26 21:24:27   MU::USI:BSI:CICT started
+04/25/26 21:24:27   MU::USI:BSI:CICT elapsed time: 0.001 seconds
+04/25/26 21:24:27   MP::GAP started
+04/25/26 21:24:27   MP::GAP elapsed time: 0.001 seconds
+04/25/26 21:24:27   MU::USI:BSI elapsed time: 0.004 seconds
+04/25/26 21:24:27   MU::USI elapsed time: 0.006 seconds
+04/25/26 21:24:27   MS::CP:MD:CPC elapsed time: 0.155 seconds
+04/25/26 21:24:27   MS::CP elapsed time: 0.157 seconds
+04/25/26 21:24:27   CSL started
+04/25/26 21:24:27   WPCB:init1 started
+04/25/26 21:24:27   PCU version : 13.0.0.639
+04/25/26 21:24:27   WPCB:genin started
+04/25/26 21:24:27   WPCB:genin elapsed time: 0.042 seconds
+04/25/26 21:24:27   WPCB:init1 elapsed time: 0.049 seconds
+04/25/26 21:24:27   CSL elapsed time: 0.051 seconds
+04/25/26 21:24:27   CSL started
+04/25/26 21:24:27   WPCB:init1 started
+04/25/26 21:24:27   PCU version : 13.0.0.639
+04/25/26 21:24:27   WPCB:genin started
+04/25/26 21:24:27   WPCB:genin elapsed time: 0.030 seconds
+04/25/26 21:24:27   WPCB:init1 elapsed time: 0.037 seconds
+04/25/26 21:24:27   CSL elapsed time: 0.039 seconds
+04/25/26 21:24:27   VA started
+04/25/26 21:24:27   VA elapsed time: 0.001 seconds
+04/25/26 21:24:27   VA started
+04/25/26 21:24:27   VA elapsed time: 0.001 seconds
+04/25/26 21:24:27   VA started
+04/25/26 21:24:27   WS_ASP started
+04/25/26 21:24:27   HTTP::CONNECTORG started
+04/25/26 21:24:27   HTTP::CONNECTORG elapsed time: 0.001 seconds
+04/25/26 21:24:27   In IsInternetConnected - strURL=https://iws.corel.com/ipmws/services/SubscriptionService, Return=true, Reason=0, Error:0, WSAError=0
+04/25/26 21:24:28   GLHDID elapsed time: 0.918 seconds
+04/25/26 21:24:28   PCU_HD elapsed time: 0.970 seconds
+04/25/26 21:24:29   Send Request 1 failed code = 12029
+04/25/26 21:24:29   WS_ASP elapsed time: 2.067 seconds
+04/25/26 21:24:29   Error Authenticating - Error code:  Description: 
+04/25/26 21:24:29   VA elapsed time: 2.077 seconds
+04/25/26 21:24:29   MD started
+04/25/26 21:24:29   MD:ST started
+04/25/26 21:24:29   MP::GAP started
+04/25/26 21:24:29   MP::GAP elapsed time: 0.001 seconds
+04/25/26 21:24:29   MD:ST elapsed time: 0.003 seconds
+04/25/26 21:24:29   MD elapsed time: 0.046 seconds
+04/25/26 21:24:30   MD:RM started
+04/25/26 21:24:30   MU:RM started
+04/25/26 21:24:30   MU::USI:BSI started
+04/25/26 21:24:30   MU::USI:BSI:CICT started
+04/25/26 21:24:30   MU::USI:BSI:CICT elapsed time: 0.001 seconds
+04/25/26 21:24:30   MP::GAP started
+04/25/26 21:24:30   MP::GAP elapsed time: 0.001 seconds
+04/25/26 21:24:30   MU::USI:BSI elapsed time: 0.004 seconds
+04/25/26 21:24:32   Send Request 1 failed code = 12029
+04/25/26 21:24:32   cannot get server response properly
+04/25/26 21:24:32   MU:RM return value 2
+04/25/26 21:24:32   MU:RM elapsed time: 2.062 seconds
+04/25/26 21:24:32   MD:RM elapsed time: 2.063 seconds
+04/25/26 21:24:32   Error: Unable to retrieve messages!
+04/25/26 21:24:32   CTTH:UST No need to update schedule
+04/25/26 21:24:32   CUH: Uninit msgsys!
+04/25/26 21:24:32   MS::RL started
+04/25/26 21:24:32   MD::RL started
+04/25/26 21:24:32   MU:CTT started
+04/25/26 21:24:32   MU:CTT elapsed time: 0.000 seconds
+04/25/26 21:24:32   MD::RL elapsed time: 0.005 seconds
+04/25/26 21:24:32   MS::RL elapsed time: 0.007 seconds
