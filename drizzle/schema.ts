@@ -220,6 +220,11 @@ export const employerBookings = mysqlTable("employerBookings", {
   confirmedAt: timestamp("confirmedAt"),
   confirmedBy: int("confirmedBy"),
   notes: text("notes"),
+  // Payment proof & approval
+  logoUrl: varchar("logoUrl", { length: 500 }),
+  buktiPaymentUrl: varchar("buktiPaymentUrl", { length: 500 }),
+  kwitansiApproved: boolean("kwitansiApproved").default(false),
+  jobVacanciesUrl: json("jobVacanciesUrl"), // [{url, name}]
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

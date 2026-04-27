@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { openInvoiceForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -42,6 +43,14 @@ export default function BossPanel() {
   const { data: interviewRaw } = trpc.event.getAllInterviewBookings.useQuery();
   const updateStatusMutation = trpc.event.updateEmployerBookingStatus.useMutation({
     onSuccess: () => refetchEmployers(),
+  });
+
+  const approvePembayaranMutation = trpc.event.approvePembayaran.useMutation({
+    onSuccess: () => {
+      refetchEmployers();
+      toast.success("Pembayaran diapprove! Kwitansi LUNAS tersedia di dashboard employer.");
+    },
+    onError: (e) => toast.error("Gagal approve: " + e.message),
   });
 
   // ── Password gate render ──────────────────────────────────────
@@ -257,7 +266,7 @@ export default function BossPanel() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Perusahaan", "Booking ID", "Booth", "Total", "Status", "Aksi"].map(h => (
+                      {["Perusahaan", "Booking ID", "Booth", "Total", "Bukti Bayar", "Status", "Aksi"].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
@@ -279,6 +288,14 @@ export default function BossPanel() {
                           </div>
                         </td>
                         <td style={{ ...s.td, fontWeight: 700, color: "#D4A017" }}>{fmt(parseFloat(emp.totalAmount || 0))}</td>
+                        <td style={s.td}>
+                          {emp.buktiPaymentUrl ? (
+                            <a href={emp.buktiPaymentUrl} target="_blank" rel="noreferrer"
+                              style={{ fontSize: "0.75rem", color: "#14b8a6", textDecoration: "none", fontWeight: 700 }}>✅ Ada</a>
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "#64748b" }}>— Belum</span>
+                          )}
+                        </td>
                         <td style={s.td}>
                           <span style={s.badge(emp.status === "confirmed" ? "#14b8a6" : emp.status === "rejected" ? "#ef4444" : "#f97316")}>
                             {emp.status === "confirmed" ? "Confirmed" : emp.status === "rejected" ? "Rejected" : "Pending"}
@@ -339,15 +356,59 @@ export default function BossPanel() {
                   </div>
                 </div>
 
+                {/* Bukti bayar info */}
+                <div style={{ marginTop: "1rem", padding: "0.75rem", background: "rgba(255,255,255,0.02)", borderRadius: 8, fontSize: "0.82rem" }}>
+                  <div style={{ color: "#64748b", marginBottom: "0.25rem" }}>Bukti Pembayaran</div>
+                  {selEmp.buktiPaymentUrl ? (
+                    <a href={selEmp.buktiPaymentUrl} target="_blank" rel="noreferrer" style={{ color: "#14b8a6", fontWeight: 700 }}>✅ Sudah upload → Lihat file</a>
+                  ) : (
+                    <span style={{ color: "#f97316" }}>⏳ Belum upload</span>
+                  )}
+                </div>
+
                 {selEmp.status === "pending" && (
-                  <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleApprove(selEmp.bookingId)}
-                      style={{ flex: 1, background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer" }}>
-                      ✅ Approve
+                  <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column" as const, gap: "0.5rem" }}>
+                    <button
+                      onClick={() => { approvePembayaranMutation.mutate({ bookingId: selEmp.bookingId }); }}
+                      style={{ background: "linear-gradient(135deg,#059669,#10b981)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer" }}>
+                      🏅 Approve Pembayaran + Kwitansi LUNAS
                     </button>
-                    <button onClick={() => handleReject(selEmp.bookingId)}
-                      style={{ flex: 1, background: "transparent", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer" }}>
-                      ❌ Tolak
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button onClick={() => handleApprove(selEmp.bookingId)}
+                        style={{ flex: 1, background: "rgba(20,184,166,0.1)", border: "1px solid rgba(20,184,166,0.4)", color: "#14b8a6", borderRadius: 10, padding: "0.65rem", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
+                        ✅ Approve (tanpa kwitansi)
+                      </button>
+                      <button onClick={() => handleReject(selEmp.bookingId)}
+                        style={{ flex: 1, background: "transparent", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", borderRadius: 10, padding: "0.65rem", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
+                        ❌ Tolak
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selEmp.status === "confirmed" && (
+                  <div style={{ marginTop: "1.25rem" }}>
+                    <button
+                      onClick={() => {
+                        const booths = Array.isArray(selEmp.booths) ? selEmp.booths : [];
+                        openInvoiceForPrint({
+                          bookingId: selEmp.bookingId,
+                          bookingDate: fmtDate(selEmp.createdAt),
+                          companyName: selEmp.companyName,
+                          industry: selEmp.industry || "",
+                          city: selEmp.city || "",
+                          pic1: { name: selEmp.pic1Name || "", title: selEmp.pic1Title || "", email: selEmp.pic1Email || "", whatsapp: selEmp.pic1Whatsapp || "" },
+                          positions: Array.isArray(selEmp.positions) ? selEmp.positions : [],
+                          booths: booths.map((b: any) => ({ boothId: b.id, label: b.label, type: b.type, price: b.price || 0 })),
+                          needsBoothDesign: selEmp.needsBoothDesign || false,
+                          specialRequest: selEmp.specialRequest || "",
+                          totalAmount: parseFloat(selEmp.totalAmount || 0),
+                          paymentDeadline: getPaymentDeadline(),
+                          lunasStamp: (selEmp as any).kwitansiApproved,
+                        });
+                      }}
+                      style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
+                      📄 Download Invoice{(selEmp as any).kwitansiApproved ? " (LUNAS)" : ""}
                     </button>
                   </div>
                 )}

@@ -10,11 +10,13 @@ export interface BookingData {
   pic1: { name: string; title: string; email: string; whatsapp: string };
   pic2?: { name: string; title: string; email: string; whatsapp: string };
   positions: { position: string; customPosition: string; count: number }[];
-  booths: { boothId: string; label: string; type: "main" | "standard"; price: number }[];
+  booths: { boothId: string; label: string; type: "main" | "standard" | "extra"; price: number }[];
   needsBoothDesign: boolean;
   specialRequest: string;
   totalAmount: number;
   paymentDeadline: string; // H-7 before event
+  lunasStamp?: boolean;   // show LUNAS watermark
+  lunasDate?: string;     // date of payment approval
 }
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -23,7 +25,7 @@ export function generateInvoiceHTML(data: BookingData): string {
   const boothRows = data.booths.map((b, i) => `
     <tr>
       <td>${i + 1}</td>
-      <td>${b.type === "main" ? "Main Booth (5×5m)" : "Standard Booth (3×3m)"} — ${b.label}</td>
+      <td>${b.type === "main" ? "Main Booth (5×5m)" : b.type === "extra" ? "Extra Booth" : "Standard Booth (3×3m)"} — ${b.label}</td>
       <td style="text-align:center">1</td>
       <td style="text-align:right">${fmt(b.price)}</td>
       <td style="text-align:right">${fmt(b.price)}</td>
@@ -205,6 +207,16 @@ ${data.specialRequest ? `
   Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 10–11 Juni 2026
 </div>
 
+${data.lunasStamp ? `
+<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);pointer-events:none;z-index:100;text-align:center;opacity:0.18">
+  <div style="font-size:120px;font-weight:900;color:#dc2626;border:12px solid #dc2626;border-radius:16px;padding:8px 32px;line-height:1;letter-spacing:8px;font-family:Arial,sans-serif;">LUNAS</div>
+  ${data.lunasDate ? `<div style="font-size:18px;color:#dc2626;font-weight:700;margin-top:8px;letter-spacing:2px;">${data.lunasDate}</div>` : ""}
+</div>
+<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);pointer-events:none;z-index:100;text-align:center;">
+  <div style="font-size:120px;font-weight:900;color:transparent;border:12px solid #dc2626;border-radius:16px;padding:8px 32px;line-height:1;letter-spacing:8px;font-family:Arial,sans-serif;-webkit-text-stroke:4px #dc2626;">LUNAS</div>
+  ${data.lunasDate ? `<div style="font-size:18px;color:#dc2626;font-weight:700;margin-top:8px;letter-spacing:2px;">${data.lunasDate}</div>` : ""}
+</div>
+` : ""}
 </body></html>`;
 }
 

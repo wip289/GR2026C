@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import BoothMapPicker, { ALL_BOOTHS } from "@/components/BoothMapPicker";
 import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, type BookingData } from "@/lib/invoiceGenerator";
 import { trpc } from "@/lib/trpc";
+import { uploadToSupabase } from "@/lib/supabase";
 
 // ── Constants ─────────────────────────────────────────────────
 const INDUSTRIES = [
@@ -95,6 +96,10 @@ export default function EmployerRegister() {
   const [selectedBooths, setSelectedBooths] = useState<string[]>([]);
   const [needsDesign, setNeedsDesign]       = useState(false);
   const [specialRequest, setSpecialRequest] = useState("");
+  const [logoUrl, setLogoUrl]               = useState("");
+  const [logoUploading, setLogoUploading]   = useState(false);
+  const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
+  const [vacanciesUploading, setVacanciesUploading] = useState(false);
 
   // UI state
   const [emailErr, setEmailErr]     = useState("");
@@ -172,7 +177,7 @@ export default function EmployerRegister() {
         pic1,
         pic2: showPic2 && pic2.name ? pic2 : undefined,
         positions,
-        booths: selectedBoothDefs.map(b => ({ boothId: b.id, label: b.label, type: b.type as "main" | "standard", price: b.price })),
+        booths: selectedBoothDefs.map(b => ({ boothId: b.id, label: b.label, type: b.type as "main" | "standard" | "extra", price: b.price })),
         needsBoothDesign: needsDesign,
         specialRequest,
         totalAmount,
@@ -226,6 +231,8 @@ export default function EmployerRegister() {
       positions,
       needsBoothDesign: needsDesign,
       specialRequest: specialRequest || undefined,
+      logoUrl: logoUrl || undefined,
+      jobVacanciesUrl: jobVacanciesUrls.length > 0 ? jobVacanciesUrls : undefined,
     });
   };
 
@@ -319,6 +326,12 @@ export default function EmployerRegister() {
           <p style={{ color: "#475569", fontSize: "0.85rem" }}>
             Grand Recruitment 2026 · June 10–11 · Gedung Dome NHI Bandung
           </p>
+          <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "#64748b" }}>
+            Sudah terdaftar?{" "}
+            <button onClick={() => navigate("/employer/login")} style={{ background: "none", border: "none", color: "#14b8a6", cursor: "pointer", fontWeight: 700, textDecoration: "underline", fontSize: "0.82rem" }}>
+              Login →
+            </button>
+          </p>
         </div>
 
         {/* Step indicator */}
@@ -370,6 +383,29 @@ export default function EmployerRegister() {
             <div style={{ marginTop: "1.1rem" }}>
               <label style={css.label}>Website <span style={{ fontSize: "0.7rem", color: "#334155", fontWeight: 400 }}>(opsional)</span></label>
               <input style={css.input} value={company.website} onChange={e => setCompany({ ...company, website: e.target.value })} placeholder="https://www.perusahaan.com" />
+            </div>
+            <div style={{ marginTop: "1.1rem" }}>
+              <label style={css.label}>Logo Perusahaan <span style={{ fontSize: "0.7rem", color: "#334155", fontWeight: 400 }}>(opsional)</span></label>
+              {logoUrl ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                  <img src={logoUrl} alt="Logo" style={{ height: 48, borderRadius: 6, border: "1px solid rgba(20,184,166,0.3)", objectFit: "contain", background: "#fff", padding: "0.2rem" }} />
+                  <span style={{ fontSize: "0.78rem", color: "#14b8a6" }}>✅ Logo terupload</span>
+                  <button onClick={() => setLogoUrl("")} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.8rem" }}>Hapus</button>
+                </div>
+              ) : null}
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(20,184,166,0.08)", border: "1px dashed rgba(20,184,166,0.4)", borderRadius: 8, padding: "0.6rem 1rem", cursor: logoUploading ? "not-allowed" : "pointer", fontSize: "0.82rem", color: "#14b8a6" }}>
+                {logoUploading ? "⏳ Uploading..." : "📎 Upload Logo"}
+                <input type="file" accept="image/*,.pdf" style={{ display: "none" }} disabled={logoUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setLogoUploading(true);
+                    try {
+                      const url = await uploadToSupabase(file, "employer", `logo/${Date.now()}-${file.name}`);
+                      setLogoUrl(url); toast.success("Logo berhasil diupload!");
+                    } catch (err: any) { toast.error("Upload gagal: " + err.message); }
+                    setLogoUploading(false);
+                  }} />
+              </label>
             </div>
           </div>
         )}
@@ -443,6 +479,41 @@ export default function EmployerRegister() {
               </div>
             ))}
             <button style={css.btnOut} onClick={addPos}>+ Tambah Posisi Lain</button>
+
+            {/* Job Vacancies Upload */}
+            <div style={{ marginTop: "1.75rem", padding: "1.25rem", background: "rgba(212,160,23,0.04)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 12 }}>
+              <div style={{ fontSize: "0.88rem", fontWeight: 700, color: "#D4A017", marginBottom: "0.75rem" }}>📄 Upload Job Vacancies <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 400 }}>(opsional – PDF, Word, Excel, JPG)</span></div>
+              {jobVacanciesUrls.length > 0 && (
+                <div style={{ marginBottom: "0.75rem" }}>
+                  {jobVacanciesUrls.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "0.4rem 0.75rem", marginBottom: "0.4rem", fontSize: "0.8rem" }}>
+                      <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "#D4A017", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80%" }}>{f.name}</a>
+                      <button onClick={() => setJobVacanciesUrls(prev => prev.filter((_, j) => j !== i))} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem", flexShrink: 0 }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(212,160,23,0.08)", border: "1px dashed rgba(212,160,23,0.4)", borderRadius: 8, padding: "0.6rem 1rem", cursor: vacanciesUploading ? "not-allowed" : "pointer", fontSize: "0.82rem", color: "#D4A017" }}>
+                {vacanciesUploading ? "⏳ Uploading..." : "📤 Upload File"}
+                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.doc,.docx,.xlsx" style={{ display: "none" }} disabled={vacanciesUploading}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length) return;
+                    setVacanciesUploading(true);
+                    try {
+                      const results: { url: string; name: string }[] = [];
+                      for (const file of files) {
+                        const url = await uploadToSupabase(file, "employer", `vacancies/${Date.now()}-${file.name}`);
+                        results.push({ url, name: file.name });
+                      }
+                      setJobVacanciesUrls(prev => [...prev, ...results]);
+                      toast.success(`${results.length} file berhasil diupload!`);
+                    } catch (err: any) { toast.error("Upload gagal: " + err.message); }
+                    setVacanciesUploading(false);
+                    e.target.value = "";
+                  }} />
+              </label>
+            </div>
           </div>
         )}
 
@@ -487,7 +558,7 @@ export default function EmployerRegister() {
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0", borderBottom: i < selectedBoothDefs.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
                     <div>
                       <span style={{ fontWeight: 700, color: "#f1f5f9" }}>Booth {b.label}</span>
-                      <span style={{ fontSize: "0.78rem", color: "#64748b", marginLeft: "0.5rem" }}>{b.type === "main" ? "Main 5×5m" : "Standard 3×3m"}</span>
+                      <span style={{ fontSize: "0.78rem", color: "#64748b", marginLeft: "0.5rem" }}>{b.type === "main" ? "Main 5×5m" : b.type === "extra" ? "Extra Booth" : "Standard 3×3m"}</span>
                     </div>
                     <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price)}</span>
                   </div>

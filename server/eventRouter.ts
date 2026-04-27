@@ -22,6 +22,9 @@ import {
   getEmployerBookingByIdAndEmail,
   getAllEmployerBookings,
   updateEmployerBookingStatus,
+  updateEmployerBuktiPayment,
+  approveEmployerPembayaran,
+  updateEmployerJobVacancies,
   createJobseeker,
   getJobseekerByIdAndEmail,
   getAllJobseekers,
@@ -116,6 +119,8 @@ export const eventRouter = router({
       positions: z.array(z.any()).optional(),
       needsBoothDesign: z.boolean().optional(),
       specialRequest: z.string().optional(),
+      logoUrl: z.string().optional(),
+      jobVacanciesUrl: z.array(z.object({ url: z.string(), name: z.string() })).optional(),
     }))
     .mutation(async ({ input }) => {
       try {
@@ -170,6 +175,8 @@ export const eventRouter = router({
           positions: input.positions || null,
           needsBoothDesign: input.needsBoothDesign || false,
           specialRequest: input.specialRequest || null,
+          logoUrl: input.logoUrl || null,
+          jobVacanciesUrl: input.jobVacanciesUrl || null,
           status: "pending",
           paymentDeadline: new Date("2026-06-01"),
         });
@@ -198,6 +205,21 @@ export const eventRouter = router({
         status: booking.status,
         needsBoothDesign: booking.needsBoothDesign,
         specialRequest: booking.specialRequest,
+        positions: booking.positions,
+        pic1Email: booking.pic1Email,
+        pic1Title: booking.pic1Title,
+        pic2Name: booking.pic2Name,
+        pic2Title: booking.pic2Title,
+        pic2Email: booking.pic2Email,
+        pic2Whatsapp: booking.pic2Whatsapp,
+        website: booking.website,
+        industry: booking.industry,
+        city: booking.city,
+        createdAt: booking.createdAt,
+        logoUrl: (booking as any).logoUrl,
+        buktiPaymentUrl: (booking as any).buktiPaymentUrl,
+        kwitansiApproved: (booking as any).kwitansiApproved,
+        jobVacanciesUrl: (booking as any).jobVacanciesUrl,
       };
     }),
 
@@ -213,6 +235,27 @@ export const eventRouter = router({
     }))
     .mutation(async ({ input }) => {
       await updateEmployerBookingStatus(input.bookingId, input.status);
+      return { success: true };
+    }),
+
+  updateBuktiPayment: publicProcedure
+    .input(z.object({ bookingId: z.string(), url: z.string() }))
+    .mutation(async ({ input }) => {
+      await updateEmployerBuktiPayment(input.bookingId, input.url);
+      return { success: true };
+    }),
+
+  approvePembayaran: publicProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .mutation(async ({ input }) => {
+      await approveEmployerPembayaran(input.bookingId);
+      return { success: true };
+    }),
+
+  updateJobVacancies: publicProcedure
+    .input(z.object({ bookingId: z.string(), urls: z.array(z.object({ url: z.string(), name: z.string() })) }))
+    .mutation(async ({ input }) => {
+      await updateEmployerJobVacancies(input.bookingId, input.urls);
       return { success: true };
     }),
 

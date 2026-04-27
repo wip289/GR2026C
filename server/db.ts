@@ -290,6 +290,38 @@ export async function updateEmployerBookingStatus(bookingId: string, status: "pe
     .where(eq(employerBookings.bookingId, bookingId));
 }
 
+export async function updateEmployerBuktiPayment(bookingId: string, url: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(employerBookings)
+    .set({ buktiPaymentUrl: url, updatedAt: new Date() } as any)
+    .where(eq(employerBookings.bookingId, bookingId));
+}
+
+export async function approveEmployerPembayaran(bookingId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(employerBookings)
+    .set({ status: "confirmed", kwitansiApproved: true, confirmedAt: new Date(), updatedAt: new Date() } as any)
+    .where(eq(employerBookings.bookingId, bookingId));
+}
+
+export async function updateEmployerJobVacancies(bookingId: string, urls: any[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(employerBookings)
+    .set({ jobVacanciesUrl: urls, updatedAt: new Date() } as any)
+    .where(eq(employerBookings.bookingId, bookingId));
+}
+
+export async function updateEmployerLogo(bookingId: string, url: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.update(employerBookings)
+    .set({ logoUrl: url, updatedAt: new Date() } as any)
+    .where(eq(employerBookings.bookingId, bookingId));
+}
+
 // ── Jobseeker queries ─────────────────────────────────────
 export async function createJobseeker(data: typeof jobseekers.$inferInsert) {
   const db = await getDb();

@@ -6,7 +6,7 @@ export interface BoothDef {
   id: string; label: string;
   x: number; y: number; w: number; h: number;
   status: BoothStatus;
-  type: "main" | "standard" | "interview" | "area";
+  type: "main" | "standard" | "extra" | "interview" | "area";
   price: number;
 }
 
@@ -128,13 +128,13 @@ export const ALL_BOOTHS: BoothDef[] = [
   { id:"M3",  label:"M3",  x:mC, y:mr3, w:MW, h:MH, status:"available", type:"main", price:10000000 },
   { id:"M4",  label:"M4",  x:mD, y:mr3, w:MW, h:MH, status:"available", type:"main", price:10000000 },
 
-  // ── P BOOTHS — vertikal memanjang (dari CorelDraw) ────────
-  // Kiri: P2 atas (y=661, h=90), P1 bawah (y=753, h=99)
-  { id:"P2", label:"P2", x:pLx, y:661, w:PW, h:90,  status:"interview", type:"interview", price:0 },
-  { id:"P1", label:"P1", x:pLx, y:753, w:PW, h:138, status:"interview", type:"interview", price:0 },
-  // Kanan: P4 atas (y=661, h=82), P3 bawah (y=747, h=105)
-  { id:"P4", label:"P4", x:pRx, y:661, w:PW, h:90,  status:"interview", type:"interview", price:0 },
-  { id:"P3", label:"P3", x:pRx, y:753, w:PW, h:138, status:"interview", type:"interview", price:0 },
+  // ── E BOOTHS — Extra booth (vertikal memanjang, dari CorelDraw) ───
+  // Kiri: E2 atas (y=661, h=90), E1 bawah (y=753, h=138)
+  { id:"E2", label:"E2", x:pLx, y:661, w:PW, h:90,  status:"available", type:"extra", price:8500000 },
+  { id:"E1", label:"E1", x:pLx, y:753, w:PW, h:138, status:"available", type:"extra", price:8500000 },
+  // Kanan: E4 atas (y=661, h=90), E3 bawah (y=753, h=138)
+  { id:"E4", label:"E4", x:pRx, y:661, w:PW, h:90,  status:"available", type:"extra", price:8500000 },
+  { id:"E3", label:"E3", x:pRx, y:753, w:PW, h:138, status:"available", type:"extra", price:8500000 },
 ];
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -150,7 +150,7 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const handleClick = (booth: BoothDef) => {
-    if (booth.type === "area" || booth.type === "interview") return;
+    if (booth.type === "area") return;
     if (booth.status !== "available" && !selectedIds.includes(booth.id)) return;
     if (selectedIds.includes(booth.id)) {
       onChange(selectedIds.filter(id => id !== booth.id));
@@ -206,7 +206,7 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
           {booths.map(booth => {
             const isSel  = selectedIds.includes(booth.id);
             const isHov  = hoveredId === booth.id;
-            const click  = booth.type !== "area" && booth.type !== "interview"
+            const click  = booth.type !== "area"
                         && (booth.status === "available" || isSel);
 
             let fill   = COLORS[booth.status].fill;

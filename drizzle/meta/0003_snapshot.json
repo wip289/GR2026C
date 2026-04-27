@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "3b439ac5-058e-4a2a-9d0f-9efc87a08d88",
-  "prevId": "9c656796-8f22-4a60-a007-0fcfc2263e35",
+  "id": "c2109b4a-e36e-434c-9985-3b86d1a2edc2",
+  "prevId": "3b439ac5-058e-4a2a-9d0f-9efc87a08d88",
   "tables": {
     "boothLayouts": {
       "name": "boothLayouts",
@@ -354,6 +354,35 @@
         "notes": {
           "name": "notes",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "logoUrl": {
+          "name": "logoUrl",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "buktiPaymentUrl": {
+          "name": "buktiPaymentUrl",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "kwitansiApproved": {
+          "name": "kwitansiApproved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": false
+        },
+        "jobVacanciesUrl": {
+          "name": "jobVacanciesUrl",
+          "type": "json",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

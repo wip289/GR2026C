@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { openInvoiceForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
+import { uploadToSupabase } from "@/lib/supabase";
 
 const DAYS = ["Senin, 8 Juni 2026", "Selasa, 9 Juni 2026"];
 const SLOTS = ["09.00 – 10.00", "10.00 – 11.00", "11.00 – 12.00", "13.00 – 14.00", "14.00 – 15.00", "15.00 – 16.00"];
@@ -29,7 +30,7 @@ const s = {
   tab:     (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#14b8a6" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s" }) as React.CSSProperties,
 };
 
-type TabId = "status" | "booth" | "interview" | "idcard";
+type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen";
 
 export default function EmployerDashboard() {
   const [, navigate] = useLocation();
@@ -47,6 +48,12 @@ export default function EmployerDashboard() {
   const [staffForm, setStaffForm] = useState<StaffMember>({ nama: "", posisi: "" });
   const [staffSaved, setStaffSaved] = useState(false);
 
+  // ── Bukti bayar upload state ─────────────────────────────────
+  const [buktiUploading, setBuktiUploading] = useState(false);
+
+  // ── Job vacancies upload state ───────────────────────────────
+  const [vacUploading, setVacUploading] = useState(false);
+
   useEffect(() => {
     const session = localStorage.getItem("employer_session");
     if (!session) { navigate("/employer/login"); return; }
@@ -63,6 +70,16 @@ export default function EmployerDashboard() {
   // Fetch event config untuk WA number & payment deadline
   const configQuery = trpc.event.getEventConfig.useQuery();
   const eventConfig = configQuery.data || {};
+
+  const updateBuktiMutation = trpc.event.updateBuktiPayment.useMutation({
+    onSuccess: () => { toast.success("Bukti bayar berhasil diupload!"); loginQuery.refetch(); },
+    onError:   (e) => toast.error("Gagal simpan: " + e.message),
+  });
+
+  const updateVacanciesMutation = trpc.event.updateJobVacancies.useMutation({
+    onSuccess: () => { toast.success("Job vacancies berhasil disimpan!"); loginQuery.refetch(); },
+    onError:   (e) => toast.error("Gagal simpan: " + e.message),
+  });
   const waNumber  = ((eventConfig as any).whatsappNumber || "628120000000").replace(/[^0-9]/g, "");
   const deadlineDate = (eventConfig as any).paymentDeadlineDate || "";
 
@@ -138,10 +155,11 @@ export default function EmployerDashboard() {
 
   // Max interview slots based on booth types
   const booths = Array.isArray(booking.booths) ? booking.booths : [];
-  const mainCount = booths.filter((b: any) => b.type === "main").length;
-  const stdCount  = booths.filter((b: any) => b.type === "standard").length;
-  const maxSlots  = (mainCount * 2) + (stdCount * 1);
-  const maxStaff  = (mainCount * 4) + (stdCount * 2);
+  const mainCount  = booths.filter((b: any) => b.type === "main").length;
+  const stdCount   = booths.filter((b: any) => b.type === "standard").length;
+  const extraCount = booths.filter((b: any) => b.type === "extra").length;
+  const maxSlots   = (mainCount * 2) + (stdCount * 1) + (extraCount * 1);
+  const maxStaff   = (mainCount * 4) + (stdCount * 2) + (extraCount * 2);
   const totalAmount = parseFloat((booking as any).totalAmount || "0");
 
   const handleBookSlot = (key: string) => {
@@ -217,6 +235,7 @@ export default function EmployerDashboard() {
             { id: "booth" as TabId, label: "🗺️ Posisi Booth" },
             { id: "interview" as TabId, label: "📅 Interview Booth" },
             { id: "idcard" as TabId, label: "🪪 ID Card Staff" },
+            { id: "rekrutmen" as TabId, label: "📄 Rekrutmen" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -233,15 +252,26 @@ export default function EmployerDashboard() {
               {booths.map((b: any, i: number) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem" }}>
                   <span style={{ color: "#cbd5e1" }}>
-                    Booth <strong style={{ color: "#14b8a6" }}>{b.label}</strong> · {(b.type === "main") ? "Main Booth 5×5m" : "Standard Booth 3×3m"}
+                    Booth <strong style={{ color: "#14b8a6" }}>{b.label}</strong> · {b.type === "main" ? "Main Booth 5×5m" : b.type === "extra" ? "Extra Booth" : "Standard Booth 3×3m"}
                   </span>
                   <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price || 0)}</span>
                 </div>
               ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem", borderBottom: "1px solid rgba(20,184,166,0.1)" }}>
                 <span>Total</span>
                 <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
               </div>
+              {(booking as any).needsBoothDesign && (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
+                  <span>📐</span><span>Layanan desain & dekorasi booth: <strong style={{ color: "#D4A017" }}>Requested</strong></span>
+                </div>
+              )}
+              {(booking as any).specialRequest && (
+                <div style={{ padding: "0.6rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
+                  <span>📝 Special Request: </span>
+                  <span style={{ color: "#f1f5f9" }}>{(booking as any).specialRequest}</span>
+                </div>
+              )}
             </div>
 
             {/* Payment instruction if pending */}
@@ -262,10 +292,37 @@ export default function EmployerDashboard() {
                   </div>
                 ))}
 
+                {/* Upload Bukti Bayar */}
+                <div style={{ marginTop: "1.25rem", padding: "1rem", background: "rgba(129,140,248,0.06)", border: "1px solid rgba(129,140,248,0.25)", borderRadius: 12 }}>
+                  <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "#818cf8", marginBottom: "0.5rem" }}>📤 Upload Bukti Bayar</div>
+                  {(booking as any).buktiPaymentUrl ? (
+                    <div style={{ fontSize: "0.82rem", color: "#6ee7b7", marginBottom: "0.75rem" }}>
+                      ✅ Bukti sudah diupload.{" "}
+                      <a href={(booking as any).buktiPaymentUrl} target="_blank" rel="noreferrer" style={{ color: "#818cf8" }}>Lihat file →</a>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: "0.82rem", color: "#94a3b8", marginBottom: "0.75rem" }}>Upload bukti transfer langsung ke sistem. Panitia akan memverifikasi dan mengonfirmasi pembayaran Anda.</div>
+                  )}
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(129,140,248,0.12)", border: "1px dashed rgba(129,140,248,0.4)", borderRadius: 8, padding: "0.6rem 1.25rem", cursor: buktiUploading ? "not-allowed" : "pointer", fontSize: "0.88rem", color: "#818cf8", fontWeight: 600 }}>
+                    {buktiUploading ? "⏳ Uploading..." : (booking as any).buktiPaymentUrl ? "🔄 Ganti File" : "📎 Pilih File"}
+                    <input type="file" style={{ display: "none" }} disabled={buktiUploading}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setBuktiUploading(true);
+                        try {
+                          const url = await uploadToSupabase(file, "employer", `${sessionData?.bookingId}/bukti-bayar/${Date.now()}-${file.name}`);
+                          updateBuktiMutation.mutate({ bookingId: sessionData?.bookingId || "", url });
+                        } catch (err: any) { toast.error("Upload gagal: " + err.message); }
+                        setBuktiUploading(false);
+                        e.target.value = "";
+                      }} />
+                  </label>
+                </div>
+
                 {/* Tombol WA kirim bukti */}
-                <div style={{ marginTop: "1.25rem", padding: "1rem", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.25)", borderRadius: 12 }}>
+                <div style={{ marginTop: "1rem", padding: "1rem", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.25)", borderRadius: 12 }}>
                   <div style={{ fontSize: "0.82rem", color: "#94a3b8", marginBottom: "0.75rem", lineHeight: 1.6 }}>
-                    Setelah transfer, kirim bukti pembayaran ke panitia. Klik tombol di bawah — WhatsApp akan terbuka otomatis dengan pesan yang sudah terisi.
+                    Atau kirim bukti pembayaran via WhatsApp. Klik tombol di bawah — pesan akan terisi otomatis.
                   </div>
                   <button
                     onClick={() => openWhatsApp(bookingId, (booking as any).companyName, totalAmount)}
@@ -299,7 +356,7 @@ export default function EmployerDashboard() {
             )}
 
             {/* Download Invoice */}
-            <div style={{ background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+            <div style={{ background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
               <div>
                 <div style={{ fontWeight: 700, color: "#D4A017", marginBottom: "0.25rem" }}>📄 Invoice Booking</div>
                 <div style={{ fontSize: "0.82rem", color: "#64748b" }}>Download ulang invoice untuk keperluan administrasi atau pembayaran</div>
@@ -310,12 +367,26 @@ export default function EmployerDashboard() {
               </button>
             </div>
 
+            {/* Download Kwitansi LUNAS — hanya jika sudah di-approve */}
+            {(booking as any).kwitansiApproved && (
+              <div style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: "#10b981", marginBottom: "0.25rem" }}>✅ Kwitansi Pembayaran LUNAS</div>
+                  <div style={{ fontSize: "0.82rem", color: "#64748b" }}>Pembayaran Anda telah dikonfirmasi. Download kwitansi resmi dengan cap LUNAS.</div>
+                </div>
+                <button onClick={handleDownloadInvoice}
+                  style={{ background: "linear-gradient(135deg,#059669,#10b981)", border: "none", color: "#fff", borderRadius: 10, padding: "0.65rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as const }}>
+                  🏅 Download Kwitansi
+                </button>
+              </div>
+            )}
+
             {/* Contact & Info */}
             <div style={s.card}>
               <div style={s.secHd}>📞 Kontak Panitia</div>
               <div style={{ fontSize: "0.85rem", color: "#64748b", lineHeight: 1.8 }}>
-                <div>WhatsApp: <strong style={{ color: "#f1f5f9" }}>0812-xxxx-xxxx</strong></div>
-                <div>Email: <strong style={{ color: "#f1f5f9" }}>grandrecruitment@nhi.ac.id</strong></div>
+                <div>WhatsApp: <strong style={{ color: "#f1f5f9" }}>{(eventConfig as any).whatsappDisplay || (eventConfig as any).whatsappNumber || "0812-xxxx-xxxx"}</strong></div>
+                <div>Email: <strong style={{ color: "#f1f5f9" }}>{(eventConfig as any).contactEmail || "grandrecruitment@nhi.ac.id"}</strong></div>
                 <div style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "#475569" }}>
                   Jam operasional: Senin–Jumat 08.00–17.00 WIB
                 </div>
@@ -339,7 +410,7 @@ export default function EmployerDashboard() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                         <div>
                           <div style={{ fontWeight: 800, fontSize: "1.5rem", color: "#14b8a6" }}>Booth {b.label}</div>
-                          <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{b.type === "main" ? "Main Booth · 5×5 meter" : "Standard Booth · 3×3 meter"}</div>
+                          <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{b.type === "main" ? "Main Booth · 5×5 meter" : b.type === "extra" ? "Extra Booth" : "Standard Booth · 3×3 meter"}</div>
                         </div>
                         <div style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: 8, padding: "0.4rem 1rem", fontSize: "0.82rem", color: "#14b8a6", fontWeight: 700 }}>
                           ✅ Confirmed
@@ -372,7 +443,7 @@ export default function EmployerDashboard() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
                         <div>
                           <div style={{ fontWeight: 800, fontSize: "1.5rem", color: "#f97316" }}>Booth {b.label}</div>
-                          <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{b.type === "main" ? "Main Booth · 5×5 meter" : "Standard Booth · 3×3 meter"}</div>
+                          <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{b.type === "main" ? "Main Booth · 5×5 meter" : b.type === "extra" ? "Extra Booth" : "Standard Booth · 3×3 meter"}</div>
                         </div>
                         <div style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.3)", borderRadius: 8, padding: "0.4rem 1rem", fontSize: "0.82rem", color: "#f97316", fontWeight: 700 }}>
                           ⏳ Belum Dikunci
@@ -670,6 +741,54 @@ export default function EmployerDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── TAB: REKRUTMEN ── */}
+        {activeTab === "rekrutmen" && (
+          <div>
+            <div style={s.card}>
+              <div style={s.secHd}>📄 Job Vacancies</div>
+              <p style={{ color: "#64748b", fontSize: "0.85rem", marginBottom: "1.25rem", lineHeight: 1.7 }}>
+                Upload daftar lowongan kerja yang akan dibuka di GR2026. File akan ditampilkan kepada jobseeker yang berminat.
+              </p>
+
+              {/* Existing files */}
+              {Array.isArray((booking as any).jobVacanciesUrl) && (booking as any).jobVacanciesUrl.length > 0 && (
+                <div style={{ marginBottom: "1.25rem" }}>
+                  <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>File Terupload</div>
+                  {((booking as any).jobVacanciesUrl as { url: string; name: string }[]).map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(212,160,23,0.04)", border: "1px solid rgba(212,160,23,0.15)", borderRadius: 8, padding: "0.5rem 0.9rem", marginBottom: "0.4rem" }}>
+                      <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "#D4A017", fontSize: "0.85rem", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</a>
+                      <span style={{ fontSize: "0.75rem", color: "#14b8a6", flexShrink: 0, marginLeft: "0.5rem" }}>✅</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload new files */}
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(212,160,23,0.08)", border: "1px dashed rgba(212,160,23,0.4)", borderRadius: 8, padding: "0.7rem 1.25rem", cursor: vacUploading ? "not-allowed" : "pointer", fontSize: "0.88rem", color: "#D4A017", fontWeight: 600 }}>
+                {vacUploading ? "⏳ Uploading..." : "📤 Upload Job Vacancies"}
+                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.doc,.docx,.xlsx" style={{ display: "none" }} disabled={vacUploading}
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length) return;
+                    setVacUploading(true);
+                    try {
+                      const existing: { url: string; name: string }[] = Array.isArray((booking as any).jobVacanciesUrl) ? (booking as any).jobVacanciesUrl : [];
+                      const results: { url: string; name: string }[] = [];
+                      for (const file of files) {
+                        const url = await uploadToSupabase(file, "employer", `${sessionData?.bookingId}/vacancies/${Date.now()}-${file.name}`);
+                        results.push({ url, name: file.name });
+                      }
+                      updateVacanciesMutation.mutate({ bookingId: sessionData?.bookingId || "", urls: [...existing, ...results] });
+                    } catch (err: any) { toast.error("Upload gagal: " + err.message); }
+                    setVacUploading(false);
+                    e.target.value = "";
+                  }} />
+              </label>
+              <div style={{ marginTop: "0.6rem", fontSize: "0.75rem", color: "#475569" }}>Format: PDF, JPG, DOC, DOCX, XLSX · Multiple files diizinkan</div>
+            </div>
           </div>
         )}
       </div>

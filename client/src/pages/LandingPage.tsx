@@ -113,6 +113,7 @@ export default function LandingPage() {
   const [scrollY, setScrollY] = useState(0);
   const [activeOrb, setActiveOrb] = useState<number | null>(null);
   const [hoveredOrb, setHoveredOrb] = useState<number | null>(null);
+  const [showLoginMenu, setShowLoginMenu] = useState(false);
   const journeyRef = useRef<HTMLDivElement>(null);
   const bondRef = useRef<HTMLDivElement>(null);
   const joinRef = useRef<HTMLDivElement>(null);
@@ -200,6 +201,30 @@ export default function LandingPage() {
                 </button>
               ))}
             </nav>
+            {/* Login dropdown */}
+            <div style={{ position: "relative" }}>
+              <button onClick={() => setShowLoginMenu(v => !v)}
+                style={{ background: "rgba(20,184,166,0.1)", border: "1px solid rgba(20,184,166,0.3)", color: "#14b8a6", borderRadius: 99, padding: "0.35rem 0.85rem", fontSize: "0.8rem", cursor: "pointer", fontWeight: 600 }}>
+                Masuk ▾
+              </button>
+              {showLoginMenu && (
+                <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: "rgba(10,22,40,0.98)", border: "1px solid rgba(20,184,166,0.25)", borderRadius: 10, padding: "0.4rem", minWidth: 170, zIndex: 200, backdropFilter: "blur(12px)" }}>
+                  {[
+                    { label: "🏢 Employer",    href: "/employer/login",  color: "#14b8a6" },
+                    { label: "🎓 Jobseeker",   href: "/jobseeker/login", color: "#D4A017" },
+                    { label: "🌟 Sponsorship", href: "/sponsor/login",   color: "#818cf8" },
+                  ].map(item => (
+                    <a key={item.label} href={item.href}
+                      onClick={() => setShowLoginMenu(false)}
+                      style={{ display: "block", padding: "0.55rem 0.9rem", borderRadius: 7, color: item.color, fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", transition: "background 0.15s" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = `${item.color}15`)}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
             {/* Lang toggle */}
             <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 99, padding: "0.2rem" }}>
               {(["id","en"] as Lang[]).map(l => (
