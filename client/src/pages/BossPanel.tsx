@@ -31,6 +31,11 @@ export default function BossPanel() {
   const [selectedJobseeker, setSelectedJobseeker] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
 
+  // ── Password gate ─────────────────────────────────────────────
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("panitia_auth") === "1");
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
+
   // ── Real data from DB ──
   const { data: employerData, refetch: refetchEmployers } = trpc.event.getAllEmployerBookings.useQuery();
   const { data: jobseekerData } = trpc.event.getAllJobseekers.useQuery();
@@ -38,6 +43,34 @@ export default function BossPanel() {
   const updateStatusMutation = trpc.event.updateEmployerBookingStatus.useMutation({
     onSuccess: () => refetchEmployers(),
   });
+
+  // ── Password gate render ──────────────────────────────────────
+  if (!authed) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a1628", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, sans-serif" }}>
+        <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 16, padding: "2.5rem 2rem", width: "100%", maxWidth: 380, textAlign: "center" }}>
+          <img src="/logo-gr2026.png" alt="GR2026" style={{ height: 56, marginBottom: "1.25rem", objectFit: "contain" }} />
+          <div style={{ color: "#D4A017", fontWeight: 700, fontSize: "1.1rem", marginBottom: "0.25rem" }}>Grand Recruitment 2026</div>
+          <div style={{ color: "#94a3b8", fontSize: "0.82rem", marginBottom: "1.75rem" }}>Portal Panitia — akses terbatas</div>
+          <input
+            type="password"
+            placeholder="Password panitia"
+            value={pwInput}
+            onChange={e => { setPwInput(e.target.value); setPwError(false); }}
+            onKeyDown={e => { if (e.key === "Enter") { if (pwInput === "GR2026@Panitia") { sessionStorage.setItem("panitia_auth", "1"); setAuthed(true); } else { setPwError(true); } } }}
+            style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: `1px solid ${pwError ? "#f43f5e" : "rgba(255,255,255,0.12)"}`, borderRadius: 8, padding: "0.65rem 0.9rem", fontSize: "0.9rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" as const, marginBottom: "0.5rem" }}
+          />
+          {pwError && <div style={{ color: "#f43f5e", fontSize: "0.8rem", marginBottom: "0.75rem" }}>Password salah. Coba lagi.</div>}
+          <button
+            onClick={() => { if (pwInput === "GR2026@Panitia") { sessionStorage.setItem("panitia_auth", "1"); setAuthed(true); } else { setPwError(true); } }}
+            style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", marginTop: pwError ? 0 : "0.5rem" }}
+          >
+            Masuk
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const employers = employerData || [];
   const jobseekers = jobseekerData || [];
