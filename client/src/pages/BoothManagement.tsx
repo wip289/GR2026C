@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import BoothMapPicker from "@/components/BoothMapPicker";
@@ -36,9 +36,13 @@ export default function BoothManagement() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabId>("denah");
   const [closedBooths, setClosedBooths] = useState<Set<string>>(new Set());
+  const saveClosedMutation = trpc.event.saveClosedBooths.useMutation();
+  const { data: closedRaw } = trpc.event.getClosedBooths.useQuery();
+  useEffect(() => { if (closedRaw) setClosedBooths(new Set(closedRaw)); }, [closedRaw]);
   const toggleClose = (id: string) => setClosedBooths(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
+    saveClosedMutation.mutate({ closedBooths: Array.from(next) });
     return next;
   });
   const [selectedBooth, setSelectedBooth] = useState<string | null>(null);

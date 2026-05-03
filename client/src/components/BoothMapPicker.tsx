@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 
 export type BoothStatus = "available" | "reserved" | "booked" | "staff" | "interview" | "area";
 
@@ -154,6 +155,7 @@ interface BoothMapPickerProps {
 export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, panitiaMode, bookingData, closedBooths, onToggleClose, onSelect }: BoothMapPickerProps) {
   const booths = boothsProp || ALL_BOOTHS;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const { data: closedFromDB } = trpc.event.getClosedBooths.useQuery();
 
   const handleClick = (booth: BoothDef) => {
     if (booth.type === "area") return;
@@ -169,7 +171,10 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
 
   // Panitia mode: resolve status dari DB
   const getBoothStatus = (booth: BoothDef): BoothStatus => {
-    if (!panitiaMode) return booth.status;
+    if (!panitiaMode) {
+      if (closedFromDB?.includes(booth.id)) return "staff";
+      return booth.status;
+    }
     if (closedBooths?.has(booth.id)) return "staff";
     if (bookingData?.[booth.id]) {
       const s = bookingData[booth.id].status;
@@ -228,7 +233,8 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
             const company  = getCompany(booth.id);
             const isSel    = selectedIds.includes(booth.id);
             const isHov    = hoveredId === booth.id;
-            const click    = !panitiaMode && booth.type !== "area"
+            const isClosedForUser = !panitiaMode && closedFromDB?.includes(booth.id);
+            const click    = !panitiaMode && booth.type !== "area" && !isClosedForUser
                           && (booth.status === "available" || isSel);
 
             let fill   = COLORS[resolvedStatus].fill;

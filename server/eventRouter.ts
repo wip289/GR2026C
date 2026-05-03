@@ -830,4 +830,17 @@ export const eventRouter = router({
         .where(eq(jobseekers.registrationId, input.registrationId));
       return { success: true };
     }),
+
+  getClosedBooths: publicProcedure.query(async () => {
+    const cfg = await getEventConfig() as any;
+    return (cfg?.closedBooths || []) as string[];
+  }),
+
+  saveClosedBooths: publicProcedure
+    .input(z.object({ closedBooths: z.array(z.string()) }))
+    .mutation(async ({ input }) => {
+      const cfg = await getEventConfig() as any || {};
+      await setEventConfig({ ...cfg, closedBooths: input.closedBooths });
+      return { success: true };
+    }),
 });
