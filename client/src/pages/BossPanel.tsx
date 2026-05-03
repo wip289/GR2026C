@@ -20,9 +20,9 @@ const s = {
   td:    { padding: "0.85rem 1rem", fontSize: "0.85rem", borderBottom: "1px solid rgba(255,255,255,0.04)", verticalAlign: "middle" as const },
 };
 
-const SLOTS = ["09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"];
-const DAYS  = ["Senin 8 Jun", "Selasa 9 Jun"];
-const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10"];
+const SLOTS = ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"];
+const DAYS  = ["Rabu 10 Jun", "Kamis 11 Jun"];
+const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 const TAKEN_SLOTS: Record<string, string> = {};  // Will be built from real DB data
 
 export default function BossPanel() {
@@ -560,7 +560,7 @@ export default function BossPanel() {
                           <td key={slotIdx} style={{ ...s.td, textAlign: "center" }}>
                             {company ? (
                               <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "0.3rem 0.4rem", fontSize: "0.68rem", color: "#fca5a5", lineHeight: 1.3 }}>
-                                {company.replace("PT ", "").substring(0, 12)}
+                                {company.length > 14 ? company.substring(0, 14) + "…" : company}
                               </div>
                             ) : (
                               <div style={{ color: "#1e3a5f", fontSize: "1rem" }}>·</div>
