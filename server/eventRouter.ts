@@ -322,18 +322,24 @@ export const eventRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        // Ambil eventId aktif dari config jika tidak dikirim dari form
+        let resolvedEventId = input.eventId || null;
+        if (!resolvedEventId) {
+          const cfg = await getEventConfig() as any;
+          resolvedEventId = cfg?.eventId || cfg?.id || null;
+        }
         await createJobseeker({
           registrationId: input.registrationId,
-          eventId: input.eventId || null,
+          eventId: resolvedEventId,
           namaLengkap: input.namaLengkap,
           nik: input.nik || "",
           tempatLahir: input.tempatLahir || null,
           tanggalLahir: input.tanggalLahir ? new Date(input.tanggalLahir) : null,
-          jenisKelamin: input.jenisKelamin || "Tidak Diisi",
+          jenisKelamin: input.jenisKelamin || null,
           whatsapp: input.whatsapp || "",
           email: input.email,
           kota: input.kota || null,
-          status: input.status || "belum_diisi",
+          status: input.statusKerja || input.status || null,
           institusi: input.institusi || null,
           jurusan: input.jurusan || null,
           tahunLulus: input.tahunLulus || null,
