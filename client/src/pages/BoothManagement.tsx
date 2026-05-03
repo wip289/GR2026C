@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import BoothMapPicker from "@/components/BoothMapPicker";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -36,7 +37,10 @@ export default function BoothManagement() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabId>("denah");
   const [closedBooths, setClosedBooths] = useState<Set<string>>(new Set());
-  const saveClosedMutation = trpc.event.saveClosedBooths.useMutation();
+  const saveClosedMutation = trpc.event.saveClosedBooths.useMutation({
+    onSuccess: () => toast.success("Perubahan denah berhasil disimpan!"),
+    onError: () => toast.error("Gagal menyimpan perubahan"),
+  });
   const { data: closedRaw } = trpc.event.getClosedBooths.useQuery();
   useEffect(() => { if (closedRaw) setClosedBooths(new Set(closedRaw)); }, [closedRaw]);
   const toggleClose = (id: string) => setClosedBooths(prev => {
@@ -227,6 +231,14 @@ export default function BoothManagement() {
                   </div>
                 ))}
               </div>
+
+              {/* Simpan Perubahan Denah */}
+              <button
+                onClick={() => saveClosedMutation.mutate({ closedBooths: Array.from(closedBooths) })}
+                disabled={saveClosedMutation.isPending}
+                style={{ width: "100%", background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", borderRadius: 10, padding: "0.75rem", color: "#fff", fontWeight: 700, fontSize: "0.9rem", cursor: saveClosedMutation.isPending ? "not-allowed" : "pointer", opacity: saveClosedMutation.isPending ? 0.7 : 1 }}>
+                {saveClosedMutation.isPending ? "⏳ Menyimpan..." : "💾 Simpan Perubahan Denah"}
+              </button>
 
               {/* Selected booth detail */}
               {selectedBooth ? (
