@@ -9,13 +9,6 @@ const DAYS = ["Rabu, 10 Juni 2026", "Kamis, 11 Juni 2026"];
 const SLOTS = ["08.00 – 09.00", "09.00 – 10.00", "10.00 – 11.00", "11.00 – 12.00", "13.00 – 14.00", "14.00 – 15.00", "15.00 – 16.00"];
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
-// Simulasi slot yang sudah dibooking orang lain
-const TAKEN_SLOTS: Record<string, string> = {
-  "E1-0-0": "PT Garuda Food", "E1-0-1": "PT Santika Hotels",
-  "E2-0-0": "PT Aston Group",  "E3-0-2": "PT Accor Hotels",
-  "E4-1-0": "PT Hyatt",        "E5-1-1": "PT Marriott",
-  "E6-0-3": "PT MNC Hotels",   "E7-0-4": "PT TAUZIA",
-};
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
@@ -93,6 +86,26 @@ export default function EmployerDashboard() {
     onSuccess: () => { toast.success("Job vacancies berhasil disimpan!"); loginQuery.refetch(); },
     onError:   (e) => toast.error("Gagal simpan: " + e.message),
   });
+
+  const { data: takenRaw, refetch: refetchTaken } = trpc.event.getInterviewBookingsByEmployer.useQuery(
+    { employerBookingId: sessionData?.bookingId || "" },
+    { enabled: !!sessionData?.bookingId }
+  );
+  const takenSlots: Record<string, string> = {};
+  (takenRaw || []).forEach((b: any) => {
+    const key = `${b.boothId}-${b.day}-${b.slotIndex}`;
+    takenSlots[key] = b.companyName || b.employerBookingId;
+  });
+
+  const confirmInterviewMutation = trpc.event.createInterviewBooking.useMutation({
+    onSuccess: () => {
+      toast.success("Booking interview booth berhasil!");
+      setMySlots([]);
+      refetchTaken();
+    },
+    onError: (err) => toast.error("Gagal: " + err.message),
+  });
+
   const waNumber  = ((eventConfig as any).whatsappNumber || "628120000000").replace(/[^0-9]/g, "");
   const deadlineDate = (eventConfig as any).paymentDeadlineDate || "";
 
@@ -185,7 +198,7 @@ export default function EmployerDashboard() {
       toast.error(`Maksimal ${maxSlots} slot interview untuk paket booth Anda`);
       return;
     }
-    if (TAKEN_SLOTS[key]) {
+    if (takenSlots[key]) {
       toast.error("Slot ini sudah dibooking perusahaan lain");
       return;
     }
@@ -584,7 +597,7 @@ export default function EmployerDashboard() {
                             {SLOTS.map((_, slotIdx) => {
                               const key = `${booth}-${selectedDay}-${slotIdx}`;
                               const isMine = mySlots.includes(key);
-                              const isTaken = !!TAKEN_SLOTS[key];
+                              const isTaken = !!takenSlots[key];
                               const bg = isMine ? "#065f46" : isTaken ? "#7f1d1d" : "rgba(20,184,166,0.08)";
                               const border = isMine ? "1px solid #10b981" : isTaken ? "1px solid #ef4444" : "1px solid rgba(20,184,166,0.15)";
                               const label = isMine ? "✓ Saya" : isTaken ? "✗" : "•";
@@ -593,7 +606,7 @@ export default function EmployerDashboard() {
                                 <td key={slotIdx} style={{ padding: "0.4rem", borderBottom: "1px solid rgba(255,255,255,0.04)", textAlign: "center" }}>
                                   <div
                                     onClick={() => !isTaken && handleBookSlot(key)}
-                                    title={isTaken ? TAKEN_SLOTS[key] : isMine ? "Klik untuk batalkan" : "Klik untuk booking"}
+                                    title={isTaken ? takenSlots[key] : isMine ? "Klik untuk batalkan" : "Klik untuk booking"}
                                     style={{ background: bg, border, borderRadius: 6, padding: "0.4rem 0.2rem", fontSize: "0.72rem", color, fontWeight: 700, cursor: isTaken ? "not-allowed" : "pointer", minWidth: 40, transition: "all 0.15s" }}>
                                     {label}
                                   </div>
@@ -638,9 +651,21 @@ export default function EmployerDashboard() {
                       );
                     })}
                     <button
-                      onClick={() => { toast.success("Booking interview booth berhasil dikonfirmasi!", { description: "Detail akan dikirim via WhatsApp H-3 sebelum acara" }); }}
-                      style={{ marginTop: "1rem", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%" }}>
-                      Konfirmasi Booking Interview Booth ✓
+                      onClick={() => {
+                        mySlots.forEach(key => {
+                          const [boothId, dayStr, slotStr] = key.split("-");
+                          confirmInterviewMutation.mutate({
+                            employerBookingId: sessionData?.bookingId || "",
+                            boothId,
+                            day: parseInt(dayStr),
+                            slotIndex: parseInt(slotStr),
+                            companyName: (booking as any)?.companyName || "",
+                          });
+                        });
+                      }}
+                      disabled={confirmInterviewMutation.isPending}
+                      style={{ marginTop: "1rem", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.9rem", fontWeight: 700, cursor: confirmInterviewMutation.isPending ? "not-allowed" : "pointer", width: "100%", opacity: confirmInterviewMutation.isPending ? 0.7 : 1 }}>
+                      {confirmInterviewMutation.isPending ? "⏳ Menyimpan..." : "Konfirmasi Booking Interview Booth ✓"}
                     </button>
                   </div>
                 )}
