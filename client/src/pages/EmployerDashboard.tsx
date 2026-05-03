@@ -34,6 +34,7 @@ export default function EmployerDashboard() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [hasBooked, setHasBooked] = useState(false); // hard lock setelah konfirmasi
+  const [confirmedSlots, setConfirmedSlots] = useState<{boothId:string;day:number;slotIndex:number}[]>([]); // backup display
 
   const [sessionData, setSessionData] = useState<{bookingId: string; email: string} | null>(null);
 
@@ -108,6 +109,15 @@ export default function EmployerDashboard() {
   const incrementRescheduleMutation = trpc.event.incrementRescheduleCount.useMutation();
   const confirmInterviewMutation = trpc.event.createInterviewBooking.useMutation({
     onSuccess: () => {
+      // Simpan slot ke confirmedSlots sebelum clear mySlots
+      const parsed = mySlots.map(key => {
+        const parts = key.split("-");
+        const slotIndex = parseInt(parts[parts.length - 1]);
+        const day = parseInt(parts[parts.length - 2]);
+        const boothId = parts.slice(0, parts.length - 2).join("-");
+        return { boothId, day, slotIndex };
+      });
+      setConfirmedSlots(prev => [...prev, ...parsed]);
       setMySlots([]);
       setIsRescheduling(false);
       setHasBooked(true);
@@ -561,18 +571,26 @@ export default function EmployerDashboard() {
                 <>
                   <div style={s.teal}>
                     <div style={s.secHd}>✅ Slot Interview Terdaftar</div>
-                    {(takenRaw || []).map((b: any) => (
-                      <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem", color: "#cbd5e1" }}>
-                        <span>Booth <strong style={{ color: "#60a5fa" }}>{b.boothId}</strong></span>
-                        <span>{DAYS[b.day]?.split(",")[0]} · {SLOTS[b.slotIndex]}</span>
-                        <span style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 6, padding: "0.15rem 0.6rem", fontSize: "0.75rem", color: "#6ee7b7" }}>✓ Terkonfirmasi</span>
-                      </div>
-                    ))}
+                    {(() => {
+                      // Pakai takenRaw kalau sudah ada, fallback ke confirmedSlots
+                      const displaySlots = (takenRaw && takenRaw.length > 0)
+                        ? (takenRaw as any[]).map(b => ({ boothId: b.boothId, day: b.day, slotIndex: b.slotIndex, id: b.id }))
+                        : confirmedSlots.map((s, i) => ({ ...s, id: i }));
+                      return displaySlots.length === 0
+                        ? <div style={{ color: "#64748b", fontSize: "0.85rem" }}>⏳ Memuat data slot...</div>
+                        : displaySlots.map((b: any) => (
+                          <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem", color: "#cbd5e1" }}>
+                            <span>Booth <strong style={{ color: "#60a5fa" }}>{b.boothId}</strong></span>
+                            <span>{DAYS[b.day]?.split(",")[0]} · {SLOTS[b.slotIndex]}</span>
+                            <span style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 6, padding: "0.15rem 0.6rem", fontSize: "0.75rem", color: "#6ee7b7" }}>✓ Terkonfirmasi</span>
+                          </div>
+                        ));
+                    })()}
                   </div>
                   <div style={{ marginTop: "0.5rem" }}>
                     {canReschedule ? (
                       <button
-                        onClick={() => { setIsRescheduling(true); setMySlots([]); setHasBooked(false); }}
+                        onClick={() => { setIsRescheduling(true); setMySlots([]); setHasBooked(false); setConfirmedSlots([]); }}
                         style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 10, padding: "0.75rem 1.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
                         🔄 Ubah Jadwal (1x)
                       </button>
