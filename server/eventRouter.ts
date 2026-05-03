@@ -833,14 +833,23 @@ export const eventRouter = router({
 
   getClosedBooths: publicProcedure.query(async () => {
     const cfg = await getEventConfig() as any;
-    return (cfg?.closedBooths || []) as string[];
+    const raw = cfg?.closedBooths;
+    if (!raw) return [] as string[];
+    try {
+      return JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw)) as string[];
+    } catch {
+      return [] as string[];
+    }
   }),
 
   saveClosedBooths: publicProcedure
     .input(z.object({ closedBooths: z.array(z.string()) }))
     .mutation(async ({ input }) => {
       const cfg = await getEventConfig() as any || {};
-      await setEventConfig({ ...cfg, closedBooths: input.closedBooths });
+      await setEventConfig({
+        ...cfg,
+        closedBooths: JSON.stringify(input.closedBooths)
+      });
       return { success: true };
     }),
 });
