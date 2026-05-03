@@ -107,8 +107,8 @@ export default function EmployerDashboard() {
   const incrementRescheduleMutation = trpc.event.incrementRescheduleCount.useMutation();
   const confirmInterviewMutation = trpc.event.createInterviewBooking.useMutation({
     onSuccess: () => {
-      toast.success("Booking interview booth berhasil!");
       setMySlots([]);
+      setIsRescheduling(false);
       refetchTaken();
       refetchAllTaken();
     },
@@ -547,12 +547,14 @@ export default function EmployerDashboard() {
         {activeTab === "interview" && (
           <div>
             {booking.status === "confirmed" ? (() => {
-              const hasExisting = (takenRaw || []).length > 0;
+              const hasExistingBooking = (takenRaw || []).some(
+                (b: any) => b.employerBookingId === sessionData?.bookingId
+              );
               const rescheduleCount = (booking as any).rescheduleCount ?? 0;
               const canReschedule = rescheduleCount < 1;
 
               // ── State: sudah booking, tidak sedang reschedule ──
-              if (hasExisting && !isRescheduling) return (
+              if (hasExistingBooking && !isRescheduling) return (
                 <>
                   <div style={s.teal}>
                     <div style={s.secHd}>✅ Slot Interview Terdaftar</div>

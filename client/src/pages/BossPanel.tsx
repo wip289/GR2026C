@@ -571,7 +571,11 @@ export default function BossPanel() {
                                   {company.replace(/^(PT|CV|UD)\s*/i, "").substring(0, 10)}
                                 </span>
                                 <button
-                                  onClick={() => bookingId && cancelSlotMutation.mutate({ id: bookingId })}
+                                  onClick={() => {
+                                    if (!bookingId) return;
+                                    if (!window.confirm(`Batalkan slot ${company}?`)) return;
+                                    cancelSlotMutation.mutate({ id: bookingId });
+                                  }}
                                   title={`Batalkan: ${company}`}
                                   style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem", padding: 0, lineHeight: 1, flexShrink: 0, fontWeight: 700 }}>
                                   ×
