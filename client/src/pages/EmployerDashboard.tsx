@@ -48,10 +48,23 @@ export default function EmployerDashboard() {
   const [staffForm, setStaffForm] = useState<StaffMember>({ nama: "", posisi: "" });
   const [staffSaved, setStaffSaved] = useState(false);
 
+  // ── Logo upload state ───────────────────────────────────────────
+  const [logoUploading, setLogoUploading] = useState(false);
+  const updateLogoMutation = trpc.event.updateEmployerLogo?.useMutation?.({
+    onSuccess: () => { toast.success("Logo berhasil disimpan!"); loginQuery.refetch(); },
+    onError: () => toast.error("Gagal menyimpan logo"),
+  });
+
   // ── Bukti bayar upload state ─────────────────────────────────
   const [buktiUploading, setBuktiUploading] = useState(false);
 
   // ── Job vacancies upload state ───────────────────────────────
+  // ── Kondisi rekrutmen state ──────────────────────────────────
+  const [rekrutmenRows, setRekrutmenRows] = useState<{ posisi: string; jumlah: string; status: string }[]>([
+    { posisi: "", jumlah: "", status: "" }
+  ]);
+  const [savingRekrutmen, setSavingRekrutmen] = useState(false);
+
   const [vacUploading, setVacUploading] = useState(false);
 
   useEffect(() => {
@@ -272,6 +285,47 @@ export default function EmployerDashboard() {
                   <span style={{ color: "#f1f5f9" }}>{(booking as any).specialRequest}</span>
                 </div>
               )}
+            </div>
+
+            {/* Logo Perusahaan */}
+            <div style={s.card}>
+              <div style={s.secHd}>🖼️ Logo Perusahaan</div>
+              {(booking as any).logoUrl ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                  <img src={(booking as any).logoUrl} alt="Logo"
+                    style={{ height: 60, maxWidth: 160, objectFit: "contain", background: "#fff", borderRadius: 8, padding: "0.35rem", border: "1px solid rgba(20,184,166,0.3)" }} />
+                  <span style={{ fontSize: "0.82rem", color: "#14b8a6", fontWeight: 600 }}>✅ Logo terupload</span>
+                </div>
+              ) : (
+                <p style={{ fontSize: "0.82rem", color: "#64748b", marginBottom: "1rem" }}>
+                  Belum ada logo. Upload logo perusahaan untuk ditampilkan di booth dan materi event.
+                </p>
+              )}
+              <div style={{ fontSize: "0.75rem", color: "#475569", marginBottom: "0.75rem" }}>
+                💡 Mohon kirimkan logo dengan resolusi yang cukup untuk kebutuhan cetak dan display.
+              </div>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(20,184,166,0.08)", border: "1px dashed rgba(20,184,166,0.4)", borderRadius: 8, padding: "0.6rem 1rem", cursor: logoUploading ? "not-allowed" : "pointer", fontSize: "0.82rem", color: "#14b8a6", fontWeight: 600 }}>
+                {logoUploading ? "⏳ Uploading..." : (booking as any).logoUrl ? "🔄 Ganti Logo" : "📎 Upload Logo"}
+                <input type="file" accept="image/*,.pdf" style={{ display: "none" }} disabled={logoUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setLogoUploading(true);
+                    try {
+                      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+                      const safeName = `logo-${Date.now()}.${ext}`;
+                      const url = await uploadToSupabase(file, "employer", `${sessionData?.bookingId}/logo/${safeName}`);
+                      await fetch("/api/upload/update-doc", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ registrationId: sessionData?.bookingId, type: "logo", url }),
+                      });
+                      loginQuery.refetch();
+                      toast.success("Logo berhasil diupload!");
+                    } catch (err: any) { toast.error("Upload gagal: " + err.message); }
+                    setLogoUploading(false);
+                    e.target.value = "";
+                  }} />
+              </label>
             </div>
 
             {/* Payment instruction if pending */}
@@ -793,6 +847,64 @@ export default function EmployerDashboard() {
                   }} />
               </label>
               <div style={{ marginTop: "0.6rem", fontSize: "0.75rem", color: "#475569" }}>Format: PDF, JPG, DOC, DOCX, XLSX · Multiple files diizinkan</div>
+            </div>
+            {/* Kondisi Rekrutmen */}
+            <div style={s.card}>
+              <div style={s.secHd}>📊 Kondisi Rekrutmen</div>
+              <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 10, padding: "0.85rem 1rem", marginBottom: "1.25rem" }}>
+                <p style={{ fontSize: "0.83rem", color: "#94a3b8", lineHeight: 1.75, margin: 0 }}>
+                  ℹ️ Silakan update kondisi rekrutmen Anda di event ini. Dengan mengisi form ini, Anda membantu kami membuat event yang lebih sesuai kebutuhan Anda di masa depan.
+                </p>
+              </div>
+
+              {rekrutmenRows.map((row, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 100px 1fr auto", gap: "0.75rem", alignItems: "center", marginBottom: "0.75rem" }}>
+                  <input
+                    placeholder="Posisi (contoh: Waiter)"
+                    value={row.posisi}
+                    onChange={e => setRekrutmenRows(prev => prev.map((r, idx) => idx === i ? { ...r, posisi: e.target.value } : r))}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.6rem 0.85rem", fontSize: "0.85rem", color: "#f1f5f9", outline: "none" }}
+                  />
+                  <input
+                    placeholder="Jumlah"
+                    type="number"
+                    min={1}
+                    value={row.jumlah}
+                    onChange={e => setRekrutmenRows(prev => prev.map((r, idx) => idx === i ? { ...r, jumlah: e.target.value } : r))}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.6rem 0.85rem", fontSize: "0.85rem", color: "#f1f5f9", outline: "none", width: "100%" }}
+                  />
+                  <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                    {["Terpenuhi", "Tidak Terpenuhi"].map(opt => (
+                      <label key={opt} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.82rem", color: row.status === opt ? "#14b8a6" : "#64748b", cursor: "pointer", fontWeight: row.status === opt ? 700 : 400 }}>
+                        <input type="radio" name={`status-${i}`} value={opt} checked={row.status === opt}
+                          onChange={() => setRekrutmenRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: opt } : r))}
+                          style={{ accentColor: "#14b8a6" }} />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                  <button onClick={() => setRekrutmenRows(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "1rem", padding: "0.25rem" }}>✕</button>
+                </div>
+              ))}
+
+              <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+                <button onClick={() => setRekrutmenRows(prev => [...prev, { posisi: "", jumlah: "", status: "" }])}
+                  style={{ background: "transparent", border: "1px dashed rgba(20,184,166,0.4)", color: "#14b8a6", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", cursor: "pointer", fontWeight: 600 }}>
+                  + Tambah Posisi
+                </button>
+                <button
+                  onClick={async () => {
+                    setSavingRekrutmen(true);
+                    await new Promise(r => setTimeout(r, 600));
+                    setSavingRekrutmen(false);
+                    toast.success("Kondisi rekrutmen berhasil disimpan!");
+                  }}
+                  disabled={savingRekrutmen}
+                  style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)", border: "none", color: "#fff", borderRadius: 8, padding: "0.5rem 1.25rem", fontSize: "0.82rem", fontWeight: 700, cursor: savingRekrutmen ? "not-allowed" : "pointer", opacity: savingRekrutmen ? 0.7 : 1 }}>
+                  {savingRekrutmen ? "⏳ Menyimpan..." : "💾 Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         )}

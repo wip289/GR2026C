@@ -62,19 +62,13 @@ export default function EmployerLogin() {
       setCompanyName(data.companyName || "");
       setNamaCetak(data.printName || data.companyName || "");
 
-      // Kalau sudah pernah upload logo, langsung ke dashboard
-      if (data.logoUrl) {
-        localStorage.setItem("employer_session", JSON.stringify({
-          bookingId: bookingId.trim().toUpperCase(),
-          email: email.trim().toLowerCase(),
-        }));
-        toast.success(`Selamat datang, ${data.companyName}!`);
-        navigate("/employer/dashboard");
-        return;
-      }
-
-      // Belum ada logo → minta upload dulu
-      setStep("upload");
+      // Langsung ke dashboard (upload logo ada di dashboard)
+      localStorage.setItem("employer_session", JSON.stringify({
+        bookingId: bookingId.trim().toUpperCase(),
+        email: email.trim().toLowerCase(),
+      }));
+      toast.success(`Selamat datang, ${data.companyName}!`);
+      navigate("/employer/dashboard");
     } catch {
       toast.error("Terjadi kesalahan, coba lagi");
     }
@@ -103,26 +97,11 @@ export default function EmployerLogin() {
       return;
     }
 
-    // PNG/JPG — cek resolusi
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      if (img.width < 1000 || img.height < 1000) {
-        setLogoStatus("error");
-        setLogoMsg(`❌ Resolusi terlalu kecil (${img.width}×${img.height}px). Minimum 1000×1000px untuk kualitas cetak.`);
-        setLogoPreview(null);
-      } else {
-        setLogoStatus("ok");
-        setLogoMsg(`✅ Resolusi ${img.width}×${img.height}px — siap cetak.`);
-        setLogoPreview(url);
-      }
-    };
-    img.onerror = () => {
-      setLogoStatus("error");
-      setLogoMsg("❌ File tidak dapat dibaca. Coba file lain.");
-    };
-    img.src = url;
+    // PNG/JPG — terima semua resolusi
+    const previewUrl = URL.createObjectURL(file);
+    setLogoStatus("ok");
+    setLogoMsg("✅ Logo diterima. Mohon kirimkan logo dengan resolusi yang cukup untuk kebutuhan cetak dan display.");
+    setLogoPreview(previewUrl);
   };
 
   // ── Step 2: Upload logo & simpan nama cetak ───────────────────
@@ -308,7 +287,7 @@ export default function EmployerLogin() {
               <p style={{ fontSize: "0.88rem", color: "#94a3b8", marginBottom: "0.25rem" }}>
                 {logoFile ? logoFile.name : "Klik untuk pilih file logo"}
               </p>
-              <p style={{ fontSize: "0.75rem", color: "#64748b" }}>PNG / JPG / PDF · Minimum 1000×1000px</p>
+              <p style={{ fontSize: "0.75rem", color: "#64748b" }}>PNG / JPG / PDF</p>
             </div>
             <input ref={fileRef} type="file" accept=".png,.jpg,.jpeg,.pdf"
               style={{ display: "none" }}
@@ -322,7 +301,7 @@ export default function EmployerLogin() {
             )}
             {logoStatus === "error" && (
               <p style={{ ...s.hint, marginTop: "0.5rem" }}>
-                💡 Tips: Minta file logo dari tim desain atau marketing perusahaan Anda dalam format AI/EPS yang diekspor ke PNG resolusi tinggi.
+                💡 Mohon kirimkan logo dengan resolusi yang cukup untuk kebutuhan cetak dan display.
               </p>
             )}
           </div>

@@ -167,9 +167,9 @@ export function generateInvoiceHTML(data: BookingData): string {
 
 <div class="payment-box">
   <h3>🏦 Instruksi Pembayaran</h3>
-  <div class="pay-row"><span class="pay-label">Bank</span><span class="pay-value">Bank BNI</span></div>
-  <div class="pay-row"><span class="pay-label">No. Rekening</span><span class="pay-value">0123-456-789</span></div>
-  <div class="pay-row"><span class="pay-label">Atas Nama</span><span class="pay-value">Koperasi Poltekpar NHI Bandung</span></div>
+  <div class="pay-row"><span class="pay-label">Bank</span><span class="pay-value">Bank BTN</span></div>
+  <div class="pay-row"><span class="pay-label">No. Rekening</span><span class="pay-value">0095 01 30 00000 38</span></div>
+  <div class="pay-row"><span class="pay-label">Atas Nama</span><span class="pay-value">Koperasi STP Bandung</span></div>
   <div class="pay-row"><span class="pay-label">Nominal</span><span class="pay-value amount">${fmt(data.totalAmount)}</span></div>
   <div class="pay-row"><span class="pay-label">Berita Transfer</span><span class="pay-value">${data.bookingId}</span></div>
 </div>

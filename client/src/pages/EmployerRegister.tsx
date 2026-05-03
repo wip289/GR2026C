@@ -96,8 +96,7 @@ export default function EmployerRegister() {
   const [selectedBooths, setSelectedBooths] = useState<string[]>([]);
   const [needsDesign, setNeedsDesign]       = useState(false);
   const [specialRequest, setSpecialRequest] = useState("");
-  const [logoUrl, setLogoUrl]               = useState("");
-  const [logoUploading, setLogoUploading]   = useState(false);
+  // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
   const [vacanciesUploading, setVacanciesUploading] = useState(false);
 
@@ -231,7 +230,7 @@ export default function EmployerRegister() {
       positions,
       needsBoothDesign: needsDesign,
       specialRequest: specialRequest || undefined,
-      logoUrl: logoUrl || undefined,
+
       jobVacanciesUrl: jobVacanciesUrls.length > 0 ? jobVacanciesUrls : undefined,
     });
   };
@@ -393,27 +392,9 @@ export default function EmployerRegister() {
               <input style={css.input} value={company.website} onChange={e => setCompany({ ...company, website: e.target.value })} placeholder="https://www.perusahaan.com" />
             </div>
             <div style={{ marginTop: "1.1rem" }}>
-              <label style={css.label}>Logo Perusahaan <span style={{ fontSize: "0.7rem", color: "#334155", fontWeight: 400 }}>(opsional)</span></label>
-              {logoUrl ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-                  <img src={logoUrl} alt="Logo" style={{ height: 48, borderRadius: 6, border: "1px solid rgba(20,184,166,0.3)", objectFit: "contain", background: "#fff", padding: "0.2rem" }} />
-                  <span style={{ fontSize: "0.78rem", color: "#14b8a6" }}>✅ Logo terupload</span>
-                  <button onClick={() => setLogoUrl("")} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.8rem" }}>Hapus</button>
-                </div>
-              ) : null}
-              <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(20,184,166,0.08)", border: "1px dashed rgba(20,184,166,0.4)", borderRadius: 8, padding: "0.6rem 1rem", cursor: logoUploading ? "not-allowed" : "pointer", fontSize: "0.82rem", color: "#14b8a6" }}>
-                {logoUploading ? "⏳ Uploading..." : "📎 Upload Logo"}
-                <input type="file" accept="image/*,.pdf" style={{ display: "none" }} disabled={logoUploading}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]; if (!file) return;
-                    setLogoUploading(true);
-                    try {
-                      const url = await uploadToSupabase(file, "employer", `logo/${Date.now()}-${file.name}`);
-                      setLogoUrl(url); toast.success("Logo berhasil diupload!");
-                    } catch (err: any) { toast.error("Upload gagal: " + err.message); }
-                    setLogoUploading(false);
-                  }} />
-              </label>
+              <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#64748b" }}>
+                🖼️ Upload logo perusahaan tersedia di <strong style={{ color: "#14b8a6" }}>Dashboard Employer</strong> setelah booking selesai.
+              </div>
             </div>
           </div>
         )}
@@ -639,6 +620,19 @@ export default function EmployerRegister() {
                 ))}
               </div>
 
+              {/* Job Vacancies */}
+              {jobVacanciesUrls.length > 0 && (
+                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>File Job Vacancies</div>
+                  {jobVacanciesUrls.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                      <span>📄</span>
+                      <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#14b8a6", textDecoration: "none", fontWeight: 600 }}>{f.name}</a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Booths */}
               <div>
                 <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Booth yang Dipesan</div>
@@ -662,9 +656,9 @@ export default function EmployerRegister() {
               <div style={css.secHd}>🏦 Informasi Pembayaran</div>
               <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 10, padding: "1.25rem", marginBottom: "1rem" }}>
                 {[
-                  { label: "Bank",        val: "Bank BNI" },
-                  { label: "No. Rekening",val: "0123-456-789" },
-                  { label: "Atas Nama",   val: "Koperasi Poltekpar NHI Bandung" },
+                  { label: "Bank",        val: "Bank BTN" },
+                  { label: "No. Rekening",val: "0095 01 30 00000 38" },
+                  { label: "Atas Nama",   val: "Koperasi STP Bandung" },
                   { label: "Nominal",     val: fmt(totalAmount) },
                 ].map(row => (
                   <div key={row.label} style={{ display: "flex", gap: "1rem", marginBottom: "0.55rem", flexWrap: "wrap" }}>
