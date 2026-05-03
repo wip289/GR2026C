@@ -101,6 +101,7 @@ export default function BossPanel() {
   };
 
   // Build real taken slots from DB
+  console.log("[BossPanel] interviewRaw:", interviewRaw);
   const realTakenSlots: Record<string, string> = {};
   ((interviewRaw || []) as any[]).forEach((b: any) => {
     if (b.status === "active") {
