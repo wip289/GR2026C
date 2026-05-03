@@ -489,7 +489,10 @@ export function generateIdCardHTML(data: {
 
   <!-- Header -->
   <div class="header-bar">
-    <div class="logo-row">
+    <img src="/logo-gr2026.png" alt="Grand Recruitment 2026"
+      style="height:9mm;width:auto;object-fit:contain;max-width:48mm;"
+      onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"/>
+    <div id="logo-fallback" style="display:none;align-items:center;gap:1.5mm;">
       <div class="logo-dot">GR</div>
       <div class="logo-words">
         <div class="l1">Grand Recruitment 2026</div>
