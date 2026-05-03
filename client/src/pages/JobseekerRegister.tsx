@@ -267,8 +267,15 @@ export default function JobseekerRegister() {
           <div style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.25rem", textAlign: "left" }}>
             <div style={{ fontSize: "0.68rem", color: "#D4A017", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.3rem" }}>Registration ID</div>
             <div style={{ fontWeight: 800, color: "#D4A017", fontSize: "1.2rem", fontFamily: "monospace" }}>{finalId}</div>
-            <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.4rem", lineHeight: 1.6 }}>
-              Login dengan <strong style={{ color: "#f1f5f9" }}>{email}</strong> + ID ini.
+            <div style={{ marginTop: "0.75rem", background: "rgba(212,160,23,0.1)", borderRadius: 8, padding: "0.6rem 0.85rem" }}>
+              <div style={{ fontSize: "0.82rem", color: "#fde68a", fontWeight: 700, marginBottom: "0.25rem" }}>
+                🔑 Cara Login ke Dashboard
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "#f1f5f9", lineHeight: 1.7 }}>
+                Gunakan <strong style={{ color: "#D4A017" }}>Registration ID</strong> di atas<br/>
+                + email <strong style={{ color: "#D4A017" }}>{email}</strong><br/>
+                untuk masuk ke dashboard jobseeker Anda.
+              </div>
             </div>
           </div>
 

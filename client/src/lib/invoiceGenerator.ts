@@ -222,37 +222,25 @@ ${data.lunasStamp ? `
 
 export function openInvoiceForPrint(data: BookingData) {
   const html = generateInvoiceHTML(data);
-  // Inject auto-print script into the HTML
+  // Tambah tombol Print/Save PDF di pojok kanan bawah (tanpa auto-print)
   const printableHtml = html.replace(
     "</body></html>",
     `<div style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;gap:10px">
       <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,0.4)">
         🖨️ Print / Save PDF
       </button>
-      <button onclick="window.close()" style="background:#f1f5f9;color:#334155;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
-        ✕ Tutup
-      </button>
     </div>
-    <script>
-      window.addEventListener("load", function() {
-        setTimeout(function() { window.print(); }, 800);
-      });
-    </script>
     </body></html>`
   );
   const blob = new Blob([printableHtml], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank", "width=900,height=700");
-  if (win) {
-    win.addEventListener("load", () => setTimeout(() => URL.revokeObjectURL(url), 10000));
-  } else {
-    // Popup blocked - download as HTML file instead
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Invoice-GR2026-${data.bookingId}.html`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  // Buka di tab baru (bukan popup)
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
 }
 
 

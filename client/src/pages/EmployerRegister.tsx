@@ -157,7 +157,7 @@ export default function EmployerRegister() {
   const canNext = () => {
     if (step === 0) return !!(company.name && company.industry && company.city);
     if (step === 1) return !!(pic1.name && pic1.email && pic1.whatsapp) && !emailErr && !checkingEmail;
-    if (step === 2) return positions.some(p => p.position || p.customPosition);
+    if (step === 2) return true; // Posisi & job vacancies opsional
     if (step === 3) return selectedBooths.length > 0;
     return true;
   };
@@ -275,8 +275,16 @@ export default function EmployerRegister() {
           {/* Login info */}
           <div style={{ ...css.card, textAlign: "left" }}>
             <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Login ke Portal Employer</div>
-            <div style={{ fontSize: "0.85rem", color: "#94a3b8", lineHeight: 1.7 }}>
-              Gunakan <strong style={{ color: "#f1f5f9" }}>Booking ID</strong> + <strong style={{ color: "#f1f5f9" }}>{bookingData.pic1.email}</strong> untuk login dan pantau status booth Anda.
+            <div style={{ background: "rgba(20,184,166,0.1)", borderRadius: 8, padding: "0.75rem 1rem" }}>
+              <div style={{ fontSize: "0.88rem", color: "#fde68a", fontWeight: 700, marginBottom: "0.4rem" }}>
+                🔑 Cara Login ke Dashboard Employer
+              </div>
+              <div style={{ fontSize: "0.85rem", color: "#f1f5f9", lineHeight: 1.8 }}>
+                Gunakan <strong style={{ color: "#14b8a6" }}>Booking ID</strong>:<br/>
+                <span style={{ fontFamily: "monospace", color: "#14b8a6", fontWeight: 800, fontSize: "0.95rem" }}>{bookingData.bookingId}</span><br/>
+                + email <strong style={{ color: "#14b8a6" }}>{bookingData.pic1.email}</strong><br/>
+                untuk login dan pantau status booth Anda.
+              </div>
             </div>
           </div>
 

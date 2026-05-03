@@ -777,9 +777,14 @@ export default function EmployerDashboard() {
                     try {
                       const existing: { url: string; name: string }[] = Array.isArray((booking as any).jobVacanciesUrl) ? (booking as any).jobVacanciesUrl : [];
                       const results: { url: string; name: string }[] = [];
-                      for (const file of files) {
-                        const url = await uploadToSupabase(file, "employer", `${sessionData?.bookingId}/vacancies/${Date.now()}-${file.name}`);
-                        results.push({ url, name: file.name });
+                      const ts = Date.now();
+                      for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+                        const seq = String(existing.length + i + 1).padStart(2, "0");
+                        const safeName = `jobvacancy-${ts}-${seq}.${ext}`;
+                        const url = await uploadToSupabase(file, "employer", `${sessionData?.bookingId}/vacancies/${safeName}`);
+                        results.push({ url, name: safeName });
                       }
                       updateVacanciesMutation.mutate({ bookingId: sessionData?.bookingId || "", urls: [...existing, ...results] });
                     } catch (err: any) { toast.error("Upload gagal: " + err.message); }
