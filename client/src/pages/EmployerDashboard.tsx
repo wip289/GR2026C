@@ -91,17 +91,20 @@ export default function EmployerDashboard() {
     { employerBookingId: sessionData?.bookingId || "" },
     { enabled: !!sessionData?.bookingId }
   );
+  const { data: allInterviewRaw, refetch: refetchAllTaken } = trpc.event.getAllInterviewBookings.useQuery();
   const takenSlots: Record<string, string> = {};
-  (takenRaw || []).forEach((b: any) => {
+  ((allInterviewRaw || []) as any[]).forEach((b: any) => {
     const key = `${b.boothId}-${b.day}-${b.slotIndex}`;
     takenSlots[key] = b.companyName || b.employerBookingId;
   });
 
+  const cancelInterviewMutation = trpc.event.cancelInterviewBooking.useMutation();
   const confirmInterviewMutation = trpc.event.createInterviewBooking.useMutation({
     onSuccess: () => {
       toast.success("Booking interview booth berhasil!");
       setMySlots([]);
       refetchTaken();
+      refetchAllTaken();
     },
     onError: (err) => toast.error("Gagal: " + err.message),
   });
@@ -651,21 +654,32 @@ export default function EmployerDashboard() {
                       );
                     })}
                     <button
-                      onClick={() => {
-                        mySlots.forEach(key => {
-                          const [boothId, dayStr, slotStr] = key.split("-");
-                          confirmInterviewMutation.mutate({
-                            employerBookingId: sessionData?.bookingId || "",
-                            boothId,
-                            day: parseInt(dayStr),
-                            slotIndex: parseInt(slotStr),
-                            companyName: (booking as any)?.companyName || "",
-                          });
-                        });
+                      onClick={async () => {
+                        try {
+                          for (const b of (takenRaw || []) as any[]) {
+                            await cancelInterviewMutation.mutateAsync({ id: b.id });
+                          }
+                          for (const key of mySlots) {
+                            const [boothId, dayStr, slotStr] = key.split("-");
+                            await confirmInterviewMutation.mutateAsync({
+                              employerBookingId: sessionData?.bookingId || "",
+                              boothId,
+                              day: parseInt(dayStr),
+                              slotIndex: parseInt(slotStr),
+                              companyName: (booking as any)?.companyName || "",
+                            });
+                          }
+                          toast.success("Booking interview booth berhasil!");
+                          setMySlots([]);
+                          refetchTaken();
+                          refetchAllTaken();
+                        } catch (err: any) {
+                          toast.error("Gagal: " + err.message);
+                        }
                       }}
-                      disabled={confirmInterviewMutation.isPending}
-                      style={{ marginTop: "1rem", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.9rem", fontWeight: 700, cursor: confirmInterviewMutation.isPending ? "not-allowed" : "pointer", width: "100%", opacity: confirmInterviewMutation.isPending ? 0.7 : 1 }}>
-                      {confirmInterviewMutation.isPending ? "⏳ Menyimpan..." : "Konfirmasi Booking Interview Booth ✓"}
+                      disabled={confirmInterviewMutation.isPending || cancelInterviewMutation.isPending}
+                      style={{ marginTop: "1rem", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.9rem", fontWeight: 700, cursor: (confirmInterviewMutation.isPending || cancelInterviewMutation.isPending) ? "not-allowed" : "pointer", width: "100%", opacity: (confirmInterviewMutation.isPending || cancelInterviewMutation.isPending) ? 0.7 : 1 }}>
+                      {(confirmInterviewMutation.isPending || cancelInterviewMutation.isPending) ? "⏳ Menyimpan..." : "Konfirmasi Booking Interview Booth ✓"}
                     </button>
                   </div>
                 )}

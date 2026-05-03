@@ -23,7 +23,6 @@ const s = {
 const SLOTS = ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"];
 const DAYS  = ["Rabu 10 Jun", "Kamis 11 Jun"];
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
-const TAKEN_SLOTS: Record<string, string> = {};  // Will be built from real DB data
 
 export default function BossPanel() {
   const [, navigate] = useLocation();
@@ -40,7 +39,7 @@ export default function BossPanel() {
   // ── Real data from DB ──
   const { data: employerData, refetch: refetchEmployers } = trpc.event.getAllEmployerBookings.useQuery();
   const { data: jobseekerData } = trpc.event.getAllJobseekers.useQuery();
-  const { data: interviewRaw } = trpc.event.getAllInterviewBookings.useQuery();
+  const { data: interviewRaw, refetch: refetchInterview } = trpc.event.getAllInterviewBookings.useQuery();
   const updateStatusMutation = trpc.event.updateEmployerBookingStatus.useMutation({
     onSuccess: () => refetchEmployers(),
   });
@@ -51,6 +50,11 @@ export default function BossPanel() {
       toast.success("Pembayaran diapprove! Kwitansi LUNAS tersedia di dashboard employer.");
     },
     onError: (e) => toast.error("Gagal approve: " + e.message),
+  });
+
+  const cancelSlotMutation = trpc.event.cancelInterviewBooking.useMutation({
+    onSuccess: () => { toast.success("Slot berhasil dibatalkan"); refetchInterview(); },
+    onError: (e) => toast.error("Gagal batalkan: " + e.message),
   });
 
   // ── Password gate render ──────────────────────────────────────
@@ -89,7 +93,7 @@ export default function BossPanel() {
   const pendingRevenue = employers.filter((e: any) => e.status === "pending")
     .reduce((s: number, e: any) => s + (Array.isArray(e.booths) ? e.booths.reduce((bs: number, b: any) => bs + (b.price || 0), 0) : 0), 0);
   const totalBooths = employers.reduce((s: number, e: any) => s + (Array.isArray(e.booths) ? e.booths.length : 0), 0);
-  const bookedSlots = Object.keys(TAKEN_SLOTS).length;
+  const bookedSlots = ((interviewRaw || []) as any[]).filter((b: any) => b.status === "active").length;
 
   const handleApprove = (bookingId: string) => {
     updateStatusMutation.mutate({ bookingId, status: "confirmed" });
@@ -101,12 +105,13 @@ export default function BossPanel() {
   };
 
   // Build real taken slots from DB
-  console.log("[BossPanel] interviewRaw:", interviewRaw);
   const realTakenSlots: Record<string, string> = {};
+  const realTakenIds: Record<string, number> = {};
   ((interviewRaw || []) as any[]).forEach((b: any) => {
     if (b.status === "active") {
       const key = `${b.boothId}-${b.day}-${b.slotIndex}`;
       realTakenSlots[key] = b.companyName || b.employerBookingId;
+      realTakenIds[key] = b.id;
     }
   });
 
@@ -557,11 +562,20 @@ export default function BossPanel() {
                       {SLOTS.map((_, slotIdx) => {
                         const key = `${booth}-${selectedDay}-${slotIdx}`;
                         const company = realTakenSlots[key];
+                        const bookingId = realTakenIds[key];
                         return (
                           <td key={slotIdx} style={{ ...s.td, textAlign: "center" }}>
                             {company ? (
-                              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "0.3rem 0.4rem", fontSize: "0.68rem", color: "#fca5a5", lineHeight: 1.3 }}>
-                                {company.length > 14 ? company.substring(0, 14) + "…" : company}
+                              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "0.2rem 0.35rem", fontSize: "0.65rem", color: "#fca5a5", lineHeight: 1.3, display: "flex", alignItems: "center", gap: "0.2rem", minWidth: 0 }}>
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                                  {company.replace(/^(PT|CV|UD)\s*/i, "").substring(0, 10)}
+                                </span>
+                                <button
+                                  onClick={() => bookingId && cancelSlotMutation.mutate({ id: bookingId })}
+                                  title={`Batalkan: ${company}`}
+                                  style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem", padding: 0, lineHeight: 1, flexShrink: 0, fontWeight: 700 }}>
+                                  ×
+                                </button>
                               </div>
                             ) : (
                               <div style={{ color: "#1e3a5f", fontSize: "1rem" }}>·</div>
