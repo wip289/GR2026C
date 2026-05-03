@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import BoothMap from "./BoothMap";
+import BoothMapPicker from "@/components/BoothMapPicker";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
@@ -286,7 +286,9 @@ export default function BoothManagement() {
                 </div>
               </div>
 
-            <BoothMap
+            <BoothMapPicker
+              selectedIds={[]}
+              onChange={() => {}}
               panitiaMode={true}
               bookingData={boothMap}
               closedBooths={closedBooths}
