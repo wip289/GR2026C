@@ -94,18 +94,26 @@ export default function BoothManagement() {
   });
 
   // Interview constants
-  const SLOTS = ["08.00–09.00","09.00–10.00","10.00–11.00","11.00–12.00","13.00–14.00","14.00–15.00"];
-  const DAYS  = ["Senin, 8 Jun 2026","Selasa, 9 Jun 2026"];
-  const INT_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10"];
+  const SLOTS = ["08.00–09.00","09.00–10.00","10.00–11.00","11.00–12.00","13.00–14.00","14.00–15.00","15.00–16.00"];
+  const DAYS  = ["Rabu, 10 Jun 2026","Kamis, 11 Jun 2026"];
+  const INT_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
   // Build taken slots from DB
   const takenSlots: Record<string, string> = {};
+  const takenIds: Record<string, number> = {};
   ((interviewRaw || []) as any[]).forEach((b: any) => {
     if (b.status === "active") {
       const key = `${b.boothId}-${b.day}-${b.slotIndex}`;
       takenSlots[key] = b.companyName || b.employerBookingId;
+      takenIds[key] = b.id;
     }
   });
+
+  const { refetch: refetchInterview } = trpc.event.getAllInterviewBookings.useQuery();
+  const cancelSlotMutation = trpc.event.cancelInterviewBooking?.useMutation?.({
+    onSuccess: () => { toast.success("Slot berhasil dibatalkan!"); refetchInterview(); },
+    onError:   () => toast.error("Gagal membatalkan slot"),
+  }) || { mutate: () => {}, isPending: false };
 
   const [selectedDay, setSelectedDay] = useState(0);
   const totalSlots = INT_BOOTHS.length * SLOTS.length;
@@ -460,8 +468,19 @@ export default function BoothManagement() {
                         return (
                           <td key={slotIdx} style={{ padding: "0.4rem", textAlign: "center" }}>
                             {company ? (
-                              <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "0.3rem 0.4rem", fontSize: "0.68rem", color: "#fca5a5", lineHeight: 1.3, maxWidth: 90 }}>
-                                {company.replace(/^(PT|CV|UD)\s*/i, "").substring(0, 14)}
+                              <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, padding: "0.25rem 0.35rem", fontSize: "0.65rem", color: "#fca5a5", lineHeight: 1.3, display: "flex", alignItems: "center", gap: "0.2rem" }}>
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                                  {company.replace(/^(PT|CV|UD)\s*/i, "").substring(0, 12)}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    const id = takenIds[key];
+                                    if (!id) return;
+                                    if (!window.confirm(`Batalkan slot ${company}?`)) return;
+                                    cancelSlotMutation.mutate({ id });
+                                  }}
+                                  style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.85rem", padding: 0, lineHeight: 1, flexShrink: 0, fontWeight: 700 }}
+                                  title={`Batalkan: ${company}`}>×</button>
                               </div>
                             ) : (
                               <div style={{ width: 10, height: 10, borderRadius: "50%", background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.2)", margin: "0 auto" }}/>
