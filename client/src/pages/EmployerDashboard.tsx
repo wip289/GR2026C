@@ -33,6 +33,7 @@ export default function EmployerDashboard() {
   const [mySlots, setMySlots] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [hasBooked, setHasBooked] = useState(false); // hard lock setelah konfirmasi
 
   const [sessionData, setSessionData] = useState<{bookingId: string; email: string} | null>(null);
 
@@ -109,8 +110,10 @@ export default function EmployerDashboard() {
     onSuccess: () => {
       setMySlots([]);
       setIsRescheduling(false);
+      setHasBooked(true);
       refetchTaken();
       refetchAllTaken();
+      toast.success("Booking interview berhasil dikonfirmasi!");
     },
     onError: (err) => toast.error("Gagal: " + err.message),
   });
@@ -547,7 +550,7 @@ export default function EmployerDashboard() {
         {activeTab === "interview" && (
           <div>
             {booking.status === "confirmed" ? (() => {
-              const hasExistingBooking = (takenRaw || []).some(
+              const hasExistingBooking = hasBooked || (takenRaw || []).some(
                 (b: any) => b.employerBookingId === sessionData?.bookingId
               );
               const rescheduleCount = (booking as any).rescheduleCount ?? 0;
@@ -569,7 +572,7 @@ export default function EmployerDashboard() {
                   <div style={{ marginTop: "0.5rem" }}>
                     {canReschedule ? (
                       <button
-                        onClick={() => { setIsRescheduling(true); setMySlots([]); }}
+                        onClick={() => { setIsRescheduling(true); setMySlots([]); setHasBooked(false); }}
                         style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 10, padding: "0.75rem 1.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
                         🔄 Ubah Jadwal (1x)
                       </button>
