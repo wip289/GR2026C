@@ -148,10 +148,9 @@ interface BoothMapPickerProps {
   bookingData?: Record<string, { company: string; status: string }>;
   closedBooths?: Set<string>;
   onToggleClose?: (id: string) => void;
-  onSelect?: (id: string | null) => void;
 }
 
-export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, panitiaMode, bookingData, closedBooths, onToggleClose, onSelect }: BoothMapPickerProps) {
+export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, panitiaMode, bookingData, closedBooths, onToggleClose }: BoothMapPickerProps) {
   const booths = boothsProp || ALL_BOOTHS;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -242,7 +241,7 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
 
             return (
               <g key={booth.id}
-                onClick={() => { if (panitiaMode) { onSelect?.(booth.id); } else { handleClick(booth); } }}
+                onClick={() => panitiaMode ? setHoveredId(booth.id) : handleClick(booth)}
                 onMouseEnter={() => (click || panitiaMode) && setHoveredId(booth.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 style={{ cursor: (click || panitiaMode) ? "pointer" : "default" }}>

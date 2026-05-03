@@ -176,124 +176,87 @@ export default function BoothManagement() {
 
         {/* ── TAB: DENAH ── */}
         {activeTab === "denah" && (
-          <div style={s.card}>
-            <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1rem" }}>
-              Klik booth untuk detail · Klik <strong style={{ color: "#ef4444" }}>×</strong> di sudut booth untuk menutup/membuka penjualan
+          <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start" }}>
+            {/* Map */}
+            <div style={{ flex: 1, minWidth: 0, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "1rem" }}>
+              <BoothMapPicker
+                selectedIds={[]}
+                onChange={() => {}}
+                panitiaMode={true}
+                bookingData={boothMap}
+                closedBooths={closedBooths}
+                onToggleClose={toggleClose}
+                onSelect={(id) => setSelectedBooth(id)}
+              />
             </div>
 
-              {/* Legend closing */}
-              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-                <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Klik booth untuk detail · </div>
-                <div style={{ fontSize: "0.72rem", color: "#94a3b8", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 4, padding: "0.15rem 0.5rem" }}>🔒 = Ditutup (tidak dijual)</div>
+            {/* Panel kanan */}
+            <div style={{ width: 280, flexShrink: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {/* Legend */}
+              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "1.25rem" }}>
+                <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>Keterangan</div>
+                {[
+                  { color: "#0f766e", stroke: "#14b8a6", label: "Tersedia" },
+                  { color: "#c2410c", stroke: "#f97316", label: "Reserved — proses bayar" },
+                  { color: "#991b1b", stroke: "#ef4444", label: "Booked — sudah dipesan" },
+                  { color: "#475569", stroke: "#64748b", label: "🔒 Ditutup panitia" },
+                  { color: "#1e3a5f", stroke: "#3b82f6", label: "Panitia / Staff" },
+                ].map(l => (
+                  <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.6rem" }}>
+                    <div style={{ width: 14, height: 14, borderRadius: 3, background: l.color, border: `1px solid ${l.stroke}`, flexShrink: 0 }}/>
+                    <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>{l.label}</span>
+                  </div>
+                ))}
               </div>
 
-              {/* Main Booths */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#D4A017", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
-                  Main Booth (5×5m) — {bookedMain}/{totalMain} terjual
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {MAIN_BOOTHS.map(id => {
-                    const isClosed = closedBooths.has(id);
-                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
-                    const isSelected = selectedBooth === id;
-                    return (
-                      <div key={id} style={{ position: "relative" as const }}>
-                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
-                          style={{ width: 64, height: 54, borderRadius: 8, border: `2px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", transform: isSelected ? "scale(1.05)" : "scale(1)", opacity: isClosed ? 0.6 : 1 }}>
-                          <div style={{ fontSize: "0.72rem", fontWeight: 800, color: c.text }}>{id}</div>
-                          {isClosed ? (
-                            <div style={{ fontSize: "0.55rem", color: "#ef4444" }}>🔒 Ditutup</div>
-                          ) : boothMap[id] ? (
-                            <div style={{ fontSize: "0.52rem", color: c.text, opacity: 0.85, textAlign: "center", padding: "0 3px", lineHeight: 1.2, maxWidth: 58, overflow: "hidden" }}>
-                              {boothMap[id].company.replace(/^(PT|CV|UD|PD)\s*/i, "").split(" ").slice(0,2).join(" ")}
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: "0.5rem", color: "#1e3a5f" }}>kosong</div>
-                          )}
-                        </div>
-                        <button onClick={() => toggleClose(id)} title={isClosed ? "Buka kembali" : "Tutup booth"}
-                          style={{ position: "absolute" as const, top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.6rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
-                          {isClosed ? "+" : "×"}
-                        </button>
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                {[
+                  { label: "Main", val: `${bookedMain}/${totalMain}`, color: "#D4A017" },
+                  { label: "Extra", val: `${bookedExtra}/${totalExtra}`, color: "#a78bfa" },
+                  { label: "Standard", val: `${bookedStd}/${totalStd}`, color: "#14b8a6" },
+                  { label: "Ditutup", val: closedBooths.size, color: "#ef4444" },
+                ].map(st => (
+                  <div key={st.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "0.75rem", textAlign: "center" }}>
+                    <div style={{ fontSize: "1.3rem", fontWeight: 800, color: st.color }}>{st.val}</div>
+                    <div style={{ fontSize: "0.7rem", color: "#475569", textTransform: "uppercase", letterSpacing: "0.08em" }}>{st.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Selected booth detail */}
+              {selectedBooth ? (
+                <div style={{ background: boothMap[selectedBooth] ? "rgba(239,68,68,0.08)" : "rgba(20,184,166,0.08)", border: `1px solid ${boothMap[selectedBooth] ? "#ef4444" : "#14b8a6"}`, borderRadius: 12, padding: "1.25rem" }}>
+                  <div style={{ fontWeight: 800, fontSize: "1.2rem", marginBottom: "0.25rem", color: "#f1f5f9" }}>
+                    Booth {selectedBooth}
+                  </div>
+                  {boothMap[selectedBooth] && (
+                    <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "0.5rem 0.85rem", marginBottom: "0.75rem" }}>
+                      <div style={{ fontSize: "0.7rem", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.2rem" }}>Dipesan oleh</div>
+                      <div style={{ fontWeight: 700, color: "#fca5a5", fontSize: "0.9rem" }}>{boothMap[selectedBooth].company}</div>
+                      <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "0.2rem" }}>
+                        {boothMap[selectedBooth].status === "confirmed" ? "✅ Confirmed" : "⏳ Pending"}
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
+                  {closedBooths.has(selectedBooth) && (
+                    <div style={{ fontSize: "0.82rem", color: "#ef4444", marginBottom: "0.75rem" }}>🔒 Booth ini ditutup (tidak dijual)</div>
+                  )}
+                  {!boothMap[selectedBooth] && !closedBooths.has(selectedBooth) && (
+                    <div style={{ fontSize: "0.82rem", color: "#14b8a6", marginBottom: "0.75rem" }}>✓ Tersedia untuk dipesan</div>
+                  )}
+                  <button onClick={() => toggleClose(selectedBooth)}
+                    style={{ width: "100%", background: closedBooths.has(selectedBooth) ? "rgba(20,184,166,0.15)" : "rgba(239,68,68,0.15)", border: `1px solid ${closedBooths.has(selectedBooth) ? "#14b8a6" : "#ef4444"}`, color: closedBooths.has(selectedBooth) ? "#14b8a6" : "#ef4444", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer" }}>
+                    {closedBooths.has(selectedBooth) ? "🔓 Buka Kembali" : "🔒 Tutup Booth (Tidak Dijual)"}
+                  </button>
                 </div>
-              </div>
-
-              {/* Extra Booths */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
-                  Extra Booth (4×2m) — {bookedExtra}/{totalExtra} terjual · Rp 8.500.000
+              ) : (
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.5rem", textAlign: "center" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>👆</div>
+                  <p style={{ color: "#475569", fontSize: "0.85rem", lineHeight: 1.6 }}>Klik booth untuk melihat detail dan opsi tutup/buka</p>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {EXTRA_BOOTHS.map(id => {
-                    const isClosed = closedBooths.has(id);
-                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
-                    const isSelected = selectedBooth === id;
-                    return (
-                      <div key={id} style={{ position: "relative" as const }}>
-                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
-                          style={{ width: 64, height: 54, borderRadius: 8, border: `2px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", opacity: isClosed ? 0.6 : 1 }}>
-                          <div style={{ fontSize: "0.72rem", fontWeight: 800, color: c.text }}>{id}</div>
-                          {isClosed ? (
-                            <div style={{ fontSize: "0.55rem", color: "#ef4444" }}>🔒 Ditutup</div>
-                          ) : boothMap[id] ? (
-                            <div style={{ fontSize: "0.52rem", color: c.text, opacity: 0.85, textAlign: "center", padding: "0 3px", lineHeight: 1.2 }}>
-                              {boothMap[id].company.replace(/^(PT|CV|UD|PD)\s*/i, "").split(" ").slice(0,2).join(" ")}
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: "0.5rem", color: "#1e3a5f" }}>kosong</div>
-                          )}
-                        </div>
-                        <button onClick={() => toggleClose(id)} title={isClosed ? "Buka kembali" : "Tutup booth"}
-                          style={{ position: "absolute" as const, top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.6rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
-                          {isClosed ? "+" : "×"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Standard Booths */}
-              <div style={{ marginBottom: "1.5rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
-                  Standard Booth (3×3m) — {bookedStd}/{totalStd} terjual
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                  {STD_BOOTHS.map(id => {
-                    const isClosed = closedBooths.has(id);
-                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
-                    const isSelected = selectedBooth === id;
-                    return (
-                      <div key={id} style={{ position: "relative" as const }}>
-                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
-                          style={{ width: 48, height: 40, borderRadius: 6, border: `1.5px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", opacity: isClosed ? 0.5 : 1 }}>
-                          <div style={{ fontSize: "0.65rem", fontWeight: 700, color: c.text }}>{id}</div>
-                          {isClosed ? <div style={{ fontSize: "0.45rem", color: "#ef4444" }}>🔒</div>
-                            : boothMap[id] ? <div style={{ fontSize: "0.5rem", color: c.text, opacity: 0.8 }}>•</div>
-                            : null}
-                        </div>
-                        <button onClick={() => toggleClose(id)}
-                          style={{ position: "absolute" as const, top: -5, right: -5, width: 14, height: 14, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.5rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
-                          {isClosed ? "+" : "×"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-            <BoothMapPicker
-              selectedIds={[]}
-              onChange={() => {}}
-              panitiaMode={true}
-              bookingData={boothMap}
-              closedBooths={closedBooths}
-              onToggleClose={toggleClose}
-            />
+              )}
+            </div>
           </div>
         )}
 
