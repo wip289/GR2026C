@@ -234,11 +234,12 @@ export default function BoothMap({ bookingData, closedBooths, onToggleClose, pan
                   {panitiaMode && companyName && (
                     <text
                       x={booth.x + booth.w / 2}
-                      y={booth.y + booth.h / 2 + 12}
+                      y={booth.y + booth.h - 6}
                       textAnchor="middle"
                       fill={c.text}
                       fontSize={booth.w > 70 ? 8 : 6}
-                      opacity="0.9"
+                      opacity="0.95"
+                      fontStyle="italic"
                     >{companyName}</text>
                   )}
                   {/* Closed indicator */}
@@ -320,14 +321,36 @@ export default function BoothMap({ bookingData, closedBooths, onToggleClose, pan
           </div>
 
           {/* Selected booth detail */}
-          {selected ? (
-            <div style={{ background: selected.status === "available" ? "rgba(20,184,166,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${COLORS[selected.status].stroke}`, borderRadius: 12, padding: "1.5rem" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.3rem", marginBottom: "0.5rem", color: COLORS[selected.status].text }}>
+          {selected ? (() => {
+            // Pakai data real dari DB jika ada (panitia mode)
+            const realStatus = (() => {
+              if (closedBooths?.has(selected.id)) return "staff";
+              if (bookingData?.[selected.id]) {
+                const s = bookingData[selected.id].status;
+                if (s === "confirmed" || s === "active") return "booked" as BoothStatus;
+                if (s === "pending") return "reserved" as BoothStatus;
+              }
+              return selected.status;
+            })();
+            const realCompany = bookingData?.[selected.id]?.company || null;
+            const isClosed = closedBooths?.has(selected.id);
+            const rc = COLORS[realStatus];
+            return (
+            <div style={{ background: realStatus === "available" ? "rgba(20,184,166,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${rc.stroke}`, borderRadius: 12, padding: "1.5rem" }}>
+              <div style={{ fontWeight: 800, fontSize: "1.3rem", marginBottom: "0.25rem", color: rc.text }}>
                 Booth {selected.label}
               </div>
-              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1rem" }}>
-                {selected.type === "main" ? "Main Booth · 5×5 meter" : selected.type === "standard" ? "Standard Booth · 3×3 meter" : selected.type === "interview" ? "Interview Booth" : ""}
+              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: realCompany ? "0.5rem" : "1rem" }}>
+                {selected.type === "main" ? "Main Booth · 5×5 meter" : selected.type === "standard" ? "Standard Booth · 3×3 meter" : selected.type === "interview" ? "Interview Booth · Extra" : ""}
               </div>
+
+              {/* Nama perusahaan jika sudah dipesan */}
+              {realCompany && (
+                <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "0.5rem 0.85rem", marginBottom: "1rem" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.2rem" }}>Dipesan oleh</div>
+                  <div style={{ fontWeight: 700, color: "#fca5a5", fontSize: "0.9rem" }}>{realCompany}</div>
+                </div>
+              )}
 
               {selected.price && (
                 <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#D4A017", marginBottom: "1rem" }}>
@@ -336,38 +359,32 @@ export default function BoothMap({ bookingData, closedBooths, onToggleClose, pan
               )}
 
               <div style={{ marginBottom: "1rem" }}>
-                <div style={{ display: "inline-block", padding: "0.3rem 0.85rem", borderRadius: 20, fontSize: "0.8rem", fontWeight: 700, background: COLORS[selected.status].fill, color: COLORS[selected.status].text, border: `1px solid ${COLORS[selected.status].stroke}` }}>
-                  {selected.status === "available" ? "✓ Tersedia" : selected.status === "reserved" ? "⏳ Reserved" : selected.status === "booked" ? "✗ Sudah Dipesan" : selected.status === "interview" ? "Gratis untuk Employer" : "Panitia"}
+                <div style={{ display: "inline-block", padding: "0.3rem 0.85rem", borderRadius: 20, fontSize: "0.8rem", fontWeight: 700, background: rc.fill, color: rc.text, border: `1px solid ${rc.stroke}` }}>
+                  {isClosed ? "🔒 Ditutup" : realStatus === "available" ? "✓ Tersedia" : realStatus === "reserved" ? "⏳ Pending Pembayaran" : realStatus === "booked" ? "✗ Sudah Dipesan" : realStatus === "interview" ? "Extra Booth" : "Panitia"}
                 </div>
               </div>
 
               {panitiaMode && onToggleClose && (
                 <button onClick={() => onToggleClose(selected.id)}
-                  style={{ width: "100%", background: closedBooths?.has(selected.id) ? "rgba(20,184,166,0.15)" : "rgba(239,68,68,0.15)", border: `1px solid ${closedBooths?.has(selected.id) ? "#14b8a6" : "#ef4444"}`, color: closedBooths?.has(selected.id) ? "#14b8a6" : "#ef4444", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.5rem" }}>
-                  {closedBooths?.has(selected.id) ? "🔓 Buka Kembali" : "🔒 Tutup Booth (Tidak Dijual)"}
+                  style={{ width: "100%", background: isClosed ? "rgba(20,184,166,0.15)" : "rgba(239,68,68,0.15)", border: `1px solid ${isClosed ? "#14b8a6" : "#ef4444"}`, color: isClosed ? "#14b8a6" : "#ef4444", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.5rem" }}>
+                  {isClosed ? "🔓 Buka Kembali" : "🔒 Tutup Booth (Tidak Dijual)"}
                 </button>
               )}
-              {!panitiaMode && selected.status === "available" && selected.price && (
-                <button
-                  onClick={() => navigate("/employer/register")}
-                  style={{ width: "100%", background: "linear-gradient(135deg, #0d9488, #14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.85rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}
-                >
+              {!panitiaMode && realStatus === "available" && selected.price && (
+                <button onClick={() => navigate("/employer/register")}
+                  style={{ width: "100%", background: "linear-gradient(135deg, #0d9488, #14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.85rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}>
                   Pesan Booth Ini →
                 </button>
               )}
-              {selected.status === "reserved" && (
-                <p style={{ fontSize: "0.8rem", color: "#94a3b8", textAlign: "center" }}>Booth ini sedang dalam proses pembayaran oleh employer lain.</p>
+              {realStatus === "reserved" && !realCompany && (
+                <p style={{ fontSize: "0.8rem", color: "#94a3b8", textAlign: "center" }}>Sedang dalam proses pembayaran.</p>
               )}
-              {selected.status === "booked" && (
-                <p style={{ fontSize: "0.8rem", color: "#94a3b8", textAlign: "center" }}>Booth ini sudah dipesan. Pilih booth lain yang masih tersedia.</p>
-              )}
-              {selected.status === "interview" && (
-                <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Booth interview tersedia gratis untuk employer yang sudah memesan booth S atau M. Booking jadwal via dashboard employer setelah pendaftaran.</p>
-              )}
-              {selected.status === "staff" && (
-                <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Area panitia dan sekretariat. Tidak tersedia untuk umum.</p>
+              {realStatus === "booked" && !realCompany && (
+                <p style={{ fontSize: "0.8rem", color: "#94a3b8", textAlign: "center" }}>Booth ini sudah dipesan.</p>
               )}
             </div>
+            );
+          })()
           ) : (
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.5rem", textAlign: "center" }}>
               <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>👆</div>
