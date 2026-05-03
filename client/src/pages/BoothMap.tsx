@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 
+// Props untuk mode panitia (opsional — kalau tidak diisi, tampil mode employer biasa)
+interface PanitiaProps {
+  bookingData?: Record<string, { company: string; status: string }>;
+  closedBooths?: Set<string>;
+  onToggleClose?: (id: string) => void;
+  panitiaMode?: boolean;
+}
+
 type BoothStatus = "available" | "reserved" | "booked" | "staff" | "interview" | "area";
 
 interface Booth {
@@ -118,9 +126,28 @@ const availableCount = BOOTHS.filter(b => b.status === "available" && b.type !==
 const bookedCount    = BOOTHS.filter(b => b.status === "booked").length;
 const reservedCount  = BOOTHS.filter(b => b.status === "reserved").length;
 
-export default function BoothMap() {
+export default function BoothMap({ bookingData, closedBooths, onToggleClose, panitiaMode }: PanitiaProps = {}) {
   const [, navigate] = useLocation();
   const [selected, setSelected] = useState<Booth | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Resolve booth status: panitia mode pakai data real dari DB
+  const getBoothStatus = (booth: Booth): BoothStatus => {
+    if (closedBooths?.has(booth.id)) return "staff"; // abu-abu = ditutup
+    if (bookingData?.[booth.id]) {
+      const s = bookingData[booth.id].status;
+      if (s === "confirmed" || s === "active") return "booked";
+      if (s === "pending") return "reserved";
+    }
+    return booth.status;
+  };
+
+  const getCompanyName = (id: string): string | null => {
+    if (!bookingData?.[id]) return null;
+    return bookingData[id].company
+      .replace(/^(PT|CV|UD|PD)\s*/i, "")
+      .split(" ").slice(0, 2).join(" ");
+  };
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const handleClick = (booth: Booth) => {
@@ -169,7 +196,10 @@ export default function BoothMap() {
 
             {/* Render all booths */}
             {BOOTHS.map(booth => {
-              const c = COLORS[booth.status];
+              const resolvedStatus = getBoothStatus(booth);
+              const c = COLORS[resolvedStatus];
+              const isClosed = closedBooths?.has(booth.id);
+              const companyName = getCompanyName(booth.id);
               const isHovered = hoveredId === booth.id;
               const isSelected = selected?.id === booth.id;
               const clickable = booth.type !== "area";
@@ -183,6 +213,7 @@ export default function BoothMap() {
                 >
                   <rect
                     x={booth.x} y={booth.y} width={booth.w} height={booth.h} rx="3"
+                    opacity={isClosed ? 0.5 : 1}
                     fill={c.fill}
                     stroke={isSelected ? "#fff" : isHovered ? c.stroke : c.stroke}
                     strokeWidth={isSelected ? 2.5 : isHovered ? 2 : 1}
@@ -200,6 +231,34 @@ export default function BoothMap() {
                   >
                     {booth.label}
                   </text>
+                  {/* Company name in panitia mode */}
+                  {panitiaMode && companyName && (
+                    <text
+                      x={booth.x + booth.w / 2}
+                      y={booth.y + booth.h / 2 + 12}
+                      textAnchor="middle"
+                      fill={c.text}
+                      fontSize={booth.w > 70 ? 8 : 6}
+                      opacity="0.9"
+                    >{companyName}</text>
+                  )}
+                  {/* Closed indicator */}
+                  {isClosed && (
+                    <text x={booth.x + booth.w / 2} y={booth.y + booth.h / 2 + 12}
+                      textAnchor="middle" fill="#ef4444" fontSize="7" opacity="0.9">🔒</text>
+                  )}
+                  {/* Close/open toggle button in panitia mode */}
+                  {panitiaMode && booth.type !== "area" && onToggleClose && (
+                    <g onClick={(e) => { e.stopPropagation(); onToggleClose(booth.id); }} style={{ cursor: "pointer" }}>
+                      <circle cx={booth.x + booth.w - 6} cy={booth.y + 6} r="6"
+                        fill={isClosed ? "#ef4444" : "rgba(100,116,139,0.7)"}
+                        stroke={isClosed ? "#fca5a5" : "#64748b"} strokeWidth="0.5"/>
+                      <text x={booth.x + booth.w - 6} y={booth.y + 9}
+                        textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">
+                        {isClosed ? "+" : "×"}
+                      </text>
+                    </g>
+                  )}
                   {/* Price for main booths */}
                   {booth.type === "main" && booth.price && (
                     <text
@@ -283,7 +342,13 @@ export default function BoothMap() {
                 </div>
               </div>
 
-              {selected.status === "available" && selected.price && (
+              {panitiaMode && onToggleClose && (
+                <button onClick={() => onToggleClose(selected.id)}
+                  style={{ width: "100%", background: closedBooths?.has(selected.id) ? "rgba(20,184,166,0.15)" : "rgba(239,68,68,0.15)", border: `1px solid ${closedBooths?.has(selected.id) ? "#14b8a6" : "#ef4444"}`, color: closedBooths?.has(selected.id) ? "#14b8a6" : "#ef4444", borderRadius: 10, padding: "0.75rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.5rem" }}>
+                  {closedBooths?.has(selected.id) ? "🔓 Buka Kembali" : "🔒 Tutup Booth (Tidak Dijual)"}
+                </button>
+              )}
+              {!panitiaMode && selected.status === "available" && selected.price && (
                 <button
                   onClick={() => navigate("/employer/register")}
                   style={{ width: "100%", background: "linear-gradient(135deg, #0d9488, #14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.85rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}
@@ -311,13 +376,15 @@ export default function BoothMap() {
             </div>
           )}
 
-          {/* CTA */}
-          <button
-            onClick={() => navigate("/employer/register")}
-            style={{ background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", color: "#fff", borderRadius: 12, padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}
-          >
-            Daftar sebagai Employer →
-          </button>
+          {/* CTA - only show in employer mode */}
+          {!panitiaMode && (
+            <button
+              onClick={() => navigate("/employer/register")}
+              style={{ background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", color: "#fff", borderRadius: 12, padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}
+            >
+              Daftar sebagai Employer →
+            </button>
+          )}
         </div>
       </div>
 

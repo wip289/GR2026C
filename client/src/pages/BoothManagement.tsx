@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import BoothMap from "./BoothMap";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
@@ -8,8 +9,9 @@ const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const MAIN_BOOTHS = [
   "M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","M11","M12"
 ];
-const STD_BOOTHS = Array.from({ length: 38 }, (_, i) => `S${i + 1}`);
-const INTERVIEW_BOOTHS = Array.from({ length: 10 }, (_, i) => `E${i + 1}`);
+const EXTRA_BOOTHS = ["E1","E2","E3","E4"];
+const STD_BOOTHS = Array.from({ length: 36 }, (_, i) => `S${i + 1}`);
+const INTERVIEW_BOOTHS = Array.from({ length: 14 }, (_, i) => `IE${i + 1}`);
 
 const s = {
   page:  { minHeight: "100vh", background: "#0a1628", fontFamily: "system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
@@ -33,6 +35,12 @@ function getBoothType(bt: any): string {
 export default function BoothManagement() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabId>("denah");
+  const [closedBooths, setClosedBooths] = useState<Set<string>>(new Set());
+  const toggleClose = (id: string) => setClosedBooths(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
   const [selectedBooth, setSelectedBooth] = useState<string | null>(null);
 
   // Get real booking data from DB
@@ -91,10 +99,12 @@ export default function BoothManagement() {
   const takenToday = Object.keys(takenSlots).filter(k => k.includes(`-${selectedDay}-`)).length;
 
   // Stats
-  const totalMain = MAIN_BOOTHS.length;
-  const totalStd  = STD_BOOTHS.length;
-  const bookedMain = MAIN_BOOTHS.filter(b => boothMap[b]).length;
-  const bookedStd  = STD_BOOTHS.filter(b => boothMap[b]).length;
+  const totalMain  = MAIN_BOOTHS.length;
+  const totalExtra = EXTRA_BOOTHS.length;
+  const totalStd   = STD_BOOTHS.length;
+  const bookedMain  = MAIN_BOOTHS.filter(b => boothMap[b]).length;
+  const bookedExtra = EXTRA_BOOTHS.filter(b => boothMap[b]).length;
+  const bookedStd   = STD_BOOTHS.filter(b => boothMap[b]).length;
   const specialRequests = bookings.filter(b => b.specialRequest || b.needsBoothDesign);
 
   // Booth color
@@ -135,6 +145,7 @@ export default function BoothManagement() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
           {[
             { label: "Main Booth", val: `${bookedMain}/${totalMain}`, color: "#D4A017", sub: "terjual" },
+            { label: "Extra Booth", val: `${bookedExtra}/${totalExtra}`, color: "#a78bfa", sub: "terjual" },
             { label: "Standard Booth", val: `${bookedStd}/${totalStd}`, color: "#14b8a6", sub: "terjual" },
             { label: "Confirmed", val: bookings.filter(b=>b.status==="confirmed").length, color: "#10b981", sub: "employer" },
             { label: "Pending", val: bookings.filter(b=>b.status==="pending").length, color: "#f97316", sub: "menunggu" },
@@ -165,21 +176,15 @@ export default function BoothManagement() {
 
         {/* ── TAB: DENAH ── */}
         {activeTab === "denah" && (
-          <div style={{ display: "grid", gridTemplateColumns: selectedBooth ? "1fr 320px" : "1fr", gap: "1.5rem" }}>
-            <div style={s.card}>
-              {/* Legend */}
-              <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-                {[
-                  { color: "#14b8a6", label: "Confirmed" },
-                  { color: "#f97316", label: "Pending" },
-                  { color: "#ef4444", label: "Rejected" },
-                  { color: "#334155", label: "Tersedia" },
-                ].map(l => (
-                  <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#64748b" }}>
-                    <div style={{ width: 14, height: 14, borderRadius: 3, background: `${l.color}25`, border: `1px solid ${l.color}` }}/>
-                    {l.label}
-                  </div>
-                ))}
+          <div style={s.card}>
+            <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1rem" }}>
+              Klik booth untuk detail · Klik <strong style={{ color: "#ef4444" }}>×</strong> di sudut booth untuk menutup/membuka penjualan
+            </div>
+
+              {/* Legend closing */}
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+                <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Klik booth untuk detail · </div>
+                <div style={{ fontSize: "0.72rem", color: "#94a3b8", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 4, padding: "0.15rem 0.5rem" }}>🔒 = Ditutup (tidak dijual)</div>
               </div>
 
               {/* Main Booths */}
@@ -189,22 +194,63 @@ export default function BoothManagement() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                   {MAIN_BOOTHS.map(id => {
-                    const c = boothColor(id);
+                    const isClosed = closedBooths.has(id);
+                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
                     const isSelected = selectedBooth === id;
                     return (
-                      <div key={id} onClick={() => setSelectedBooth(isSelected ? null : id)}
-                        style={{ width: 64, height: 54, borderRadius: 8, border: `2px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", transform: isSelected ? "scale(1.05)" : "scale(1)", position: "relative" as const }}>
-                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: c.text }}>{id}</div>
-                        {boothMap[id] ? (
-                          <>
+                      <div key={id} style={{ position: "relative" as const }}>
+                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
+                          style={{ width: 64, height: 54, borderRadius: 8, border: `2px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", transform: isSelected ? "scale(1.05)" : "scale(1)", opacity: isClosed ? 0.6 : 1 }}>
+                          <div style={{ fontSize: "0.72rem", fontWeight: 800, color: c.text }}>{id}</div>
+                          {isClosed ? (
+                            <div style={{ fontSize: "0.55rem", color: "#ef4444" }}>🔒 Ditutup</div>
+                          ) : boothMap[id] ? (
                             <div style={{ fontSize: "0.52rem", color: c.text, opacity: 0.85, textAlign: "center", padding: "0 3px", lineHeight: 1.2, maxWidth: 58, overflow: "hidden" }}>
                               {boothMap[id].company.replace(/^(PT|CV|UD|PD)\s*/i, "").split(" ").slice(0,2).join(" ")}
                             </div>
-                            <div style={{ position: "absolute" as const, top: 2, right: 3, width: 6, height: 6, borderRadius: "50%", background: c.border }}/>
-                          </>
-                        ) : (
-                          <div style={{ fontSize: "0.5rem", color: "#1e3a5f" }}>kosong</div>
-                        )}
+                          ) : (
+                            <div style={{ fontSize: "0.5rem", color: "#1e3a5f" }}>kosong</div>
+                          )}
+                        </div>
+                        <button onClick={() => toggleClose(id)} title={isClosed ? "Buka kembali" : "Tutup booth"}
+                          style={{ position: "absolute" as const, top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.6rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
+                          {isClosed ? "+" : "×"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Extra Booths */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ fontSize: "0.75rem", color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+                  Extra Booth (4×2m) — {bookedExtra}/{totalExtra} terjual · Rp 8.500.000
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                  {EXTRA_BOOTHS.map(id => {
+                    const isClosed = closedBooths.has(id);
+                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
+                    const isSelected = selectedBooth === id;
+                    return (
+                      <div key={id} style={{ position: "relative" as const }}>
+                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
+                          style={{ width: 64, height: 54, borderRadius: 8, border: `2px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", opacity: isClosed ? 0.6 : 1 }}>
+                          <div style={{ fontSize: "0.72rem", fontWeight: 800, color: c.text }}>{id}</div>
+                          {isClosed ? (
+                            <div style={{ fontSize: "0.55rem", color: "#ef4444" }}>🔒 Ditutup</div>
+                          ) : boothMap[id] ? (
+                            <div style={{ fontSize: "0.52rem", color: c.text, opacity: 0.85, textAlign: "center", padding: "0 3px", lineHeight: 1.2 }}>
+                              {boothMap[id].company.replace(/^(PT|CV|UD|PD)\s*/i, "").split(" ").slice(0,2).join(" ")}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: "0.5rem", color: "#1e3a5f" }}>kosong</div>
+                          )}
+                        </div>
+                        <button onClick={() => toggleClose(id)} title={isClosed ? "Buka kembali" : "Tutup booth"}
+                          style={{ position: "absolute" as const, top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.6rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
+                          {isClosed ? "+" : "×"}
+                        </button>
                       </div>
                     );
                   })}
@@ -218,94 +264,34 @@ export default function BoothManagement() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
                   {STD_BOOTHS.map(id => {
-                    const c = boothColor(id);
+                    const isClosed = closedBooths.has(id);
+                    const c = isClosed ? { bg: "rgba(100,116,139,0.15)", border: "#475569", text: "#475569" } : boothColor(id);
                     const isSelected = selectedBooth === id;
                     return (
-                      <div key={id} onClick={() => setSelectedBooth(isSelected ? null : id)}
-                        style={{ width: 48, height: 40, borderRadius: 6, border: `1.5px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", transform: isSelected ? "scale(1.05)" : "scale(1)" }}>
-                        <div style={{ fontSize: "0.65rem", fontWeight: 700, color: c.text }}>{id}</div>
-                        {boothMap[id] && <div style={{ fontSize: "0.5rem", color: c.text, opacity: 0.8 }}>•</div>}
+                      <div key={id} style={{ position: "relative" as const }}>
+                        <div onClick={() => setSelectedBooth(isSelected ? null : id)}
+                          style={{ width: 48, height: 40, borderRadius: 6, border: `1.5px solid ${isSelected ? "#fff" : c.border}`, background: c.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", opacity: isClosed ? 0.5 : 1 }}>
+                          <div style={{ fontSize: "0.65rem", fontWeight: 700, color: c.text }}>{id}</div>
+                          {isClosed ? <div style={{ fontSize: "0.45rem", color: "#ef4444" }}>🔒</div>
+                            : boothMap[id] ? <div style={{ fontSize: "0.5rem", color: c.text, opacity: 0.8 }}>•</div>
+                            : null}
+                        </div>
+                        <button onClick={() => toggleClose(id)}
+                          style={{ position: "absolute" as const, top: -5, right: -5, width: 14, height: 14, borderRadius: "50%", background: isClosed ? "#ef4444" : "rgba(100,116,139,0.4)", border: "none", cursor: "pointer", fontSize: "0.5rem", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
+                          {isClosed ? "+" : "×"}
+                        </button>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Interview Booths */}
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "#60a5fa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
-                  Interview Booth — {INTERVIEW_BOOTHS.length} unit
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                  {INTERVIEW_BOOTHS.map(id => (
-                    <div key={id} style={{ width: 44, height: 36, borderRadius: 6, border: "1px solid rgba(96,165,250,0.3)", background: "rgba(96,165,250,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#60a5fa" }}>{id}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Detail panel */}
-            {selectedBooth && (
-              <div style={{ ...s.card, position: "sticky" as const, top: 76, alignSelf: "start" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
-                  <div style={{ fontWeight: 800, fontSize: "1.5rem", color: selectedData ? boothColor(selectedBooth).text : "#475569" }}>
-                    Booth {selectedBooth}
-                  </div>
-                  <button onClick={() => setSelectedBooth(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "1.2rem" }}>×</button>
-                </div>
-
-                {selectedData ? (
-                  <>
-                    <div style={{ marginBottom: "0.5rem" }}>
-                      <span style={s.badge(boothColor(selectedBooth).text)}>
-                        {selectedData.status === "confirmed" ? "✅ Confirmed" : selectedData.status === "pending" ? "⏳ Pending" : "❌ Rejected"}
-                      </span>
-                      <span style={{ ...s.badge("#94a3b8"), marginLeft: "0.4rem" }}>
-                        {selectedData.boothType === "main" ? "Main 5×5m" : "Standard 3×3m"}
-                      </span>
-                    </div>
-
-                    {[
-                      { label: "Perusahaan", val: selectedData.company },
-                      { label: "Booking ID", val: selectedData.bookingId },
-                      { label: "PIC", val: selectedData.pic },
-                      { label: "WhatsApp", val: selectedData.whatsapp },
-                      { label: "Total", val: fmt(parseFloat(selectedData.totalAmount || "0")) },
-                    ].map(item => (
-                      <div key={item.label} style={{ marginBottom: "0.75rem" }}>
-                        <div style={{ fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</div>
-                        <div style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: 600 }}>{item.val}</div>
-                      </div>
-                    ))}
-
-                    {selectedData.needsBoothDesign && (
-                      <div style={{ padding: "0.75rem", background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.3)", borderRadius: 8, marginBottom: "0.75rem", fontSize: "0.82rem", color: "#818cf8" }}>
-                        📐 Meminta layanan desain booth interior
-                      </div>
-                    )}
-
-                    {selectedData.specialRequest && (
-                      <div style={{ padding: "0.75rem", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: 8, fontSize: "0.82rem", color: "#fed7aa" }}>
-                        <div style={{ fontWeight: 700, color: "#f97316", marginBottom: "0.35rem" }}>⚡ Special Request:</div>
-                        {selectedData.specialRequest}
-                      </div>
-                    )}
-
-                    {!selectedData.specialRequest && !selectedData.needsBoothDesign && (
-                      <div style={{ fontSize: "0.82rem", color: "#334155", fontStyle: "italic" }}>Tidak ada special request</div>
-                    )}
-                  </>
-                ) : (
-                  <div style={{ textAlign: "center", padding: "1.5rem", color: "#334155" }}>
-                    <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>✅</div>
-                    <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>Booth Tersedia</div>
-                    <div style={{ fontSize: "0.82rem" }}>Belum ada booking untuk booth ini</div>
-                  </div>
-                )}
-              </div>
-            )}
+            <BoothMap
+              panitiaMode={true}
+              bookingData={boothMap}
+              closedBooths={closedBooths}
+              onToggleClose={toggleClose}
+            />
           </div>
         )}
 
