@@ -129,7 +129,6 @@ const reservedCount  = BOOTHS.filter(b => b.status === "reserved").length;
 export default function BoothMap({ bookingData, closedBooths, onToggleClose, panitiaMode }: PanitiaProps = {}) {
   const [, navigate] = useLocation();
   const [selected, setSelected] = useState<Booth | null>(null);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Resolve booth status: panitia mode pakai data real dari DB
   const getBoothStatus = (booth: Booth): BoothStatus => {
