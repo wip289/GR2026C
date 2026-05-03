@@ -321,17 +321,13 @@ export default function BoothMap({ bookingData, closedBooths, onToggleClose, pan
           </div>
 
           {/* Selected booth detail */}
-          {selected ? (() => {
-            // Pakai data real dari DB jika ada (panitia mode)
-            const realStatus = (() => {
-              if (closedBooths?.has(selected.id)) return "staff";
-              if (bookingData?.[selected.id]) {
-                const s = bookingData[selected.id].status;
-                if (s === "confirmed" || s === "active") return "booked" as BoothStatus;
-                if (s === "pending") return "reserved" as BoothStatus;
-              }
-              return selected.status;
-            })();
+          {selected && (() => {
+            const realStatus: BoothStatus = closedBooths?.has(selected.id) ? "staff"
+              : bookingData?.[selected.id]
+                ? (bookingData[selected.id].status === "confirmed" || bookingData[selected.id].status === "active" ? "booked"
+                  : bookingData[selected.id].status === "pending" ? "reserved"
+                  : selected.status)
+              : selected.status;
             const realCompany = bookingData?.[selected.id]?.company || null;
             const isClosed = closedBooths?.has(selected.id);
             const rc = COLORS[realStatus];
@@ -384,8 +380,8 @@ export default function BoothMap({ bookingData, closedBooths, onToggleClose, pan
               )}
             </div>
             );
-          })()
-          ) : (
+          })()}
+          {!selected && (
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1.5rem", textAlign: "center" }}>
               <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>👆</div>
               <p style={{ color: "#475569", fontSize: "0.85rem", lineHeight: 1.6 }}>Klik booth mana saja untuk melihat detail dan harga</p>
