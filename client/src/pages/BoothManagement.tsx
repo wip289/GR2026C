@@ -52,9 +52,14 @@ export default function BoothManagement() {
   const [selectedBooth, setSelectedBooth] = useState<string | null>(null);
 
   // Get real booking data from DB
-  const { data: bookingsRaw } = trpc.event.getAllEmployerBookings.useQuery();
+  const { data: bookingsRaw, refetch: refetchBookings } = trpc.event.getAllEmployerBookings.useQuery();
   const { data: interviewRaw } = trpc.event.getAllInterviewBookings.useQuery();
   const bookings = (bookingsRaw || []) as any[];
+
+  const cancelBookingMutation = trpc.event.updateEmployerBookingStatus.useMutation({
+    onSuccess: () => { toast.success("Booking dibatalkan."); refetchBookings(); },
+    onError: (e) => toast.error("Gagal: " + e.message),
+  });
 
 
 
@@ -283,14 +288,14 @@ export default function BoothManagement() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    {["Perusahaan","Booking ID","Booth","Total","Status","Special Request"].map(h => (
+                    {["Perusahaan","Booking ID","Booth","Total","Status","Special Request","Aksi"].map(h => (
                       <th key={h} style={{ padding: "0.75rem 1rem", textAlign: "left", fontSize: "0.75rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {bookings.length === 0 ? (
-                    <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#334155" }}>Belum ada booking</td></tr>
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "#334155" }}>Belum ada booking</td></tr>
                   ) : bookings.map((b: any) => {
                     const booths = parseBooths(b.booths);
                     const hasSpecial = !!(b.specialRequest || b.needsBoothDesign);
@@ -333,6 +338,19 @@ export default function BoothManagement() {
                             </span>
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#334155" }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "0.85rem 1rem" }}>
+                          {b.status !== "rejected" && (
+                            <button
+                              onClick={() => {
+                                if (!window.confirm(`Batalkan booking ${b.companyName}?`)) return;
+                                cancelBookingMutation.mutate({ bookingId: b.bookingId, status: "rejected" });
+                              }}
+                              disabled={cancelBookingMutation.isPending}
+                              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 8, padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+                              ❌ Batalkan
+                            </button>
                           )}
                         </td>
                       </tr>

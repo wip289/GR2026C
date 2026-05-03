@@ -32,6 +32,7 @@ export default function EmployerDashboard() {
   const [bookingId, setBookingId] = useState("");
   const [mySlots, setMySlots] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   const [sessionData, setSessionData] = useState<{bookingId: string; email: string} | null>(null);
 
@@ -93,12 +94,17 @@ export default function EmployerDashboard() {
   );
   const { data: allInterviewRaw, refetch: refetchAllTaken } = trpc.event.getAllInterviewBookings.useQuery();
   const takenSlots: Record<string, string> = {};
+  const blockedByOthers: Record<string, string> = {};
   ((allInterviewRaw || []) as any[]).forEach((b: any) => {
     const key = `${b.boothId}-${b.day}-${b.slotIndex}`;
     takenSlots[key] = b.companyName || b.employerBookingId;
+    if (b.employerBookingId !== sessionData?.bookingId) {
+      blockedByOthers[key] = b.companyName || b.employerBookingId;
+    }
   });
 
   const cancelInterviewMutation = trpc.event.cancelInterviewBooking.useMutation();
+  const incrementRescheduleMutation = trpc.event.incrementRescheduleCount.useMutation();
   const confirmInterviewMutation = trpc.event.createInterviewBooking.useMutation({
     onSuccess: () => {
       toast.success("Booking interview booth berhasil!");
@@ -201,7 +207,8 @@ export default function EmployerDashboard() {
       toast.error(`Maksimal ${maxSlots} slot interview untuk paket booth Anda`);
       return;
     }
-    if (takenSlots[key]) {
+    const blocked = isRescheduling ? blockedByOthers : takenSlots;
+    if (blocked[key]) {
       toast.error("Slot ini sudah dibooking perusahaan lain");
       return;
     }
@@ -539,11 +546,51 @@ export default function EmployerDashboard() {
         {/* ── TAB: INTERVIEW BOOTH ── */}
         {activeTab === "interview" && (
           <div>
-            {booking.status === "confirmed" ? (
+            {booking.status === "confirmed" ? (() => {
+              const hasExisting = (takenRaw || []).length > 0;
+              const rescheduleCount = (booking as any).rescheduleCount ?? 0;
+              const canReschedule = rescheduleCount < 1;
+
+              // ── State: sudah booking, tidak sedang reschedule ──
+              if (hasExisting && !isRescheduling) return (
+                <>
+                  <div style={s.teal}>
+                    <div style={s.secHd}>✅ Slot Interview Terdaftar</div>
+                    {(takenRaw || []).map((b: any) => (
+                      <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem", color: "#cbd5e1" }}>
+                        <span>Booth <strong style={{ color: "#60a5fa" }}>{b.boothId}</strong></span>
+                        <span>{DAYS[b.day]?.split(",")[0]} · {SLOTS[b.slotIndex]}</span>
+                        <span style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 6, padding: "0.15rem 0.6rem", fontSize: "0.75rem", color: "#6ee7b7" }}>✓ Terkonfirmasi</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: "0.5rem" }}>
+                    {canReschedule ? (
+                      <button
+                        onClick={() => { setIsRescheduling(true); setMySlots([]); }}
+                        style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 10, padding: "0.75rem 1.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
+                        🔄 Ubah Jadwal (1x)
+                      </button>
+                    ) : (
+                      <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10, padding: "1rem", color: "#fca5a5", fontSize: "0.85rem" }}>
+                        ⚠️ Anda sudah menggunakan kesempatan ubah jadwal.
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+
+              // ── State: belum booking atau sedang reschedule ──
+              return (
               <>
                 {/* Slot info */}
                 <div style={s.teal}>
-                  <div style={s.secHd}>📅 Booking Interview Booth</div>
+                  <div style={s.secHd}>📅 {isRescheduling ? "Pilih Jadwal Baru" : "Booking Interview Booth"}</div>
+                  {isRescheduling && (
+                    <div style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 8, padding: "0.65rem 1rem", marginBottom: "1rem", fontSize: "0.83rem", color: "#fde68a" }}>
+                      ⚠️ Jadwal lama akan dihapus dan diganti. Pilih slot baru lalu klik Konfirmasi.
+                    </div>
+                  )}
                   <p style={{ color: "#64748b", fontSize: "0.85rem", marginBottom: "1rem", lineHeight: 1.7 }}>
                     Interview booth tersedia <strong style={{ color: "#f1f5f9" }}>gratis</strong> untuk employer yang sudah memesan booth.
                     Pilih booth dan slot waktu yang tersedia.
@@ -600,7 +647,7 @@ export default function EmployerDashboard() {
                             {SLOTS.map((_, slotIdx) => {
                               const key = `${booth}-${selectedDay}-${slotIdx}`;
                               const isMine = mySlots.includes(key);
-                              const isTaken = !!takenSlots[key];
+                              const isTaken = !!(isRescheduling ? blockedByOthers[key] : takenSlots[key]);
                               const bg = isMine ? "#065f46" : isTaken ? "#7f1d1d" : "rgba(20,184,166,0.08)";
                               const border = isMine ? "1px solid #10b981" : isTaken ? "1px solid #ef4444" : "1px solid rgba(20,184,166,0.15)";
                               const label = isMine ? "✓ Saya" : isTaken ? "✗" : "•";
@@ -669,6 +716,10 @@ export default function EmployerDashboard() {
                               companyName: (booking as any)?.companyName || "",
                             });
                           }
+                          if (isRescheduling) {
+                            await incrementRescheduleMutation.mutateAsync({ bookingId: sessionData?.bookingId || "" });
+                            setIsRescheduling(false);
+                          }
                           toast.success("Booking interview booth berhasil!");
                           setMySlots([]);
                           refetchTaken();
@@ -684,7 +735,7 @@ export default function EmployerDashboard() {
                   </div>
                 )}
               </>
-            ) : (
+            ); })() : (
               <div style={s.card}>
                 <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
                   <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>

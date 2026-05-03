@@ -32,6 +32,7 @@ import {
   getInterviewBookingsByEmployer,
   getAllInterviewBookings,
   deleteInterviewBooking,
+  incrementRescheduleCount,
 } from "./db";
 import { hasPermission, hasAnyPermission } from "./rbac";
 import type { CoordinatorRole } from "./rbac";
@@ -220,6 +221,7 @@ export const eventRouter = router({
         buktiPaymentUrl: (booking as any).buktiPaymentUrl,
         kwitansiApproved: (booking as any).kwitansiApproved,
         jobVacanciesUrl: (booking as any).jobVacanciesUrl,
+        rescheduleCount: (booking as any).rescheduleCount ?? 0,
       };
     }),
 
@@ -433,6 +435,13 @@ export const eventRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       await deleteInterviewBooking(input.id);
+      return { success: true };
+    }),
+
+  incrementRescheduleCount: publicProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .mutation(async ({ input }) => {
+      await incrementRescheduleCount(input.bookingId);
       return { success: true };
     }),
 

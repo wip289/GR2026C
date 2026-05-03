@@ -314,6 +314,17 @@ export async function updateEmployerJobVacancies(bookingId: string, urls: any[])
     .where(eq(employerBookings.bookingId, bookingId));
 }
 
+export async function incrementRescheduleCount(bookingId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [row] = await db.select({ rescheduleCount: employerBookings.rescheduleCount })
+    .from(employerBookings).where(eq(employerBookings.bookingId, bookingId)).limit(1);
+  const next = ((row as any)?.rescheduleCount || 0) + 1;
+  await db.update(employerBookings)
+    .set({ rescheduleCount: next, updatedAt: new Date() } as any)
+    .where(eq(employerBookings.bookingId, bookingId));
+}
+
 export async function updateEmployerLogo(bookingId: string, url: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

@@ -225,6 +225,7 @@ export const employerBookings = mysqlTable("employerBookings", {
   buktiPaymentUrl: varchar("buktiPaymentUrl", { length: 500 }),
   kwitansiApproved: boolean("kwitansiApproved").default(false),
   jobVacanciesUrl: json("jobVacanciesUrl"), // [{url, name}]
+  rescheduleCount: int("rescheduleCount").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
