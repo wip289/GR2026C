@@ -240,6 +240,29 @@ export const eventRouter = router({
       return { success: true };
     }),
 
+  updateEmployerBooth: publicProcedure
+    .input(z.object({
+      bookingId: z.string(),
+      selectedBooths: z.array(z.string()),
+      boothType: z.string().optional(),
+      totalAmount: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      await db.update(employerBookings)
+        .set({
+          booths: JSON.stringify(input.selectedBooths.map(id => ({
+            id,
+            label: id,
+            type: input.boothType || "standard",
+            price: 0,
+          }))),
+          updatedAt: new Date(),
+        })
+        .where(eq(employerBookings.bookingId, input.bookingId));
+      return { success: true };
+    }),
+
   updateBuktiPayment: publicProcedure
     .input(z.object({ bookingId: z.string(), url: z.string() }))
     .mutation(async ({ input }) => {

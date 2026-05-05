@@ -50,6 +50,8 @@ export default function BoothManagement() {
     return next;
   });
   const [selectedBooth, setSelectedBooth] = useState<string | null>(null);
+  const [editingBooth, setEditingBooth] = useState<any>(null);
+  const [newBooths, setNewBooths] = useState<string[]>([]);
 
   // Get real booking data from DB
   const { data: bookingsRaw, refetch: refetchBookings } = trpc.event.getAllEmployerBookings.useQuery();
@@ -59,6 +61,16 @@ export default function BoothManagement() {
   const cancelBookingMutation = trpc.event.updateEmployerBookingStatus.useMutation({
     onSuccess: () => { toast.success("Booking dibatalkan."); refetchBookings(); },
     onError: (e) => toast.error("Gagal: " + e.message),
+  });
+
+  const updateBoothMutation = trpc.event.updateEmployerBooth.useMutation({
+    onSuccess: () => {
+      toast.success("Booth berhasil diganti!");
+      setEditingBooth(null);
+      setNewBooths([]);
+      refetchBookings();
+    },
+    onError: () => toast.error("Gagal mengganti booth"),
   });
 
 
@@ -350,15 +362,22 @@ export default function BoothManagement() {
                         </td>
                         <td style={{ padding: "0.85rem 1rem" }}>
                           {b.status !== "rejected" && (
-                            <button
-                              onClick={() => {
-                                if (!window.confirm(`Batalkan booking ${b.companyName}?`)) return;
-                                cancelBookingMutation.mutate({ bookingId: b.bookingId, status: "rejected" });
-                              }}
-                              disabled={cancelBookingMutation.isPending}
-                              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 8, padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
-                              ❌ Batalkan
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (!window.confirm(`Batalkan booking ${b.companyName}?`)) return;
+                                  cancelBookingMutation.mutate({ bookingId: b.bookingId, status: "rejected" });
+                                }}
+                                disabled={cancelBookingMutation.isPending}
+                                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 8, padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+                                ❌ Batalkan
+                              </button>
+                              <button
+                                onClick={() => { setEditingBooth(b); setNewBooths(parseBooths(b.booths).map((bt: any) => bt.id || bt.label)); }}
+                                style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.35rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", marginTop: "0.4rem", display: "block" }}>
+                                🔄 Ganti Booth
+                              </button>
+                            </>
                           )}
                         </td>
                       </tr>
@@ -512,6 +531,48 @@ export default function BoothManagement() {
         )}
 
       </div>
+
+      {editingBooth && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+          <div style={{ background: "#0a1628", borderRadius: 16, padding: "2rem", width: "100%", maxWidth: 900, maxHeight: "90vh", overflowY: "auto", border: "1px solid rgba(20,184,166,0.3)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: "1.2rem" }}>🔄 Ganti Booth</div>
+                <div style={{ color: "#64748b", fontSize: "0.85rem" }}>{editingBooth.companyName} · {editingBooth.bookingId}</div>
+              </div>
+              <button onClick={() => setEditingBooth(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "1.5rem" }}>×</button>
+            </div>
+            <div style={{ marginBottom: "1rem", color: "#94a3b8", fontSize: "0.85rem" }}>
+              Booth sekarang: <strong style={{ color: "#D4A017" }}>{parseBooths(editingBooth.booths).map((bt: any) => bt.id || bt.label).join(", ")}</strong>
+            </div>
+            <div style={{ marginBottom: "1rem", color: "#94a3b8", fontSize: "0.85rem" }}>
+              Pilih booth baru dari denah (klik untuk pilih/batal):
+            </div>
+            <BoothMapPicker
+              selectedIds={newBooths}
+              onChange={setNewBooths}
+              bookingData={boothMap}
+              closedBooths={closedBooths}
+            />
+            <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem", justifyContent: "flex-end" }}>
+              <button onClick={() => setEditingBooth(null)}
+                style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", borderRadius: 10, padding: "0.75rem 1.5rem", fontWeight: 700, cursor: "pointer" }}>
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  if (newBooths.length === 0) { toast.error("Pilih minimal 1 booth"); return; }
+                  if (!window.confirm(`Ganti booth ${editingBooth.companyName} ke: ${newBooths.join(", ")}?`)) return;
+                  updateBoothMutation.mutate({ bookingId: editingBooth.bookingId, selectedBooths: newBooths });
+                }}
+                disabled={updateBoothMutation.isPending || newBooths.length === 0}
+                style={{ background: "linear-gradient(135deg, #D4A017, #B8860B)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem 1.5rem", fontWeight: 700, cursor: "pointer" }}>
+                {updateBoothMutation.isPending ? "⏳ Menyimpan..." : "💾 Simpan Perubahan Booth"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
