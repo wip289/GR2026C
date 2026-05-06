@@ -1,5 +1,13 @@
 // ── Invoice Generator for GR2026 Employer Booking ──────────────
 
+export interface FacilityItem {
+  label: string;
+  qty: number;
+  unit: string;
+  pricePerDay: number;
+  days: number;
+}
+
 export interface BookingData {
   bookingId: string;
   bookingDate: string;
@@ -14,9 +22,13 @@ export interface BookingData {
   needsBoothDesign: boolean;
   specialRequest: string;
   totalAmount: number;
-  paymentDeadline: string; // H-7 before event
-  lunasStamp?: boolean;   // show LUNAS watermark
-  lunasDate?: string;     // date of payment approval
+  paymentDeadline: string;
+  lunasStamp?: boolean;
+  lunasDate?: string;
+  // Fasilitas & Paket tambahan
+  facilities?: FacilityItem[];
+  paketBooth?: { nama: string; harga: number; spesifikasi: string } | null;
+  facilityTotal?: number;
 }
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -218,6 +230,101 @@ ${data.lunasStamp ? `
 </div>
 ` : ""}
 </body></html>`;
+}
+
+export function generateFacilityInvoiceHTML(data: BookingData): string {
+  const items: string[] = [];
+  if (data.paketBooth) {
+    items.push(`
+      <tr style="border-bottom:1px solid #e2e8f0">
+        <td style="padding:10px 8px;font-size:13px">${data.paketBooth.nama}</td>
+        <td style="padding:10px 8px;font-size:13px;color:#64748b">${data.paketBooth.spesifikasi}</td>
+        <td style="padding:10px 8px;font-size:13px;text-align:center">1</td>
+        <td style="padding:10px 8px;font-size:13px;text-align:right;font-weight:700;color:#D4A017">${fmt(data.paketBooth.harga)}</td>
+      </tr>`);
+  }
+  (data.facilities || []).forEach(f => {
+    if (f.qty > 0) {
+      items.push(`
+        <tr style="border-bottom:1px solid #e2e8f0">
+          <td style="padding:10px 8px;font-size:13px">${f.label}</td>
+          <td style="padding:10px 8px;font-size:13px;color:#64748b">${f.qty} ${f.unit} × ${f.days} hari</td>
+          <td style="padding:10px 8px;font-size:13px;text-align:center">${fmt(f.pricePerDay)}/hari</td>
+          <td style="padding:10px 8px;font-size:13px;text-align:right;font-weight:700;color:#D4A017">${fmt(f.qty * f.pricePerDay * f.days)}</td>
+        </tr>`);
+    }
+  });
+  const total = data.facilityTotal || 0;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:0;background:#f8fafc}
+    .page{max-width:800px;margin:0 auto;background:#fff;padding:40px;box-shadow:0 0 20px rgba(0,0,0,0.1)}
+    @media print{body{background:#fff}.page{box-shadow:none;padding:20px}}
+  </style></head><body>
+  <div class="page">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:3px solid #D4A017">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#0a1628">INVOICE FASILITAS TAMBAHAN</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung</div>
+        <div style="font-size:13px;color:#64748b">10–11 Juni 2026 · Gedung Dome NHI Bandung</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:#64748b">Nomor Invoice</div>
+        <div style="font-size:16px;font-weight:800;color:#D4A017">${data.bookingId}-FAC</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px">Tanggal: ${data.bookingDate}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:8px">
+      <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Ditagihkan kepada</div>
+      <div style="font-weight:700;font-size:16px;color:#0a1628">${data.companyName}</div>
+      <div style="font-size:13px;color:#64748b">${data.industry} · ${data.city}</div>
+      <div style="font-size:13px;color:#64748b">PIC: ${data.pic1.name} · ${data.pic1.whatsapp}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+      <thead>
+        <tr style="background:#0a1628">
+          <th style="padding:12px 8px;text-align:left;color:#fff;font-size:12px">Item</th>
+          <th style="padding:12px 8px;text-align:left;color:#fff;font-size:12px">Keterangan</th>
+          <th style="padding:12px 8px;text-align:center;color:#fff;font-size:12px">Satuan</th>
+          <th style="padding:12px 8px;text-align:right;color:#fff;font-size:12px">Total</th>
+        </tr>
+      </thead>
+      <tbody>${items.join("")}</tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:32px">
+      <div style="background:#0a1628;color:#fff;padding:16px 24px;border-radius:8px;min-width:200px">
+        <div style="display:flex;justify-content:space-between;gap:32px">
+          <span style="font-size:14px">Grand Total</span>
+          <span style="font-size:18px;font-weight:800;color:#D4A017">${fmt(total)}</span>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px">*Belum termasuk sewa booth utama</div>
+      </div>
+    </div>
+    <div style="padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #D4A017;font-size:13px;color:#92400e;margin-bottom:24px">
+      <strong>Informasi Pembayaran:</strong><br/>
+      Bank BTN · No. Rek: 0095 01 30 00000 38 · a.n Koperasi STP Bandung<br/>
+      Batas Pembayaran: ${data.paymentDeadline}<br/>
+      Setelah transfer, kirim bukti ke WhatsApp panitia.
+    </div>
+    <div style="text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px">
+      Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 10–11 Juni 2026
+    </div>
+    <div style="position:fixed;bottom:24px;right:24px;z-index:999">
+      <button onclick="window.print()" style="background:#D4A017;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
+        🖨️ Print / Save PDF
+      </button>
+    </div>
+  </div></body></html>`;
+}
+
+export function openFacilityInvoice(data: BookingData) {
+  const html = generateFacilityInvoiceHTML(data);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
 }
 
 export function openInvoiceForPrint(data: BookingData) {

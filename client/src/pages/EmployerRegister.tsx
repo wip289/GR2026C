@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import BoothMapPicker, { ALL_BOOTHS } from "@/components/BoothMapPicker";
-import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, type BookingData } from "@/lib/invoiceGenerator";
+import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, openFacilityInvoice, type BookingData, type FacilityItem } from "@/lib/invoiceGenerator";
 import { trpc } from "@/lib/trpc";
 import { uploadToSupabase } from "@/lib/supabase";
 
@@ -213,6 +213,23 @@ export default function EmployerRegister() {
     onSuccess: (_data, variables) => {
       const now = new Date();
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+      // Build facility items untuk invoice
+      const FACILITY_LABELS: Record<string, { label: string; unit: string; price: number }> = {
+        facilityChair:   { label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
+        facilityTable:   { label: "Meja + cover hitam",   unit: "buah", price: 125000 },
+        facilityTV42:    { label: "TV 42 Inch",           unit: "unit", price: 750000 },
+        facilityTV55:    { label: "TV 55 Inch",           unit: "unit", price: 1500000 },
+        facilityPower2A: { label: "Listrik tambahan 2A",  unit: "titik", price: 250000 },
+        facilityPower4A: { label: "Listrik tambahan 4A",  unit: "titik", price: 400000 },
+        facilityCable:   { label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
+      };
+      const facilityItems: FacilityItem[] = Object.entries(facilities)
+        .filter(([, qty]) => qty > 0)
+        .map(([key, qty]) => ({ ...FACILITY_LABELS[key], qty, days: 2, pricePerDay: FACILITY_LABELS[key].price }));
+      const paketData = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1] : null;
+      const facTotal = facilityItems.reduce((s, f) => s + f.qty * f.pricePerDay * f.days, 0)
+        + (paketData ? paketData.harga : 0);
+
       const data: BookingData = {
         bookingId: variables.bookingId,
         bookingDate: dateStr,
@@ -228,6 +245,9 @@ export default function EmployerRegister() {
         specialRequest,
         totalAmount,
         paymentDeadline: getPaymentDeadline(),
+        facilities: facilityItems,
+        paketBooth: paketData ? { nama: paketData.nama, harga: paketData.harga, spesifikasi: paketData.spesifikasi } : null,
+        facilityTotal: facTotal,
       };
       setBookingData(data);
       toast.success("Booking berhasil!", { description: "Invoice siap didownload." });
@@ -344,11 +364,23 @@ export default function EmployerRegister() {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Actions — Invoice buttons */}
           <button onClick={() => openInvoiceForPrint(bookingData)}
-            style={{ ...css.btnPri, background: "linear-gradient(135deg, #D4A017, #B8860B)", marginBottom: "0.75rem", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
-            📄 Download Invoice PDF
+            style={{ ...css.btnPri, background: "linear-gradient(135deg, #D4A017, #B8860B)", marginBottom: "0.5rem", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
+            📄 Invoice Booth
           </button>
+          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth) && (
+            <button onClick={() => openFacilityInvoice(bookingData)}
+              style={{ ...css.btnPri, background: "linear-gradient(135deg, #fbbf24, #d97706)", marginBottom: "0.5rem" }}>
+              🛠️ Invoice Fasilitas & Paket
+            </button>
+          )}
+          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth) && (
+            <button onClick={() => { openInvoiceForPrint(bookingData); setTimeout(() => openFacilityInvoice(bookingData), 800); }}
+              style={{ ...css.btnPri, background: "linear-gradient(135deg, #0d9488, #14b8a6)", marginBottom: "0.75rem" }}>
+              📋 Download Semua Invoice (Gabungan)
+            </button>
+          )}
           <button onClick={() => navigate("/employer/login")}
             style={{ ...css.btnPri, marginBottom: "0.75rem" }}>
             Login ke Portal Employer →
@@ -761,8 +793,49 @@ export default function EmployerRegister() {
                 {needsDesign && <div style={{ fontSize: "0.82rem", color: "#D4A017", marginTop: "0.5rem" }}>📐 + Desain booth (ditagih terpisah oleh vendor)</div>}
                 {specialRequest && <div style={{ fontSize: "0.82rem", color: "#94a3b8", marginTop: "0.5rem" }}>📝 {specialRequest}</div>}
                 <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(20,184,166,0.2)", paddingTop: "0.75rem", marginTop: "0.75rem", fontWeight: 800, fontSize: "1.1rem" }}>
-                  <span>Total</span>
+                  <span>Subtotal Booth</span>
                   <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
+                </div>
+
+                {/* Fasilitas & Paket tambahan */}
+                {(selectedPaket !== null || Object.values(facilities).some(v => v > 0)) && (
+                  <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(212,160,23,0.2)" }}>
+                    <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>Fasilitas & Paket Tambahan (ditagih terpisah)</div>
+                    {selectedPaket !== null && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                        <span>🎨 {PAKET_BOOTH[selectedPaket-1].nama}</span>
+                        <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(PAKET_BOOTH[selectedPaket-1].harga)}</span>
+                      </div>
+                    )}
+                    {Object.entries(facilities).filter(([,v]) => v > 0).map(([key, qty]) => {
+                      const labels: Record<string,{label:string;price:number}> = {
+                        facilityChair:{label:"Kursi",price:25000}, facilityTable:{label:"Meja",price:125000},
+                        facilityTV42:{label:"TV 42"",price:750000}, facilityTV55:{label:"TV 55"",price:1500000},
+                        facilityPower2A:{label:"Listrik 2A",price:250000}, facilityPower4A:{label:"Listrik 4A",price:400000},
+                        facilityCable:{label:"Kabel",price:250000},
+                      };
+                      return (
+                        <div key={key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.25rem" }}>
+                          <span>🛠️ {labels[key].label} × {qty} × 2 hari</span>
+                          <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(qty * labels[key].price * 2)}</span>
+                        </div>
+                      );
+                    })}
+                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(251,191,36,0.2)", paddingTop: "0.5rem", marginTop: "0.5rem", fontWeight: 800, fontSize: "0.95rem" }}>
+                      <span style={{ color: "#fbbf24" }}>Subtotal Fasilitas</span>
+                      <span style={{ color: "#fbbf24" }}>{fmt(
+                        (selectedPaket !== null ? PAKET_BOOTH[selectedPaket-1].harga : 0) +
+                        Object.entries(facilities).filter(([,v])=>v>0).reduce((s,[k,v])=>{
+                          const p:{[key:string]:number}={facilityChair:25000,facilityTable:125000,facilityTV42:750000,facilityTV55:1500000,facilityPower2A:250000,facilityPower4A:400000,facilityCable:250000};
+                          return s + v * (p[k]||0) * 2;
+                        },0)
+                      )}</span>
+                    </div>
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(212,160,23,0.1)", borderRadius: 8, padding: "0.75rem 0.85rem", marginTop: "0.75rem", fontWeight: 800, fontSize: "1.15rem" }}>
+                  <span>Grand Total</span>
+                  <span style={{ color: "#D4A017" }}>{fmt(totalAmount + (selectedPaket !== null ? PAKET_BOOTH[selectedPaket-1].harga : 0) + Object.entries(facilities).filter(([,v])=>v>0).reduce((s,[k,v])=>{const p:{[key:string]:number}={facilityChair:25000,facilityTable:125000,facilityTV42:750000,facilityTV55:1500000,facilityPower2A:250000,facilityPower4A:400000,facilityCable:250000};return s+v*(p[k]||0)*2;},0))}</span>
                 </div>
               </div>
             </div>
