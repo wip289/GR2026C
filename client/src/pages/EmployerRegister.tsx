@@ -96,6 +96,27 @@ export default function EmployerRegister() {
   const [selectedBooths, setSelectedBooths] = useState<string[]>([]);
   const [needsDesign, setNeedsDesign]       = useState(false);
   const [specialRequest, setSpecialRequest] = useState("");
+  const [facilities, setFacilities] = useState<Record<string, number>>({
+    facilityChair: 0,
+    facilityTable: 0,
+    facilityTV42: 0,
+    facilityTV55: 0,
+    facilityPower2A: 0,
+    facilityPower4A: 0,
+    facilityCable: 0,
+  });
+
+  const FACILITY_LIST = [
+    { key: "facilityChair",  label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
+    { key: "facilityTable",  label: "Meja + cover hitam",   unit: "buah", price: 125000 },
+    { key: "facilityTV42",   label: "TV 42 Inch",           unit: "unit", price: 750000 },
+    { key: "facilityTV55",   label: "TV 55 Inch",           unit: "unit", price: 1500000 },
+    { key: "facilityPower2A",label: "Listrik tambahan 2A",  unit: "titik", price: 250000 },
+    { key: "facilityPower4A",label: "Listrik tambahan 4A",  unit: "titik", price: 400000 },
+    { key: "facilityCable",  label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
+  ];
+
+  const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * f.price, 0);
   // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
   const [vacanciesUploading, setVacanciesUploading] = useState(false);
@@ -230,6 +251,7 @@ export default function EmployerRegister() {
       positions,
       needsBoothDesign: needsDesign,
       specialRequest: specialRequest || undefined,
+      facilities: facilityTotal > 0 ? JSON.stringify(facilities) : undefined,
 
       jobVacanciesUrl: jobVacanciesUrls.length > 0 ? jobVacanciesUrls : undefined,
     });
@@ -585,6 +607,39 @@ export default function EmployerRegister() {
                   placeholder="Contoh: posisi dekat entrance, butuh stop kontak tambahan, dll."
                 />
               </div>
+            </div>
+
+            {/* Fasilitas Tambahan */}
+            <div style={css.card}>
+              <div style={css.secHd}>🛠️ Fasilitas Tambahan (Exhibitor Order)</div>
+              <div style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 10, padding: "0.75rem 1rem", marginBottom: "1.25rem", fontSize: "0.82rem", color: "#94a3b8" }}>
+                ⚠️ Fasilitas berikut <strong style={{ color: "#fbbf24" }}>ditagih terpisah oleh vendor</strong> dan bukan bagian dari harga booth. Isi jumlah yang dibutuhkan (kosongkan jika tidak perlu).
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+                {FACILITY_LIST.map(f => (
+                  <div key={f.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "0.75rem 1rem", border: `1px solid ${facilities[f.key] > 0 ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.06)"}` }}>
+                    <div>
+                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: facilities[f.key] > 0 ? "#fbbf24" : "#f1f5f9" }}>{f.label}</div>
+                      <div style={{ fontSize: "0.72rem", color: "#475569" }}>
+                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(f.price)}/{f.unit}/hari
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <button onClick={() => setFacilities(p => ({ ...p, [f.key]: Math.max(0, (p[f.key]||0) - 1) }))}
+                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f1f5f9", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <span style={{ width: 24, textAlign: "center", fontWeight: 700, fontSize: "0.95rem", color: facilities[f.key] > 0 ? "#fbbf24" : "#64748b" }}>{facilities[f.key] || 0}</span>
+                      <button onClick={() => setFacilities(p => ({ ...p, [f.key]: (p[f.key]||0) + 1 }))}
+                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {facilityTotal > 0 && (
+                <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.75rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan (ditagih vendor):</span>
+                  <span style={{ fontWeight: 800, color: "#fbbf24" }}>~{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)}/hari</span>
+                </div>
+              )}
             </div>
           </div>
         )}
