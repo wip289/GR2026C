@@ -810,7 +810,7 @@ export default function EmployerRegister() {
                     {Object.entries(facilities).filter(([,v]) => v > 0).map(([key, qty]) => {
                       const labels: Record<string,{label:string;price:number}> = {
                         facilityChair:{label:"Kursi",price:25000}, facilityTable:{label:"Meja",price:125000},
-                        facilityTV42:{label:"TV 42"",price:750000}, facilityTV55:{label:"TV 55"",price:1500000},
+                        facilityTV42:{label:"TV 42 Inch",price:750000}, facilityTV55:{label:"TV 55 Inch",price:1500000},
                         facilityPower2A:{label:"Listrik 2A",price:250000}, facilityPower4A:{label:"Listrik 4A",price:400000},
                         facilityCable:{label:"Kabel",price:250000},
                       };
