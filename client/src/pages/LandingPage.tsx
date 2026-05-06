@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 const content = {
   id: {
     navJourney: "Perjalanan",
+    navBooth: "Denah Booth",
     navBond: "Ikatan",
     navJoin: "Bergabung",
     badgeText: "10 – 11 Juni 2026 · Dome NHI Bandung",
@@ -48,6 +49,13 @@ const content = {
     bondCard2Body: "Ketika orang-orang pernah berdiri di tempat yang serupa, empati, rasa hormat, dan hubungan profesional yang lebih hangat tumbuh secara alami.",
     bondCard3Title: "Dampak yang Berlanjut",
     bondCard3Body: "Setiap peluang yang dibuka hari ini bisa menjadi alasan seseorang bertumbuh — dan suatu hari membuka peluang yang sama bagi orang lain.",
+    boothSectionTitle: "Denah Booth — Grand Recruitment 2026",
+    boothSectionSub: "Lihat posisi booth yang tersedia, sudah dipesan, dan yang masih terbuka. Pilih booth terbaikmu sebelum kehabisan.",
+    boothAvailable: "Tersedia",
+    boothPending: "Proses Pembayaran",
+    boothConfirmed: "Terisi",
+    boothClosed: "Ditutup",
+    boothCta: "Daftar & Pilih Booth →",
     // CTA
     ctaTitle: "Di mana posisimu dalam cerita ini hari ini?",
     ctaBody: "Apakah kamu sedang mencari peluang, membukanya, atau membantu peluang itu bertumbuh? Apapun peranmu, Grand Recruitment 2026 adalah ruang untuk bertemu, terhubung, dan bergerak maju bersama.",
@@ -58,6 +66,7 @@ const content = {
   },
   en: {
     navJourney: "The Journey",
+    navBooth: "Booth Map",
     navBond: "The Bond",
     navJoin: "Join",
     badgeText: "June 10 – 11, 2026 · Dome NHI Bandung",
@@ -96,6 +105,13 @@ const content = {
     bondCard2Body: "When people have once stood in similar places, empathy, respect, and warmer professional relationships naturally grow.",
     bondCard3Title: "Impact That Continues",
     bondCard3Body: "Every opportunity opened today can become the reason someone grows — and one day opens the same opportunity for others.",
+    boothSectionTitle: "Booth Map — Grand Recruitment 2026",
+    boothSectionSub: "See which booths are available, reserved, or already taken. Choose your spot before it's gone.",
+    boothAvailable: "Available",
+    boothPending: "Payment Pending",
+    boothConfirmed: "Booked",
+    boothClosed: "Closed",
+    boothCta: "Register & Choose Booth →",
     ctaTitle: "Where do you stand in this story today?",
     ctaBody: "Are you seeking an opportunity, opening one, or helping that opportunity grow? Whatever your role may be, Grand Recruitment 2026 is a space to meet, connect, and move forward together.",
     ctaBtn1: "Register as Jobseeker",
@@ -115,8 +131,9 @@ export default function LandingPage() {
   const [hoveredOrb, setHoveredOrb] = useState<number | null>(null);
   const [showLoginMenu, setShowLoginMenu] = useState(false);
   const journeyRef = useRef<HTMLDivElement>(null);
-  const bondRef = useRef<HTMLDivElement>(null);
-  const joinRef = useRef<HTMLDivElement>(null);
+  const boothRef   = useRef<HTMLDivElement>(null);
+  const bondRef    = useRef<HTMLDivElement>(null);
+  const joinRef    = useRef<HTMLDivElement>(null);
 
   const t = content[lang];
 
@@ -125,6 +142,29 @@ export default function LandingPage() {
   const cfg = configQuery.data as any || {};
   const eventDate = cfg.eventDateDisplay || t.badgeText;
   const eventVenue = cfg.venueName || "Dome NHI Bandung";
+
+  // Fetch booth data for map section
+  const allBookingsQuery  = trpc.event.getAllEmployerBookings.useQuery();
+  const closedBoothsQuery = trpc.event.getClosedBooths.useQuery();
+  const closedBooths = (closedBoothsQuery.data as string[] | null) || [];
+
+  const bookedBoothMap = useMemo(() => {
+    const map: Record<string, { company: string; status: string }> = {};
+    for (const b of (allBookingsQuery.data as any[] | null) || []) {
+      if (b.status === "rejected") continue;
+      for (const booth of (b.booths as any[] || [])) {
+        map[booth.id] = { company: b.companyName, status: b.status };
+      }
+    }
+    return map;
+  }, [allBookingsQuery.data]);
+
+  const getBoothColor = (id: string) => {
+    if (closedBooths.includes(id))       return { bg: "#334155", border: "#475569", label: "#64748b" };
+    if (!bookedBoothMap[id])             return { bg: "rgba(20,184,166,0.12)", border: "rgba(20,184,166,0.35)", label: "#14b8a6" };
+    if (bookedBoothMap[id].status === "confirmed") return { bg: "rgba(239,68,68,0.15)", border: "rgba(239,68,68,0.4)", label: "#f87171" };
+    return { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)", label: "#fbbf24" };
+  };
 
   useEffect(() => {
     const fn = () => setScrollY(window.scrollY);
@@ -192,6 +232,7 @@ export default function LandingPage() {
             <nav style={{ display: "flex", gap: "0.4rem" }}>
               {[
                 { label: t.navJourney, ref: journeyRef },
+                { label: t.navBooth,   ref: boothRef },
                 { label: t.navBond,    ref: bondRef },
                 { label: t.navJoin,    ref: joinRef },
               ].map(n => (
@@ -422,6 +463,100 @@ export default function LandingPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DENAH BOOTH ── */}
+      <div ref={boothRef} />
+      <section style={{ padding: "clamp(4rem,8vw,7rem) 1.25rem", background: "#060f1e" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+            <h2 style={{ fontSize: "clamp(1.8rem,4vw,3rem)", fontWeight: 800, marginBottom: "1rem" }}>{t.boothSectionTitle}</h2>
+            <p style={{ color: "#64748b", fontSize: "1.05rem", maxWidth: 560, margin: "0 auto" }}>{t.boothSectionSub}</p>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "2.5rem" }}>
+            {[
+              { color: "#14b8a6", label: t.boothAvailable },
+              { color: "#fbbf24", label: t.boothPending },
+              { color: "#f87171", label: t.boothConfirmed },
+              { color: "#64748b", label: t.boothClosed },
+            ].map(l => (
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ width: 12, height: 12, borderRadius: 3, background: l.color, flexShrink: 0 }} />
+                <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>{l.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Main Booths */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <div style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Main Booth (M1–M12)</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: "0.5rem" }}>
+              {Array.from({ length: 12 }, (_, i) => `M${i + 1}`).map(id => {
+                const c = getBoothColor(id);
+                const info = bookedBoothMap[id];
+                return (
+                  <div key={id} title={info ? info.company : id}
+                    style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 8, padding: "0.6rem 0.4rem", textAlign: "center", cursor: info ? "pointer" : "default", transition: "transform 0.15s" }}
+                    onMouseEnter={e => { if (info) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: c.label }}>{id}</div>
+                    {info && <div style={{ fontSize: "0.6rem", color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.company}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Extra Booths */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <div style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Extra Booth (E1–E4)</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(80px, 120px))", gap: "0.5rem" }}>
+              {Array.from({ length: 4 }, (_, i) => `E${i + 1}`).map(id => {
+                const c = getBoothColor(id);
+                const info = bookedBoothMap[id];
+                return (
+                  <div key={id} title={info ? info.company : id}
+                    style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 8, padding: "0.6rem 0.4rem", textAlign: "center", cursor: info ? "pointer" : "default", transition: "transform 0.15s" }}
+                    onMouseEnter={e => { if (info) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: c.label }}>{id}</div>
+                    {info && <div style={{ fontSize: "0.6rem", color: "#94a3b8", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.company}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Standard Booths */}
+          <div style={{ marginBottom: "2.5rem" }}>
+            <div style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Standard Booth (S1–S36)</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))", gap: "0.4rem" }}>
+              {Array.from({ length: 36 }, (_, i) => `S${i + 1}`).map(id => {
+                const c = getBoothColor(id);
+                const info = bookedBoothMap[id];
+                return (
+                  <div key={id} title={info ? info.company : id}
+                    style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 6, padding: "0.5rem 0.25rem", textAlign: "center", cursor: info ? "pointer" : "default", transition: "transform 0.15s" }}
+                    onMouseEnter={e => { if (info) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+                    <div style={{ fontSize: "0.68rem", fontWeight: 700, color: c.label }}>{id}</div>
+                    {info && <div style={{ fontSize: "0.55rem", color: "#94a3b8", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{info.company}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: "center" }}>
+            <button onClick={() => navigate("/employer/register")}
+              style={{ background: "linear-gradient(135deg, #0d9488, #14b8a6)", border: "none", color: "#fff", borderRadius: 99, padding: "0.85rem 2rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 24px rgba(20,184,166,0.3)" }}>
+              🏢 {t.boothCta}
+            </button>
           </div>
         </div>
       </section>
