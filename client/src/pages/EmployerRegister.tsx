@@ -142,7 +142,9 @@ export default function EmployerRegister() {
     { key: "facilityCable",  label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
   ];
 
-  const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * f.price, 0);
+  const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * (facilityDays[f.key] || 2) * f.price, 0);
+  const paketTotal = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1].harga : 0;
+  const grandTotal = (totalAmount: number) => totalAmount + paketTotal + facilityTotal;
   // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
   const [vacanciesUploading, setVacanciesUploading] = useState(false);
@@ -229,6 +231,7 @@ export default function EmployerRegister() {
       const paketData = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1] : null;
       const facTotal = facilityItems.reduce((s, f) => s + f.qty * f.pricePerDay * f.days, 0)
         + (paketData ? paketData.harga : 0);
+      const fullTotal = variables.totalAmount + facTotal;
 
       const data: BookingData = {
         bookingId: variables.bookingId,
@@ -841,7 +844,7 @@ export default function EmployerRegister() {
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(212,160,23,0.1)", borderRadius: 8, padding: "0.75rem 0.85rem", marginTop: "0.75rem", fontWeight: 800, fontSize: "1.15rem" }}>
                   <span>Grand Total</span>
-                  <span style={{ color: "#D4A017" }}>{fmt(totalAmount + (selectedPaket !== null ? PAKET_BOOTH[selectedPaket-1].harga : 0) + Object.entries(facilities).filter(([,v])=>v>0).reduce((s,[k,v])=>{const p:{[key:string]:number}={facilityChair:25000,facilityTable:125000,facilityTV42:750000,facilityTV55:1500000,facilityPower2A:250000,facilityPower4A:400000,facilityCable:250000};return s+v*(p[k]||0)*2;},0))}</span>
+                  <span style={{ color: "#D4A017" }}>{fmt(grandTotal(totalAmount))}</span>
                 </div>
               </div>
             </div>
@@ -854,7 +857,7 @@ export default function EmployerRegister() {
                   { label: "Bank",        val: "Bank BTN" },
                   { label: "No. Rekening",val: "0095 01 30 00000 38" },
                   { label: "Atas Nama",   val: "Koperasi STP Bandung" },
-                  { label: "Nominal",     val: fmt(totalAmount) },
+                  { label: "Nominal",     val: fmt(grandTotal(totalAmount)) },
                 ].map(row => (
                   <div key={row.label} style={{ display: "flex", gap: "1rem", marginBottom: "0.55rem", flexWrap: "wrap" }}>
                     <span style={{ fontSize: "0.8rem", color: "#64748b", minWidth: 130 }}>{row.label}</span>
