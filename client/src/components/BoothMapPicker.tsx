@@ -159,7 +159,11 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
 
   const handleClick = (booth: BoothDef) => {
     if (booth.type === "area") return;
-    if (booth.status !== "available" && !selectedIds.includes(booth.id)) return;
+    // Cek resolvedStatus — booth yang ditutup panitia (closedFromDB) tidak bisa diklik
+    const resolvedSt = (!panitiaMode && closedFromDB?.includes(booth.id))
+      ? "staff"
+      : booth.status;
+    if (resolvedSt !== "available" && !selectedIds.includes(booth.id)) return;
     if (selectedIds.includes(booth.id)) {
       onChange(selectedIds.filter(id => id !== booth.id));
     } else {
