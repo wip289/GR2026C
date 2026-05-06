@@ -258,10 +258,11 @@ export default function LandingPage() {
 
         <div style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 860 }}>
           {/* Badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.45rem 1.1rem",
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.55rem 1.25rem",
             borderRadius: 99, background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.3)",
-            color: "#D4A017", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.06em", marginBottom: "1.5rem" }}>
-            📅 {eventDate} · {eventVenue}
+            color: "#D4A017", fontSize: "clamp(0.85rem, 2.5vw, 1rem)", fontWeight: 700, letterSpacing: "0.04em", marginBottom: "1.5rem",
+            textAlign: "center" as const }}>
+            📅 {eventDate}
           </div>
 
           {/* Banner GR2026 */}
@@ -282,7 +283,7 @@ export default function LandingPage() {
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center" }}>
                   {/* Fixed wrapper 140×140 prevents layout shift */}
-                  <div style={{ width: 140, height: 140, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                  <div style={{ width: "clamp(90px, 28vw, 140px)", height: "clamp(90px, 28vw, 140px)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
                     onMouseEnter={() => setHoveredOrb(i)} onMouseLeave={() => setHoveredOrb(null)}>
                     {/* Backlight */}
                     <div style={{
@@ -295,8 +296,8 @@ export default function LandingPage() {
                     <button onClick={() => { setActiveOrb(i); navigate(orb.url); }}
                       style={{
                         position: "relative", zIndex: 1,
-                        width: isAct ? 116 : isHov ? 100 : 80,
-                        height: isAct ? 116 : isHov ? 100 : 80,
+                        width: isAct ? "min(116px,26vw)" : isHov ? "min(100px,23vw)" : "min(80px,20vw)",
+                        height: isAct ? "min(116px,26vw)" : isHov ? "min(100px,23vw)" : "min(80px,20vw)",
                         borderRadius: "50%",
                         border: `2px solid ${lit ? orb.color : "rgba(255,255,255,0.1)"}`,
                         background: lit ? `radial-gradient(circle at 35% 35%, ${orb.color}55, ${orb.color}18)` : "rgba(255,255,255,0.04)",
@@ -305,8 +306,8 @@ export default function LandingPage() {
                         transition: "width 0.4s cubic-bezier(0.34,1.56,0.64,1), height 0.4s cubic-bezier(0.34,1.56,0.64,1), all 0.3s ease",
                         boxShadow: isAct ? `0 0 32px ${orb.color}55, 0 0 64px ${orb.color}20` : isHov ? `0 0 20px ${orb.color}35` : "none",
                       }}>
-                      <span style={{ fontSize: isAct ? "2.1rem" : "1.4rem", lineHeight: 1, transition: "font-size 0.35s ease" }}>{orb.icon}</span>
-                      <span style={{ fontSize: "0.6rem", color: lit ? orb.color : "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4, transition: "color 0.3s" }}>{orb.role}</span>
+                      <span style={{ fontSize: isAct ? "clamp(1.4rem,5vw,2.1rem)" : "clamp(1rem,3.5vw,1.4rem)", lineHeight: 1, transition: "font-size 0.35s ease" }}>{orb.icon}</span>
+                      <span style={{ fontSize: "clamp(0.55rem,1.8vw,0.7rem)", color: lit ? orb.color : "#475569", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 4, transition: "color 0.3s" }}>{orb.role}</span>
                     </button>
                     {/* CTA tooltip */}
                     <div style={{ position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)", fontSize: "0.6rem", color: orb.color, fontWeight: 700, whiteSpace: "nowrap",
