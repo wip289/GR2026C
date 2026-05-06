@@ -669,12 +669,75 @@ export default function SuperAdmin() {
               </div>
             </div>
 
+            {/* Extra Booth */}
+            <div style={{ background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#a78bfa", marginBottom: "1rem" }}>⭐ Extra Booth</div>
+              <div style={s.row3}>
+                <div>
+                  <label style={s.label}>Harga (Rp)</label>
+                  <input style={s.input} type="number" value={config.extraBoothPrice || "8500000"} onChange={e => upd("extraBoothPrice", e.target.value)}/>
+                  <div style={{ fontSize: "0.75rem", color: "#a78bfa", marginTop: "0.25rem" }}>{fmt(config.extraBoothPrice || "8500000")}</div>
+                </div>
+                <div>
+                  <label style={s.label}>Ukuran (m)</label>
+                  <input style={s.input} value={config.extraBoothSize || "4x2"} onChange={e => upd("extraBoothSize", e.target.value)} placeholder="4x2"/>
+                </div>
+                <div>
+                  <label style={s.label}>Jumlah Unit</label>
+                  <input style={s.input} type="number" value={config.extraBoothCount || "4"} onChange={e => upd("extraBoothCount", e.target.value)}/>
+                </div>
+              </div>
+              <div style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#64748b" }}>
+                📍 Posisi: E1-E4 di kanan dan kiri area Main Booth (sesuai denah)
+              </div>
+            </div>
+
             {/* Interview Booth */}
-            <div style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.2)", borderRadius: 12, padding: "1.25rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#60a5fa", marginBottom: "1rem" }}>🎤 Interview Booth</div>
-              <div style={{ maxWidth: 200 }}>
-                <label style={s.label}>Jumlah Unit</label>
-                <input style={s.input} type="number" value={config.interviewBoothCount} onChange={e => upd("interviewBoothCount", e.target.value)}/>
+            <div style={{ background: "rgba(96,165,250,0.05)", border: "1px solid rgba(96,165,250,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#60a5fa", marginBottom: "1rem" }}>🎤 Interview Booth (Gratis untuk Employer)</div>
+              <div style={s.row3}>
+                <div style={{ maxWidth: 200 }}>
+                  <label style={s.label}>Jumlah Room</label>
+                  <input style={s.input} type="number" value={config.interviewBoothCount} onChange={e => upd("interviewBoothCount", e.target.value)}/>
+                  <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.25rem" }}>Saat ini: 14 room (E1-E14)</div>
+                </div>
+                <div style={{ maxWidth: 200 }}>
+                  <label style={s.label}>Slot per Hari</label>
+                  <input style={s.input} type="number" value={config.interviewSlotsPerDay || "7"} onChange={e => upd("interviewSlotsPerDay", e.target.value)}/>
+                  <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.25rem" }}>08.00–16.00, 7 slot/hari</div>
+                </div>
+              </div>
+              <div style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#60a5fa" }}>
+                ℹ️ Jatah slot: Main = 8 slot · Extra = 6 slot · Standard = 4 slot (total 2 hari)
+              </div>
+            </div>
+
+            {/* Fasilitas Tambahan */}
+            <div style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 12, padding: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#fbbf24", marginBottom: "1rem" }}>🛠️ Fasilitas Tambahan (Exhibitor Order)</div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem" }}>
+                Item berikut dapat dipesan employer sebagai fasilitas tambahan (ditagih terpisah oleh vendor).
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                {[
+                  { key: "facilityChair", label: "Kursi + cover hitam", default: "25000" },
+                  { key: "facilityTable", label: "Meja + cover hitam", default: "125000" },
+                  { key: "facilityTV42", label: "TV 42 Inch", default: "750000" },
+                  { key: "facilityTV55", label: "TV 55 Inch", default: "1500000" },
+                  { key: "facilityPower2A", label: "Listrik tambahan 2A", default: "250000" },
+                  { key: "facilityPower4A", label: "Listrik tambahan 4A", default: "400000" },
+                  { key: "facilityCable", label: "Perpanjangan Kabel", default: "250000" },
+                ].map(f => (
+                  <div key={f.key} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ flex: 1, fontSize: "0.8rem", color: "#94a3b8" }}>{f.label}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Rp</span>
+                      <input style={{ ...s.input, width: 100, padding: "0.4rem 0.6rem", fontSize: "0.78rem" }}
+                        type="number" value={config[f.key] || f.default}
+                        onChange={e => upd(f.key, e.target.value)}/>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -708,6 +771,36 @@ export default function SuperAdmin() {
               </div>
             </div>
 
+            {/* QRIS */}
+            <div style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 12, padding: "1.25rem", marginTop: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", marginBottom: "0.75rem" }}>📱 QRIS (Opsional)</div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "0.75rem" }}>
+                Upload gambar QR Code QRIS untuk ditampilkan di invoice dan dashboard employer sebagai opsi pembayaran alternatif.
+              </div>
+              {config.qrisImageUrl ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem" }}>
+                  <img src={config.qrisImageUrl} alt="QRIS" style={{ width: 120, height: 120, objectFit: "contain", background: "#fff", borderRadius: 8, padding: "0.35rem", border: "1px solid rgba(16,185,129,0.3)" }}/>
+                  <div>
+                    <div style={{ fontSize: "0.82rem", color: "#10b981", fontWeight: 600, marginBottom: "0.5rem" }}>✅ QRIS terupload</div>
+                    <button onClick={() => upd("qrisImageUrl", "")} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 8, padding: "0.35rem 0.75rem", fontSize: "0.75rem", cursor: "pointer" }}>Hapus</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "2px dashed rgba(16,185,129,0.3)", borderRadius: 8, padding: "1.5rem", textAlign: "center", marginBottom: "0.75rem" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📱</div>
+                  <div style={{ fontSize: "0.82rem", color: "#475569" }}>Belum ada QRIS — upload gambar QR Code di sini</div>
+                </div>
+              )}
+              <div>
+                <label style={s.label}>URL Gambar QRIS</label>
+                <input style={s.input} value={config.qrisImageUrl || ""} onChange={e => upd("qrisImageUrl", e.target.value)} placeholder="https://... atau upload ke Supabase dulu"/>
+              </div>
+              <div style={{ marginTop: "0.75rem" }}>
+                <label style={s.label}>Nama Akun QRIS (opsional)</label>
+                <input style={s.input} value={config.qrisAccountName || ""} onChange={e => upd("qrisAccountName", e.target.value)} placeholder="Koperasi STP Bandung"/>
+              </div>
+            </div>
+
             {/* Preview */}
             <div style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10, padding: "1rem", marginTop: "1rem" }}>
               <div style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Preview Tampilan di Invoice</div>
@@ -730,17 +823,65 @@ export default function SuperAdmin() {
         {activeSection === "contact" && (
           <div style={s.card}>
             <div style={s.secHd("#f97316")}>📞 Kontak Panitia</div>
-            <div style={s.row2}>
-              <div>
-                <label style={s.label}>No. WhatsApp *</label>
-                <input style={s.input} value={config.whatsappNumber} onChange={e => upd("whatsappNumber", e.target.value)} placeholder="0812-xxxx-xxxx"/>
-                <div style={{ fontSize: "0.75rem", color: "#475569", marginTop: "0.3rem" }}>Tampil di halaman employer dan invoice</div>
+
+            {/* Kontak Utama */}
+            <div style={{ background: "rgba(249,115,22,0.05)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f97316", marginBottom: "1rem" }}>📌 Kontak Utama (Tampil di Invoice & Dashboard)</div>
+              <div style={s.row2}>
+                <div>
+                  <label style={s.label}>No. WhatsApp *</label>
+                  <input style={s.input} value={config.whatsappNumber} onChange={e => upd("whatsappNumber", e.target.value)} placeholder="0812-xxxx-xxxx"/>
+                  <div style={{ fontSize: "0.75rem", color: "#475569", marginTop: "0.3rem" }}>Format: 08xx atau 628xx</div>
+                </div>
+                <div>
+                  <label style={s.label}>Email *</label>
+                  <input style={s.input} type="email" value={config.email} onChange={e => upd("email", e.target.value)} placeholder="grandrecruitment@nhi.ac.id"/>
+                  <div style={{ fontSize: "0.75rem", color: "#475569", marginTop: "0.3rem" }}>Tampil di invoice dan proposal</div>
+                </div>
               </div>
-              <div>
-                <label style={s.label}>Email *</label>
-                <input style={s.input} type="email" value={config.email} onChange={e => upd("email", e.target.value)} placeholder="grandrecruitment@nhi.ac.id"/>
-                <div style={{ fontSize: "0.75rem", color: "#475569", marginTop: "0.3rem" }}>Tampil di invoice dan proposal</div>
-              </div>
+            </div>
+
+            {/* Kontak Tambahan */}
+            <div style={{ background: "rgba(249,115,22,0.03)", border: "1px solid rgba(249,115,22,0.15)", borderRadius: 12, padding: "1.25rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f97316", marginBottom: "0.5rem" }}>👥 Kontak Panitia Tambahan</div>
+              <div style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "1rem" }}>Kontak tambahan untuk ditampilkan di halaman informasi panitia (opsional).</div>
+              {(JSON.parse(config.additionalContacts || "[]") as any[]).map((c: any, i: number) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "0.5rem", marginBottom: "0.75rem", alignItems: "end" }}>
+                  <div>
+                    {i === 0 && <label style={s.label}>Nama</label>}
+                    <input style={s.input} value={c.nama} placeholder="Nama panitia"
+                      onChange={e => { const arr = JSON.parse(config.additionalContacts || "[]"); arr[i].nama = e.target.value; upd("additionalContacts", JSON.stringify(arr)); }}/>
+                  </div>
+                  <div>
+                    {i === 0 && <label style={s.label}>Jabatan/Divisi</label>}
+                    <input style={s.input} value={c.jabatan} placeholder="Koordinator Booth"
+                      onChange={e => { const arr = JSON.parse(config.additionalContacts || "[]"); arr[i].jabatan = e.target.value; upd("additionalContacts", JSON.stringify(arr)); }}/>
+                  </div>
+                  <div>
+                    {i === 0 && <label style={s.label}>WhatsApp</label>}
+                    <input style={s.input} value={c.whatsapp} placeholder="0812-xxxx-xxxx"
+                      onChange={e => { const arr = JSON.parse(config.additionalContacts || "[]"); arr[i].whatsapp = e.target.value; upd("additionalContacts", JSON.stringify(arr)); }}/>
+                  </div>
+                  <button onClick={() => { const arr = JSON.parse(config.additionalContacts || "[]"); arr.splice(i,1); upd("additionalContacts", JSON.stringify(arr)); }}
+                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 8, padding: "0.5rem 0.75rem", cursor: "pointer", fontSize: "0.85rem" }}>✕</button>
+                </div>
+              ))}
+              <button onClick={() => { const arr = JSON.parse(config.additionalContacts || "[]"); arr.push({ nama: "", jabatan: "", whatsapp: "" }); upd("additionalContacts", JSON.stringify(arr)); }}
+                style={{ background: "transparent", border: "1px dashed rgba(249,115,22,0.4)", color: "#f97316", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>
+                + Tambah Kontak
+              </button>
+            </div>
+
+            {/* Keterangan tambahan */}
+            <div style={{ background: "rgba(249,115,22,0.03)", border: "1px solid rgba(249,115,22,0.15)", borderRadius: 12, padding: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f97316", marginBottom: "0.5rem" }}>📝 Keterangan / Info Tambahan</div>
+              <div style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "0.75rem" }}>Informasi tambahan yang ditampilkan di halaman kontak (jam operasional, lokasi sekretariat, dll).</div>
+              <textarea
+                value={config.contactNotes || ""}
+                onChange={e => upd("contactNotes", e.target.value)}
+                placeholder="Contoh: Sekretariat GR2026 berada di Gedung A Lt.2. Jam operasional: Senin–Jumat 08.00–17.00 WIB."
+                style={{ ...s.input, height: 100, resize: "vertical" as const, width: "100%", fontFamily: "inherit" }}
+              />
             </div>
           </div>
         )}

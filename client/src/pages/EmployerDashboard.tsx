@@ -295,6 +295,61 @@ export default function EmployerDashboard() {
         {/* ── TAB: STATUS ── */}
         {activeTab === "status" && (
           <div>
+            {/* Identitas Perusahaan */}
+            <div style={s.card}>
+              <div style={s.secHd}>🏢 Identitas Perusahaan</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem" }}>
+                {[
+                  { label: "Nama Perusahaan", val: (booking as any).companyName },
+                  { label: "Industri", val: (booking as any).industry },
+                  { label: "Kota", val: (booking as any).city },
+                  { label: "Website", val: (booking as any).website || "—" },
+                  { label: "Deskripsi", val: (booking as any).description || "—" },
+                ].map(item => (
+                  <div key={item.label}>
+                    <div style={{ fontSize: "0.7rem", color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.25rem" }}>{item.label}</div>
+                    <div style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: item.label === "Nama Perusahaan" ? 700 : 400 }}>{item.val}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Identitas Pemesan (PIC) */}
+            <div style={s.card}>
+              <div style={s.secHd}>👤 Identitas Pemesan</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: (booking as any).pic2Name ? "1rem" : 0 }}>
+                {[
+                  { label: "Nama", val: (booking as any).pic1Name },
+                  { label: "Jabatan", val: (booking as any).pic1Title },
+                  { label: "Email", val: (booking as any).pic1Email },
+                  { label: "Telp / WhatsApp", val: (booking as any).pic1Whatsapp },
+                ].map(item => (
+                  <div key={item.label}>
+                    <div style={{ fontSize: "0.7rem", color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.25rem" }}>{item.label}</div>
+                    <div style={{ fontSize: "0.88rem", color: "#f1f5f9" }}>{item.val || "—"}</div>
+                  </div>
+                ))}
+              </div>
+              {(booking as any).pic2Name && (
+                <>
+                  <div style={{ fontSize: "0.75rem", color: "#475569", margin: "0.75rem 0 0.5rem", fontWeight: 600 }}>PIC 2</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem" }}>
+                    {[
+                      { label: "Nama", val: (booking as any).pic2Name },
+                      { label: "Jabatan", val: (booking as any).pic2Title },
+                      { label: "Email", val: (booking as any).pic2Email },
+                      { label: "Telp / WhatsApp", val: (booking as any).pic2Whatsapp },
+                    ].map(item => (
+                      <div key={item.label}>
+                        <div style={{ fontSize: "0.7rem", color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.25rem" }}>{item.label}</div>
+                        <div style={{ fontSize: "0.88rem", color: "#f1f5f9" }}>{item.val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Booking summary */}
             <div style={s.teal}>
               <div style={s.secHd}>📋 Ringkasan Booking</div>
