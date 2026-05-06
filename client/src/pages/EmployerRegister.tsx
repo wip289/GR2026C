@@ -106,6 +106,11 @@ export default function EmployerRegister() {
     facilityCable: 0,
   });
 
+  const [facilityDays] = useState<Record<string, number>>({
+    facilityChair: 2, facilityTable: 2, facilityTV42: 2, facilityTV55: 2,
+    facilityPower2A: 2, facilityPower4A: 2, facilityCable: 2,
+  });
+
   const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
 
   const PAKET_BOOTH = [
