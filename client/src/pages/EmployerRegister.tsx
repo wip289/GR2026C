@@ -369,16 +369,16 @@ export default function EmployerRegister() {
             style={{ ...css.btnPri, background: "linear-gradient(135deg, #D4A017, #B8860B)", marginBottom: "0.5rem", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
             📄 Invoice Booth
           </button>
-          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth) && (
+          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth || bookingData.needsBoothDesign) && (
             <button onClick={() => openFacilityInvoice(bookingData)}
               style={{ ...css.btnPri, background: "linear-gradient(135deg, #fbbf24, #d97706)", marginBottom: "0.5rem" }}>
-              🛠️ Invoice Fasilitas & Paket
+              🛠️ Invoice Fasilitas & Paket Tambahan
             </button>
           )}
-          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth) && (
+          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth || bookingData.needsBoothDesign) && (
             <button onClick={() => { openInvoiceForPrint(bookingData); setTimeout(() => openFacilityInvoice(bookingData), 800); }}
               style={{ ...css.btnPri, background: "linear-gradient(135deg, #0d9488, #14b8a6)", marginBottom: "0.75rem" }}>
-              📋 Download Semua Invoice (Gabungan)
+              📋 Download Semua Invoice Sekaligus
             </button>
           )}
           <button onClick={() => navigate("/employer/login")}
@@ -798,9 +798,15 @@ export default function EmployerRegister() {
                 </div>
 
                 {/* Fasilitas & Paket tambahan */}
-                {(selectedPaket !== null || Object.values(facilities).some(v => v > 0)) && (
+                {(selectedPaket !== null || Object.values(facilities).some(v => v > 0) || needsDesign) && (
                   <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(212,160,23,0.2)" }}>
                     <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>Fasilitas & Paket Tambahan (ditagih terpisah)</div>
+                    {needsDesign && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                        <span>📐 Desain & Dekorasi Booth</span>
+                        <span style={{ color: "#fbbf24", fontSize: "0.78rem", fontStyle: "italic" }}>Harga dikonfirmasi vendor</span>
+                      </div>
+                    )}
                     {selectedPaket !== null && (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
                         <span>🎨 {PAKET_BOOTH[selectedPaket-1].nama}</span>
