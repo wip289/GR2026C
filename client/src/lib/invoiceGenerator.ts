@@ -327,6 +327,29 @@ export function openFacilityInvoice(data: BookingData) {
   setTimeout(() => URL.revokeObjectURL(url), 15000);
 }
 
+export function openCombinedInvoice(data: BookingData) {
+  const html1 = generateInvoiceHTML(data);
+  const html2 = generateFacilityInvoiceHTML(data);
+  // Gabung 2 invoice dengan page-break di tengah
+  const combined = html1.replace(
+    "</body></html>",
+    `<div style="page-break-after:always;"></div>
+    ${html2.replace("<!DOCTYPE html><html>", "").replace("<head>", "<section>").replace("</head>", "</section>").replace(/<body[^>]*>/, "").replace("</body></html>", "")}
+    <div style="position:fixed;bottom:24px;right:24px;z-index:999">
+      <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
+        🖨️ Print / Save PDF (Semua Invoice)
+      </button>
+    </div>
+    </body></html>`
+  );
+  const blob = new Blob([combined], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+
 export function openInvoiceForPrint(data: BookingData) {
   const html = generateInvoiceHTML(data);
   // Tambah tombol Print/Save PDF di pojok kanan bawah (tanpa auto-print)

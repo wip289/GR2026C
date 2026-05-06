@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import BoothMapPicker, { ALL_BOOTHS } from "@/components/BoothMapPicker";
-import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, openFacilityInvoice, type BookingData, type FacilityItem } from "@/lib/invoiceGenerator";
+import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, openFacilityInvoice, openCombinedInvoice, type BookingData, type FacilityItem } from "@/lib/invoiceGenerator";
 import { trpc } from "@/lib/trpc";
 import { uploadToSupabase } from "@/lib/supabase";
 
@@ -106,7 +106,7 @@ export default function EmployerRegister() {
     facilityCable: 0,
   });
 
-  const [facilityDays] = useState<Record<string, number>>({
+  const [facilityDays, setFacilityDays] = useState<Record<string, number>>({
     facilityChair: 2, facilityTable: 2, facilityTV42: 2, facilityTV55: 2,
     facilityPower2A: 2, facilityPower4A: 2, facilityCable: 2,
   });
@@ -384,9 +384,9 @@ export default function EmployerRegister() {
             </button>
           )}
           {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth || bookingData.needsBoothDesign) && (
-            <button onClick={() => { openInvoiceForPrint(bookingData); setTimeout(() => openFacilityInvoice(bookingData), 800); }}
+            <button onClick={() => openCombinedInvoice(bookingData)}
               style={{ ...css.btnPri, background: "linear-gradient(135deg, #0d9488, #14b8a6)", marginBottom: "0.75rem" }}>
-              📋 Download Semua Invoice Sekaligus
+              📋 Download Semua Invoice (1 File)
             </button>
           )}
           <button onClick={() => navigate("/employer/login")}
@@ -726,7 +726,7 @@ export default function EmployerRegister() {
               {facilityTotal > 0 && (
                 <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.65rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                   <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan (ditagih vendor):</span>
-                  <span style={{ fontWeight: 800, color: "#fbbf24" }}>~{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)}/hari</span>
+                  <span style={{ fontWeight: 800, color: "#fbbf24" }}>{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)} / event</span>
                 </div>
               )}
 
