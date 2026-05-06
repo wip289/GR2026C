@@ -725,7 +725,7 @@ export default function EmployerRegister() {
               </div>
               {facilityTotal > 0 && (
                 <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.65rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan dihitung otomatis 2 hari (pembayaran ke panitia): event</span>
+                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan dihitung otomatis 2 hari(pembayaran melalui panitia): event</span>
                   <span style={{ fontWeight: 800, color: "#fbbf24" }}>{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)} / event</span>
                 </div>
               )}
