@@ -372,23 +372,11 @@ export default function EmployerRegister() {
             </div>
           </div>
 
-          {/* Actions — Invoice buttons */}
-          <button onClick={() => openInvoiceForPrint(bookingData)}
-            style={{ ...css.btnPri, background: "linear-gradient(135deg, #D4A017, #B8860B)", marginBottom: "0.5rem", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
-            📄 Invoice Booth
+          {/* Actions — Invoice button */}
+          <button onClick={() => openCombinedInvoice(bookingData)}
+            style={{ ...css.btnPri, background: "linear-gradient(135deg, #D4A017, #B8860B)", marginBottom: "0.75rem", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
+            📋 Download Invoice Lengkap
           </button>
-          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth || bookingData.needsBoothDesign) && (
-            <button onClick={() => openFacilityInvoice(bookingData)}
-              style={{ ...css.btnPri, background: "linear-gradient(135deg, #fbbf24, #d97706)", marginBottom: "0.5rem" }}>
-              🛠️ Invoice Fasilitas & Paket Tambahan
-            </button>
-          )}
-          {(bookingData.facilities?.some(f => f.qty > 0) || bookingData.paketBooth || bookingData.needsBoothDesign) && (
-            <button onClick={() => openCombinedInvoice(bookingData)}
-              style={{ ...css.btnPri, background: "linear-gradient(135deg, #0d9488, #14b8a6)", marginBottom: "0.75rem" }}>
-              📋 Download Semua Invoice (1 File)
-            </button>
-          )}
           <button onClick={() => navigate("/employer/login")}
             style={{ ...css.btnPri, marginBottom: "0.75rem" }}>
             Login ke Portal Employer →
