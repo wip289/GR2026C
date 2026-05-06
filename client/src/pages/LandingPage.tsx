@@ -473,6 +473,7 @@ export default function LandingPage() {
           <BoothMapPicker
             selectedIds={[]}
             onChange={() => {}}
+            readOnly={true}
             bookingData={bookedBoothMap}
           />
 

@@ -144,6 +144,7 @@ interface BoothMapPickerProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   booths?: BoothDef[];
+  readOnly?: boolean;
   // Panitia mode props
   panitiaMode?: boolean;
   bookingData?: Record<string, { company: string; status: string }>;
@@ -152,7 +153,7 @@ interface BoothMapPickerProps {
   onSelect?: (id: string | null) => void;
 }
 
-export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, panitiaMode, bookingData, closedBooths, onToggleClose, onSelect }: BoothMapPickerProps) {
+export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, readOnly, panitiaMode, bookingData, closedBooths, onToggleClose, onSelect }: BoothMapPickerProps) {
   const booths = boothsProp || ALL_BOOTHS;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const { data: closedFromDB } = trpc.event.getClosedBooths.useQuery();
@@ -177,6 +178,12 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
   const getBoothStatus = (booth: BoothDef): BoothStatus => {
     if (!panitiaMode) {
       if (closedFromDB?.includes(booth.id)) return "staff";
+      // readOnly mode (landing page): gunakan bookingData untuk warna
+      if (bookingData?.[booth.id]) {
+        const s = bookingData[booth.id].status;
+        if (s === "confirmed" || s === "active") return "booked";
+        if (s === "pending") return "reserved";
+      }
       return booth.status;
     }
     if (closedBooths?.has(booth.id)) return "staff";
@@ -195,7 +202,7 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
 
   return (
     <div>
-      <div style={{ background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 10, padding: "0.7rem 1rem", marginBottom: "1rem", fontSize: "0.8rem", color: "#94a3b8", display: "flex", gap: "0.5rem" }}>
+      <div style={{ background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 10, padding: "0.7rem 1rem", marginBottom: "1rem", fontSize: "0.8rem", color: "#94a3b8", display: readOnly ? "none" : "flex", gap: "0.5rem" }}>
         <span>💡</span>
         <span>Klik booth <strong style={{ color: "#14b8a6" }}>hijau</strong> untuk memilih. Klik lagi untuk membatalkan. Booth merah/oranye sudah dipesan.</span>
       </div>
