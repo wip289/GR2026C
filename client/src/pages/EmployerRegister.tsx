@@ -608,43 +608,12 @@ export default function EmployerRegister() {
               </div>
             )}
 
-            {/* Paket Booth Khusus */}
+            {/* ── SATU KOTAK: Special Request + Paket + Fasilitas ── */}
             <div style={css.card}>
-              <div style={css.secHd}>🎨 Paket Booth Khusus <span style={{ fontSize: "0.72rem", color: "#334155", fontWeight: 400 }}>(opsional — ditagih terpisah oleh vendor)</span></div>
-              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1.25rem", lineHeight: 1.6 }}>
-                Pilih salah satu paket booth khusus berikut jika ingin tampilan booth yang lebih menarik. Harga belum termasuk harga sewa booth utama.
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem" }}>
-                {PAKET_BOOTH.map(p => (
-                  <div key={p.no} onClick={() => setSelectedPaket(selectedPaket === p.no ? null : p.no)}
-                    style={{ borderRadius: 12, border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "rgba(255,255,255,0.08)"}`, background: selectedPaket === p.no ? "rgba(212,160,23,0.07)" : "rgba(255,255,255,0.02)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
-                    <img src={p.img} alt={p.nama} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }}/>
-                    <div style={{ padding: "0.85rem" }}>
-                      <div style={{ fontWeight: 800, fontSize: "0.95rem", color: selectedPaket === p.no ? "#D4A017" : "#f1f5f9", marginBottom: "0.35rem" }}>{p.nama}</div>
-                      <div style={{ fontSize: "0.72rem", color: "#64748b", lineHeight: 1.5, marginBottom: "0.5rem" }}>{p.spesifikasi}</div>
-                      <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.9rem", marginBottom: "0.5rem" }}>{fmt(p.harga)}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: selectedPaket === p.no ? "#D4A017" : "#475569", fontWeight: 600 }}>
-                        <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "#475569"}`, background: selectedPaket === p.no ? "#D4A017" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {selectedPaket === p.no && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0a1628" }}/>}
-                        </div>
-                        {selectedPaket === p.no ? "✓ Dipilih" : "Pilih Paket ini"}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {selectedPaket !== null && (
-                <div style={{ marginTop: "0.75rem", background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 10, padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#94a3b8" }}>
-                  ✅ <strong style={{ color: "#D4A017" }}>{PAKET_BOOTH[selectedPaket-1].nama}</strong> dipilih — panitia akan menghubungi Anda untuk konfirmasi dan pembayaran vendor.
-                </div>
-              )}
-            </div>
+              <div style={css.secHd}>✨ Special Request & Fasilitas Booth</div>
 
-            {/* Special request */}
-            <div style={css.card}>
-              <div style={css.secHd}>✨ Permintaan Khusus</div>
-
-              <label style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", marginBottom: "1.25rem" }}>
+              {/* 1. Desain booth */}
+              <label style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer", marginBottom: "1.5rem" }}>
                 <input type="checkbox" checked={needsDesign} onChange={e => setNeedsDesign(e.target.checked)}
                   style={{ width: 18, height: 18, marginTop: 2, accentColor: "#D4A017", flexShrink: 0 }} />
                 <div>
@@ -657,48 +626,81 @@ export default function EmployerRegister() {
                 </div>
               </label>
 
-              <div>
-                <label style={css.label}>Catatan / Permintaan Lain <span style={{ fontSize: "0.7rem", color: "#334155", fontWeight: 400 }}>(opsional)</span></label>
-                <textarea
-                  style={{ ...css.input, minHeight: 80, resize: "vertical" as const }}
-                  value={specialRequest}
-                  onChange={e => setSpecialRequest(e.target.value)}
-                  placeholder="Contoh: posisi dekat entrance, butuh stop kontak tambahan, dll."
-                />
-              </div>
-            </div>
+              {/* Divider */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
 
-            {/* Fasilitas Tambahan */}
-            <div style={css.card}>
-              <div style={css.secHd}>🛠️ Fasilitas Tambahan (Exhibitor Order)</div>
-              <div style={{ background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 10, padding: "0.75rem 1rem", marginBottom: "1.25rem", fontSize: "0.82rem", color: "#94a3b8" }}>
-                ⚠️ Fasilitas berikut <strong style={{ color: "#fbbf24" }}>ditagih terpisah oleh vendor</strong> dan bukan bagian dari harga booth. Isi jumlah yang dibutuhkan (kosongkan jika tidak perlu).
+              {/* 2. Paket Booth Khusus */}
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>🎨 Paket Booth Khusus <span style={{ color: "#334155", fontWeight: 400 }}>(opsional)</span></div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Pilih paket booth jika ingin tampilan lebih menarik. Harga belum termasuk sewa booth utama — ditagih terpisah oleh vendor.
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px,1fr))", gap: "0.85rem", marginBottom: "1rem" }}>
+                {PAKET_BOOTH.map(p => (
+                  <div key={p.no} onClick={() => setSelectedPaket(selectedPaket === p.no ? null : p.no)}
+                    style={{ borderRadius: 12, border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "rgba(255,255,255,0.08)"}`, background: selectedPaket === p.no ? "rgba(212,160,23,0.07)" : "rgba(255,255,255,0.02)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
+                    <img src={p.img} alt={p.nama} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }}/>
+                    <div style={{ padding: "0.75rem" }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.88rem", color: selectedPaket === p.no ? "#D4A017" : "#f1f5f9", marginBottom: "0.25rem" }}>{p.nama}</div>
+                      <div style={{ fontSize: "0.68rem", color: "#64748b", lineHeight: 1.5, marginBottom: "0.4rem" }}>{p.spesifikasi}</div>
+                      <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.85rem", marginBottom: "0.4rem" }}>{fmt(p.harga)}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: selectedPaket === p.no ? "#D4A017" : "#475569", fontWeight: 600 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "#475569"}`, background: selectedPaket === p.no ? "#D4A017" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {selectedPaket === p.no && <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#0a1628" }}/>}
+                        </div>
+                        {selectedPaket === p.no ? "✓ Dipilih" : "Pilih paket ini"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selectedPaket !== null && (
+                <div style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 10, padding: "0.65rem 1rem", fontSize: "0.8rem", color: "#94a3b8", marginBottom: "1rem" }}>
+                  ✅ <strong style={{ color: "#D4A017" }}>{PAKET_BOOTH[selectedPaket-1].nama}</strong> dipilih — panitia akan menghubungi untuk konfirmasi vendor.
+                </div>
+              )}
+
+              {/* Divider */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
+
+              {/* 3. Fasilitas Tambahan */}
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>🛠️ Fasilitas Tambahan <span style={{ color: "#334155", fontWeight: 400 }}>(ditagih terpisah vendor)</span></div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px,1fr))", gap: "0.6rem", marginBottom: "0.85rem" }}>
                 {FACILITY_LIST.map(f => (
-                  <div key={f.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "0.75rem 1rem", border: `1px solid ${facilities[f.key] > 0 ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.06)"}` }}>
+                  <div key={f.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "0.65rem 0.85rem", border: `1px solid ${facilities[f.key] > 0 ? "rgba(251,191,36,0.4)" : "rgba(255,255,255,0.06)"}` }}>
                     <div>
-                      <div style={{ fontSize: "0.85rem", fontWeight: 600, color: facilities[f.key] > 0 ? "#fbbf24" : "#f1f5f9" }}>{f.label}</div>
-                      <div style={{ fontSize: "0.72rem", color: "#475569" }}>
+                      <div style={{ fontSize: "0.82rem", fontWeight: 600, color: facilities[f.key] > 0 ? "#fbbf24" : "#f1f5f9" }}>{f.label}</div>
+                      <div style={{ fontSize: "0.68rem", color: "#475569" }}>
                         {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(f.price)}/{f.unit}/hari
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                       <button onClick={() => setFacilities(p => ({ ...p, [f.key]: Math.max(0, (p[f.key]||0) - 1) }))}
-                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f1f5f9", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                      <span style={{ width: 24, textAlign: "center", fontWeight: 700, fontSize: "0.95rem", color: facilities[f.key] > 0 ? "#fbbf24" : "#64748b" }}>{facilities[f.key] || 0}</span>
+                        style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f1f5f9", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <span style={{ width: 22, textAlign: "center", fontWeight: 700, fontSize: "0.9rem", color: facilities[f.key] > 0 ? "#fbbf24" : "#64748b" }}>{facilities[f.key] || 0}</span>
                       <button onClick={() => setFacilities(p => ({ ...p, [f.key]: (p[f.key]||0) + 1 }))}
-                        style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                        style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                     </div>
                   </div>
                 ))}
               </div>
               {facilityTotal > 0 && (
-                <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.75rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan (ditagih vendor):</span>
+                <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.65rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan (ditagih vendor):</span>
                   <span style={{ fontWeight: 800, color: "#fbbf24" }}>~{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)}/hari</span>
                 </div>
               )}
+
+              {/* Divider */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
+
+              {/* 4. Open text box */}
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>📝 Ada permintaan lain?</div>
+              <textarea
+                style={{ ...css.input, minHeight: 80, resize: "vertical" as const }}
+                value={specialRequest}
+                onChange={e => setSpecialRequest(e.target.value)}
+                placeholder="Tulis di sini jika ada kebutuhan yang tidak ada dalam daftar di atas. Contoh: posisi dekat entrance, kebutuhan internet, dll."
+              />
             </div>
           </div>
         )}
