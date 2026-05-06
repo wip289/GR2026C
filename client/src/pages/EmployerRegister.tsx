@@ -106,6 +106,32 @@ export default function EmployerRegister() {
     facilityCable: 0,
   });
 
+  const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
+
+  const PAKET_BOOTH = [
+    {
+      no: 1,
+      nama: "Paket Booth 1",
+      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_1.jpeg",
+      harga: 21600000,
+      spesifikasi: "Booth custom dengan backdrop custom, termasuk 3 kursi, 1 meja dealing, 1 TV, 1 meja custom, 3 modul materi perusahaan.",
+    },
+    {
+      no: 2,
+      nama: "Paket Booth 2",
+      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_3.jpeg",
+      harga: 5400000,
+      spesifikasi: "Partisi R8, materi perusahaan sticker di belakang, stan terbuka 2 sisi, fascia nama & logo perusahaan.",
+    },
+    {
+      no: 3,
+      nama: "Paket Booth 3",
+      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_2.jpeg",
+      harga: 14500000,
+      spesifikasi: "Booth dengan backdrop custom dan 2 meja custom. Cocok untuk kebutuhan presentasi.",
+    },
+  ];
+
   const FACILITY_LIST = [
     { key: "facilityChair",  label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
     { key: "facilityTable",  label: "Meja + cover hitam",   unit: "buah", price: 125000 },
@@ -252,6 +278,7 @@ export default function EmployerRegister() {
       needsBoothDesign: needsDesign,
       specialRequest: specialRequest || undefined,
       facilities: facilityTotal > 0 ? JSON.stringify(facilities) : undefined,
+      paketBooth: selectedPaket !== null ? String(selectedPaket) : undefined,
 
       jobVacanciesUrl: jobVacanciesUrls.length > 0 ? jobVacanciesUrls : undefined,
     });
@@ -580,6 +607,38 @@ export default function EmployerRegister() {
                 </div>
               </div>
             )}
+
+            {/* Paket Booth Khusus */}
+            <div style={css.card}>
+              <div style={css.secHd}>🎨 Paket Booth Khusus <span style={{ fontSize: "0.72rem", color: "#334155", fontWeight: 400 }}>(opsional — ditagih terpisah oleh vendor)</span></div>
+              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+                Pilih salah satu paket booth khusus berikut jika ingin tampilan booth yang lebih menarik. Harga belum termasuk harga sewa booth utama.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem" }}>
+                {PAKET_BOOTH.map(p => (
+                  <div key={p.no} onClick={() => setSelectedPaket(selectedPaket === p.no ? null : p.no)}
+                    style={{ borderRadius: 12, border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "rgba(255,255,255,0.08)"}`, background: selectedPaket === p.no ? "rgba(212,160,23,0.07)" : "rgba(255,255,255,0.02)", cursor: "pointer", overflow: "hidden", transition: "all 0.2s" }}>
+                    <img src={p.img} alt={p.nama} style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }}/>
+                    <div style={{ padding: "0.85rem" }}>
+                      <div style={{ fontWeight: 800, fontSize: "0.95rem", color: selectedPaket === p.no ? "#D4A017" : "#f1f5f9", marginBottom: "0.35rem" }}>{p.nama}</div>
+                      <div style={{ fontSize: "0.72rem", color: "#64748b", lineHeight: 1.5, marginBottom: "0.5rem" }}>{p.spesifikasi}</div>
+                      <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.9rem", marginBottom: "0.5rem" }}>{fmt(p.harga)}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: selectedPaket === p.no ? "#D4A017" : "#475569", fontWeight: 600 }}>
+                        <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${selectedPaket === p.no ? "#D4A017" : "#475569"}`, background: selectedPaket === p.no ? "#D4A017" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {selectedPaket === p.no && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0a1628" }}/>}
+                        </div>
+                        {selectedPaket === p.no ? "✓ Dipilih" : "Pilih Paket ini"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selectedPaket !== null && (
+                <div style={{ marginTop: "0.75rem", background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 10, padding: "0.75rem 1rem", fontSize: "0.82rem", color: "#94a3b8" }}>
+                  ✅ <strong style={{ color: "#D4A017" }}>{PAKET_BOOTH[selectedPaket-1].nama}</strong> dipilih — panitia akan menghubungi Anda untuk konfirmasi dan pembayaran vendor.
+                </div>
+              )}
+            </div>
 
             {/* Special request */}
             <div style={css.card}>
