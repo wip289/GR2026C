@@ -276,8 +276,8 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
                   fill={COLORS[resolvedStatus].text} fontSize={fs} fontWeight="700">
                   {booth.label}
                 </text>
-                {/* Nama perusahaan di map (panitia mode) */}
-                {panitiaMode && company && (
+                {/* Nama perusahaan di map (panitia mode atau readOnly hover) */}
+                {(panitiaMode || (readOnly && isHov)) && company && (
                   <text x={booth.x+booth.w/2} y={booth.y+booth.h-6}
                     textAnchor="middle" fill={COLORS[resolvedStatus].text}
                     fontSize={booth.w >= 80 ? 8 : 6} opacity="0.95" fontStyle="italic">
