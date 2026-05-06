@@ -120,6 +120,7 @@ export const eventRouter = router({
       positions: z.array(z.any()).optional(),
       needsBoothDesign: z.boolean().optional(),
       specialRequest: z.string().optional(),
+      facilities: z.string().optional(),
       logoUrl: z.string().optional(),
       jobVacanciesUrl: z.array(z.object({ url: z.string(), name: z.string() })).optional(),
     }))
@@ -176,6 +177,7 @@ export const eventRouter = router({
           positions: input.positions || null,
           needsBoothDesign: input.needsBoothDesign || false,
           specialRequest: input.specialRequest || null,
+          facilities: input.facilities || null,
           logoUrl: input.logoUrl || null,
           jobVacanciesUrl: input.jobVacanciesUrl || null,
           status: "pending",

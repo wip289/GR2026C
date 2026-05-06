@@ -214,6 +214,7 @@ export const employerBookings = mysqlTable("employerBookings", {
   // Special request
   needsBoothDesign: boolean("needsBoothDesign").default(false),
   specialRequest: text("specialRequest"),
+  facilities: text("facilities"), // JSON string fasilitas tambahan (ditagih vendor)
   // Status
   status: mysqlEnum("status", ["pending", "confirmed", "rejected"]).default("pending").notNull(),
   paymentDeadline: date("paymentDeadline"),
