@@ -245,7 +245,11 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
             const isSel    = selectedIds.includes(booth.id);
             const isHov    = hoveredId === booth.id;
             const isClosedForUser = !panitiaMode && closedFromDB?.includes(booth.id);
-            const click    = !panitiaMode && booth.type !== "area" && !isClosedForUser
+
+            // Opsi A: booth tertutup tidak ditampilkan di luar panitiaMode
+            if (isClosedForUser) return null;
+
+            const click    = !panitiaMode && booth.type !== "area"
                           && (booth.status === "available" || isSel);
 
             let fill   = COLORS[resolvedStatus].fill;
