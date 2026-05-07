@@ -99,18 +99,6 @@ export default function EmployerRegister() {
   const [fasciaName, setFasciaName]         = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
 
-  // Reset paket jika ukuran booth berubah (misal dari 3×3 ke 5×5)
-  const handleBoothChange = (newIds: string[]) => {
-    const newDefs = liveBooths.filter(b => newIds.includes(b.id));
-    const newSize = newDefs.some(b => b.type === "main") ? "main"
-      : newDefs.some(b => b.type === "extra") ? "extra"
-      : "standard";
-    const oldSize = selectedBoothDefs.some(b => b.type === "main") ? "main"
-      : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
-      : "standard";
-    if (newSize !== oldSize) setSelectedPaket(null); // reset paket kalau ukuran berubah
-    setSelectedBooths(newIds);
-  };
   const [facilities, setFacilities] = useState<Record<string, number>>({
     facilityChair: 0,
     facilityTable: 0,
@@ -254,6 +242,19 @@ export default function EmployerRegister() {
     : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
     : "standard";
   const PAKET_BOOTH = PAKET_BOOTH_BY_SIZE[activeSizeType];
+
+  // Reset paket jika ukuran booth berubah — HARUS di sini, setelah selectedBoothDefs & liveBooths siap
+  const handleBoothChange = (newIds: string[]) => {
+    const newDefs = liveBooths.filter(b => newIds.includes(b.id));
+    const newSize = newDefs.some(b => b.type === "main") ? "main"
+      : newDefs.some(b => b.type === "extra") ? "extra"
+      : "standard";
+    const oldSize = selectedBoothDefs.some(b => b.type === "main") ? "main"
+      : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
+      : "standard";
+    if (newSize !== oldSize) setSelectedPaket(null);
+    setSelectedBooths(newIds);
+  };
 
   // Positions helpers
   const addPos = () => setPositions(p => [...p, { position: "", customPosition: "", count: 1 }]);
