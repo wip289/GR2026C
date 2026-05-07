@@ -20,7 +20,7 @@ const POSITIONS = [
   "Cruise Staff","Spa Therapist","Butler","Lainnya",
 ];
 
-const STEPS = ["Perusahaan", "PIC", "Rekrutmen", "Booth", "Konfirmasi"];
+const STEPS = ["Perusahaan", "PIC", "Rekrutmen", "Booth", "Exhibitor Order", "Konfirmasi"];
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
@@ -96,6 +96,8 @@ export default function EmployerRegister() {
   const [selectedBooths, setSelectedBooths] = useState<string[]>([]);
   const [needsDesign, setNeedsDesign]       = useState(false);
   const [specialRequest, setSpecialRequest] = useState("");
+  const [fasciaName, setFasciaName]         = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
   const [facilities, setFacilities] = useState<Record<string, number>>({
     facilityChair: 0,
     facilityTable: 0,
@@ -212,6 +214,7 @@ export default function EmployerRegister() {
     if (step === 1) return !!(pic1.name && pic1.email && pic1.whatsapp) && !emailErr && !checkingEmail;
     if (step === 2) return true; // Posisi & job vacancies opsional
     if (step === 3) return selectedBooths.length > 0;
+    if (step === 4) return true; // Exhibitor Order Form — opsional
     return true;
   };
 
@@ -259,7 +262,7 @@ export default function EmployerRegister() {
       };
       setBookingData(data);
       toast.success("Booking berhasil!", { description: "Invoice siap didownload." });
-      setStep(5);
+      setStep(6);
       setSubmitting(false);
       bookingsQuery.refetch();
     },
@@ -304,7 +307,11 @@ export default function EmployerRegister() {
       totalAmount,
       positions,
       needsBoothDesign: needsDesign,
-      specialRequest: specialRequest || undefined,
+      specialRequest: [
+        fasciaName ? `[FASCIA] ${fasciaName}` : "",
+        companyAddress ? `[ALAMAT] ${companyAddress}` : "",
+        specialRequest || "",
+      ].filter(Boolean).join(" | ") || undefined,
       facilities: facilityTotal > 0 ? JSON.stringify(facilities) : undefined,
       paketBooth: selectedPaket !== null ? String(selectedPaket) : undefined,
 
@@ -313,7 +320,7 @@ export default function EmployerRegister() {
   };
 
   // ── SUCCESS SCREEN ────────────────────────────────────────────
-  if (step === 5 && bookingData) {
+  if (step === 6 && bookingData) {
     return (
       <div style={css.page}>
         <nav style={css.nav}>
@@ -733,8 +740,139 @@ export default function EmployerRegister() {
           </div>
         )}
 
-        {/* ── STEP 4: Konfirmasi ── */}
+        {/* ── STEP 4: Exhibitor Order Form ── */}
         {step === 4 && (
+          <div>
+            {/* OPSIONAL banner — eye-catching */}
+            <div style={{
+              background: "linear-gradient(135deg, #f97316 0%, #fb923c 40%, #fbbf24 100%)",
+              borderRadius: 16, padding: "1.25rem 1.75rem", marginBottom: "1.5rem",
+              display: "flex", alignItems: "center", gap: "1.25rem",
+              boxShadow: "0 8px 32px rgba(249,115,22,0.35)",
+            }}>
+              <div style={{ fontSize: "2.5rem", flexShrink: 0 }}>📋</div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.3rem" }}>
+                  <span style={{ fontWeight: 900, fontSize: "1.15rem", color: "#fff", letterSpacing: "-0.01em" }}>
+                    Exhibitor Order Form
+                  </span>
+                  <span style={{ background: "rgba(255,255,255,0.25)", color: "#fff", fontSize: "0.68rem", fontWeight: 800, padding: "0.2rem 0.6rem", borderRadius: 20, textTransform: "uppercase", letterSpacing: "0.1em", border: "1px solid rgba(255,255,255,0.4)" }}>
+                    Opsional
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.85)", lineHeight: 1.5 }}>
+                  Data ini diteruskan ke vendor untuk persiapan booth Anda. Lewati jika belum ada informasi.
+                </div>
+              </div>
+            </div>
+
+            {/* Nama Fascia */}
+            <div style={{
+              background: "rgba(249,115,22,0.06)", border: "1.5px solid rgba(249,115,22,0.3)",
+              borderRadius: 16, padding: "1.75rem", marginBottom: "1.25rem",
+            }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fb923c", marginBottom: "0.35rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                🏷️ Nama Fascia Booth
+                <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#64748b", padding: "0.15rem 0.5rem", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>Maks. 24 karakter</span>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Teks yang akan dicetak di papan nama atas booth Anda (sticker). Gunakan huruf kapital.
+              </div>
+              <div style={{ position: "relative" }}>
+                <input
+                  style={{
+                    ...css.input,
+                    border: `1.5px solid ${fasciaName.length > 24 ? "#ef4444" : fasciaName.length > 0 ? "rgba(249,115,22,0.6)" : "rgba(255,255,255,0.1)"}`,
+                    fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.08em",
+                    paddingRight: "4.5rem",
+                    textTransform: "uppercase",
+                    background: fasciaName.length > 0 ? "rgba(249,115,22,0.05)" : "rgba(255,255,255,0.05)",
+                  }}
+                  value={fasciaName}
+                  onChange={e => setFasciaName(e.target.value.toUpperCase())}
+                  placeholder="NAMA PERUSAHAAN"
+                  maxLength={30}
+                />
+                <div style={{
+                  position: "absolute", right: "0.9rem", top: "50%", transform: "translateY(-50%)",
+                  fontSize: "0.75rem", fontWeight: 700,
+                  color: fasciaName.length > 24 ? "#ef4444" : fasciaName.length >= 20 ? "#f97316" : "#475569",
+                }}>
+                  {fasciaName.length}/24
+                </div>
+              </div>
+              {fasciaName.length > 24 && (
+                <div style={{ fontSize: "0.75rem", color: "#f87171", marginTop: "0.4rem" }}>
+                  ⚠️ Melebihi 24 karakter — font akan otomatis diperkecil dan dipasang 2 baris oleh vendor.
+                </div>
+              )}
+              {fasciaName.length > 0 && fasciaName.length <= 24 && (
+                <div style={{ marginTop: "0.9rem", background: "rgba(249,115,22,0.08)", border: "1px dashed rgba(249,115,22,0.4)", borderRadius: 8, padding: "0.65rem 1rem" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#64748b", marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Preview Fascia</div>
+                  <div style={{ fontWeight: 900, fontSize: "1rem", color: "#fff", letterSpacing: "0.1em", textTransform: "uppercase" }}>{fasciaName}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Alamat */}
+            <div style={{
+              background: "rgba(251,191,36,0.05)", border: "1.5px solid rgba(251,191,36,0.25)",
+              borderRadius: 16, padding: "1.75rem", marginBottom: "1.25rem",
+            }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fbbf24", marginBottom: "0.35rem" }}>
+                📍 Alamat Perusahaan
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Diperlukan vendor untuk dokumen resmi Exhibitor Order Form.
+              </div>
+              <textarea
+                style={{
+                  ...css.input, minHeight: 90, resize: "vertical" as const,
+                  border: companyAddress ? "1.5px solid rgba(251,191,36,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                  background: companyAddress ? "rgba(251,191,36,0.04)" : "rgba(255,255,255,0.05)",
+                }}
+                value={companyAddress}
+                onChange={e => setCompanyAddress(e.target.value)}
+                placeholder="Jl. Contoh No. 123, Kota, Provinsi"
+              />
+            </div>
+
+            {/* Ringkasan fasilitas yg sudah dipilih */}
+            {(Object.values(facilities).some(v => v > 0) || selectedPaket !== null || needsDesign) && (
+              <div style={{
+                background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.2)",
+                borderRadius: 14, padding: "1.25rem 1.5rem",
+              }}>
+                <div style={{ fontSize: "0.75rem", color: "#fb923c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: "0.85rem" }}>
+                  ✅ Ringkasan Pesanan Fasilitas (dari step Booth)
+                </div>
+                {needsDesign && (
+                  <div style={{ fontSize: "0.85rem", color: "#f1f5f9", marginBottom: "0.4rem" }}>📐 Layanan desain & dekorasi booth</div>
+                )}
+                {selectedPaket !== null && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#f1f5f9", marginBottom: "0.4rem" }}>
+                    <span>🎨 {PAKET_BOOTH[selectedPaket - 1].nama}</span>
+                    <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(PAKET_BOOTH[selectedPaket - 1].harga)}</span>
+                  </div>
+                )}
+                {FACILITY_LIST.filter(f => facilities[f.key] > 0).map(f => (
+                  <div key={f.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#f1f5f9", marginBottom: "0.3rem" }}>
+                    <span>🛠️ {f.label} × {facilities[f.key]}</span>
+                    <span style={{ color: "#fbbf24", fontWeight: 600 }}>{fmt(facilities[f.key] * f.price * 2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Skip hint */}
+            <div style={{ marginTop: "1.25rem", textAlign: "center", fontSize: "0.78rem", color: "#475569" }}>
+              💡 Kolom di atas tidak wajib diisi. Klik <strong style={{ color: "#fb923c" }}>Lanjut →</strong> untuk melanjutkan ke Konfirmasi.
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 5: Konfirmasi ── */}
+        {step === 5 && (
           <div>
             <div style={css.teal}>
               <div style={css.secHd}>📋 Review Booking</div>
@@ -743,6 +881,15 @@ export default function EmployerRegister() {
               <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
                 <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>Perusahaan</div>
                 <div style={{ fontSize: "1rem", fontWeight: 700, color: "#f1f5f9" }}>{company.name}</div>
+                {fasciaName && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.4rem" }}>
+                    <span style={{ fontSize: "0.72rem", background: "rgba(249,115,22,0.15)", color: "#fb923c", border: "1px solid rgba(249,115,22,0.35)", padding: "0.15rem 0.55rem", borderRadius: 6, fontWeight: 700 }}>FASCIA</span>
+                    <span style={{ fontSize: "0.85rem", color: "#fb923c", fontWeight: 700, letterSpacing: "0.08em" }}>{fasciaName}</span>
+                  </div>
+                )}
+                {companyAddress && (
+                  <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.35rem" }}>📍 {companyAddress}</div>
+                )}
                 <div style={{ fontSize: "0.85rem", color: "#64748b" }}>{company.industry} · {company.city}{company.website ? ` · ${company.website}` : ""}</div>
               </div>
 
