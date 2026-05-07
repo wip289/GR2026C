@@ -98,6 +98,19 @@ export default function EmployerRegister() {
   const [specialRequest, setSpecialRequest] = useState("");
   const [fasciaName, setFasciaName]         = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
+
+  // Reset paket jika ukuran booth berubah (misal dari 3×3 ke 5×5)
+  const handleBoothChange = (newIds: string[]) => {
+    const newDefs = liveBooths.filter(b => newIds.includes(b.id));
+    const newSize = newDefs.some(b => b.type === "main") ? "main"
+      : newDefs.some(b => b.type === "extra") ? "extra"
+      : "standard";
+    const oldSize = selectedBoothDefs.some(b => b.type === "main") ? "main"
+      : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
+      : "standard";
+    if (newSize !== oldSize) setSelectedPaket(null); // reset paket kalau ukuran berubah
+    setSelectedBooths(newIds);
+  };
   const [facilities, setFacilities] = useState<Record<string, number>>({
     facilityChair: 0,
     facilityTable: 0,
@@ -115,29 +128,36 @@ export default function EmployerRegister() {
 
   const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
 
-  const PAKET_BOOTH = [
-    {
-      no: 1,
-      nama: "Paket Booth 1",
-      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_1.jpeg",
-      harga: 21600000,
-      spesifikasi: "Booth custom dengan backdrop custom, termasuk 3 kursi, 1 meja dealing, 1 TV, 1 meja custom, 3 modul materi perusahaan.",
-    },
-    {
-      no: 2,
-      nama: "Paket Booth 2",
-      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_3.jpeg",
-      harga: 5400000,
-      spesifikasi: "Partisi R8, materi perusahaan sticker di belakang, stan terbuka 2 sisi, fascia nama & logo perusahaan.",
-    },
-    {
-      no: 3,
-      nama: "Paket Booth 3",
-      img: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths/booth_2.jpeg",
-      harga: 14500000,
-      spesifikasi: "Booth dengan backdrop custom dan 2 meja custom. Cocok untuk kebutuhan presentasi.",
-    },
-  ];
+  const BASE_URL = "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths";
+
+  const PAKET_BOOTH_BY_SIZE: Record<string, { no: number; nama: string; img: string; harga: number; spesifikasi: string }[]> = {
+    standard: [ // 3×3m
+      { no: 1, nama: "Paket Booth 1", img: `${BASE_URL}/booth-3x3-paket1.jpg`, harga: 21600000,
+        spesifikasi: "Booth custom 3×3m, backdrop custom, 3 kursi, 1 meja dealing, 1 TV, 1 meja custom, 3 modul materi perusahaan." },
+      { no: 2, nama: "Paket Booth 2", img: `${BASE_URL}/booth-3x3-paket2.jpg`, harga: 5400000,
+        spesifikasi: "Partisi R8 3×3m, materi sticker di belakang, stan terbuka 2 sisi, fascia nama & logo perusahaan." },
+      { no: 3, nama: "Paket Booth 3", img: `${BASE_URL}/booth-3x3-paket3.jpg`, harga: 14500000,
+        spesifikasi: "Booth 3×3m dengan backdrop custom dan 2 meja custom. Cocok untuk kebutuhan presentasi." },
+    ],
+    main: [ // 5×5m
+      { no: 1, nama: "Paket Booth 1", img: `${BASE_URL}/booth-5x5-paket1.png`, harga: 57500000,
+        spesifikasi: "Booth custom 5×5m, backdrop custom, 4 kursi, 2 meja dealing, 1 TV, 3 modul materi perusahaan, logo custom." },
+      { no: 2, nama: "Paket Booth 2", img: `${BASE_URL}/booth-5x5-paket2.jpg`, harga: 12700000,
+        spesifikasi: "Partisi R8 5×5m, materi sticker di belakang, stan terbuka 2 sisi, fascia nama & logo perusahaan." },
+      { no: 3, nama: "Paket Booth 3", img: `${BASE_URL}/booth-5x5-paket3.png`, harga: 37500000,
+        spesifikasi: "Booth 5×5m dengan backdrop custom, kursi sofa, dan meja custom. Nuansa premium." },
+    ],
+    extra: [ // 4×2m
+      { no: 1, nama: "Paket Booth 1", img: `${BASE_URL}/booth-4x2-paket1.jpg`, harga: 32000000,
+        spesifikasi: "Booth custom 4×2m, backdrop custom, kursi, 1 meja dealing, 1 TV, 1 meja custom, 3 modul materi perusahaan." },
+      { no: 2, nama: "Paket Booth 2", img: `${BASE_URL}/booth-4x2-paket2.jpg`, harga: 22000000,
+        spesifikasi: "Panel backdrop custom 4×2m, materi sticker di belakang, stan terbuka 3 sisi, fascia nama & logo perusahaan." },
+    ],
+  };
+
+  const SIZE_LABEL: Record<string, string> = {
+    main: "5×5m", extra: "4×2m", standard: "3×3m",
+  };
 
   const FACILITY_LIST = [
     { key: "facilityChair",  label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
@@ -188,6 +208,12 @@ export default function EmployerRegister() {
 
   const selectedBoothDefs = liveBooths.filter(b => selectedBooths.includes(b.id));
   const totalAmount = selectedBoothDefs.reduce((sum, b) => sum + b.price, 0);
+
+  // Deteksi ukuran booth dominan: main(5×5) > extra(4×2) > standard(3×3)
+  const activeSizeType = selectedBoothDefs.some(b => b.type === "main") ? "main"
+    : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
+    : "standard";
+  const PAKET_BOOTH = PAKET_BOOTH_BY_SIZE[activeSizeType];
 
   // Positions helpers
   const addPos = () => setPositions(p => [...p, { position: "", customPosition: "", count: 1 }]);
@@ -616,7 +642,7 @@ export default function EmployerRegister() {
               </p>
               <BoothMapPicker
                 selectedIds={selectedBooths}
-                onChange={setSelectedBooths}
+                onChange={handleBoothChange}
                 booths={liveBooths}
               />
             </div>
@@ -639,6 +665,9 @@ export default function EmployerRegister() {
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "1.05rem", marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(20,184,166,0.2)" }}>
                   <span>Total</span>
                   <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
+                </div>
+                <div style={{ marginTop: "0.75rem", background: "rgba(212,160,23,0.06)", border: "1px solid rgba(212,160,23,0.2)", borderRadius: 8, padding: "0.55rem 0.9rem", fontSize: "0.78rem", color: "#94a3b8" }}>
+                  💡 Booth ukuran <strong style={{ color: "#D4A017" }}>{SIZE_LABEL[activeSizeType]}</strong> — Paket booth & harga di bawah sudah disesuaikan otomatis.
                 </div>
               </div>
             )}
@@ -665,7 +694,13 @@ export default function EmployerRegister() {
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
 
               {/* 2. Paket Booth Khusus */}
-              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>🎨 Paket Booth Khusus <span style={{ color: "#334155", fontWeight: 400 }}>(opsional)</span></div>
+              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>
+                🎨 Paket Booth Khusus
+                <span style={{ marginLeft: "0.5rem", background: "rgba(212,160,23,0.15)", border: "1px solid rgba(212,160,23,0.4)", color: "#D4A017", borderRadius: 6, padding: "0.1rem 0.5rem", fontSize: "0.7rem", fontWeight: 700 }}>
+                  {SIZE_LABEL[activeSizeType]}
+                </span>
+                <span style={{ color: "#334155", fontWeight: 400, marginLeft: "0.4rem" }}>(opsional)</span>
+              </div>
               <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem", lineHeight: 1.6 }}>
                 Pilih paket booth jika ingin tampilan lebih menarik. Harga belum termasuk sewa booth utama — ditagih terpisah oleh vendor.
               </div>
