@@ -274,7 +274,13 @@ export default function PanitiaManagement() {
         try {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setDivisions(parsed);
+            // Pastikan PM (id="pm") selalu ada di posisi pertama
+            const hasPM = parsed.some((d: any) => d.id === "pm");
+            if (!hasPM) {
+              setDivisions([DEFAULT_DIVISIONS[0], ...parsed]);
+            } else {
+              setDivisions(parsed);
+            }
           }
         } catch {}
       }
@@ -355,6 +361,7 @@ export default function PanitiaManagement() {
   };
 
   const deleteDiv = (divId: string) => {
+    if (divId === "pm") { toast.error("Project Manager tidak dapat dihapus dari struktur organisasi"); return; }
     if (!confirm("Hapus divisi ini beserta semua anggotanya?")) return;
     updateAndSave(divisions.filter(d => d.id !== divId));
   };
@@ -523,19 +530,22 @@ export default function PanitiaManagement() {
             </div>
 
             {/* PM Division (center top) */}
-            {pmDiv && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "0" }}>
-                <DivisionColumn
-                  div={pmDiv}
-                  navigate={navigate}
-                  onAddMember={() => setAddingMember(pmDiv.id)}
-                  onEditMember={id => setEditingMember({ divId: pmDiv.id, memberId: id })}
-                  onDeleteMember={id => deleteMember(pmDiv.id, id)}
-                  onEditDiv={() => { setEditingDiv(pmDiv.id); setEditDivName(pmDiv.name); setEditDivIcon(pmDiv.icon); }}
-                  onDeleteDiv={() => deleteDiv(pmDiv.id)}
-                />
-              </div>
-            )}
+            {(() => {
+              const pm = pmDiv || DEFAULT_DIVISIONS[0];
+              return (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "0" }}>
+                  <DivisionColumn
+                    div={pm}
+                    navigate={navigate}
+                    onAddMember={() => setAddingMember(pm.id)}
+                    onEditMember={id => setEditingMember({ divId: pm.id, memberId: id })}
+                    onDeleteMember={id => deleteMember(pm.id, id)}
+                    onEditDiv={() => { setEditingDiv(pm.id); setEditDivName(pm.name); setEditDivIcon(pm.icon); }}
+                    onDeleteDiv={() => deleteDiv(pm.id)}
+                  />
+                </div>
+              );
+            })()}
 
             {/* Horizontal connector line */}
             {otherDivs.length > 0 && (
