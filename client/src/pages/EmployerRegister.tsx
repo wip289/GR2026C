@@ -128,6 +128,46 @@ export default function EmployerRegister() {
 
   const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
 
+  const DRAFT_KEY = "gr2026_employer_draft";
+
+  // ── Restore draft dari localStorage saat pertama load ──────────
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.company)        setCompany(d.company);
+      if (d.pic1)           setPic1(d.pic1);
+      if (d.pic2)           setPic2(d.pic2);
+      if (d.showPic2)       setShowPic2(d.showPic2);
+      if (d.positions)      setPositions(d.positions);
+      if (d.selectedBooths) setSelectedBooths(d.selectedBooths);
+      if (d.needsDesign !== undefined) setNeedsDesign(d.needsDesign);
+      if (d.specialRequest) setSpecialRequest(d.specialRequest);
+      if (d.fasciaName)     setFasciaName(d.fasciaName);
+      if (d.companyAddress) setCompanyAddress(d.companyAddress);
+      if (d.facilities)     setFacilities(d.facilities);
+      if (d.facilityDays)   setFacilityDays(d.facilityDays);
+      if (d.selectedPaket !== undefined) setSelectedPaket(d.selectedPaket);
+      if (d.step !== undefined) setStep(d.step);
+      toast.info("Draft ditemukan", { description: "Isian sebelumnya berhasil dipulihkan." });
+    } catch { /* abaikan error parse */ }
+  }, []);
+
+  // ── Autosave ke localStorage setiap ada perubahan ──────────────
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        company, pic1, pic2, showPic2, positions,
+        selectedBooths, needsDesign, specialRequest,
+        fasciaName, companyAddress, facilities, facilityDays,
+        selectedPaket, step,
+      }));
+    } catch { /* abaikan error storage penuh */ }
+  }, [company, pic1, pic2, showPic2, positions, selectedBooths,
+      needsDesign, specialRequest, fasciaName, companyAddress,
+      facilities, facilityDays, selectedPaket, step]);
+
   const BASE_URL = "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/booths";
 
   const PAKET_BOOTH_BY_SIZE: Record<string, { no: number; nama: string; img: string; harga: number; spesifikasi: string }[]> = {
@@ -288,6 +328,7 @@ export default function EmployerRegister() {
       };
       setBookingData(data);
       toast.success("Booking berhasil!", { description: "Invoice siap didownload." });
+      localStorage.removeItem(DRAFT_KEY);
       setStep(6);
       setSubmitting(false);
       bookingsQuery.refetch();
@@ -449,6 +490,21 @@ export default function EmployerRegister() {
               Login →
             </button>
           </p>
+          {localStorage.getItem(DRAFT_KEY) && (
+            <div style={{ marginTop: "0.75rem", display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "rgba(20,184,166,0.08)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 10, padding: "0.4rem 0.9rem" }}>
+              <span style={{ fontSize: "0.78rem", color: "#5eead4" }}>📝 Draft tersimpan</span>
+              <button
+                onClick={() => {
+                  if (confirm("Hapus draft dan mulai dari awal?")) {
+                    localStorage.removeItem(DRAFT_KEY);
+                    window.location.reload();
+                  }
+                }}
+                style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, textDecoration: "underline" }}>
+                Hapus draft
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Step indicator */}
