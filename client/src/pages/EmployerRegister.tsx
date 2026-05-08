@@ -198,8 +198,6 @@ export default function EmployerRegister() {
   ];
 
   const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * (facilityDays[f.key] || 2) * f.price, 0);
-  const paketTotal = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1].harga : 0;
-  const grandTotal = (totalAmount: number) => totalAmount + paketTotal + facilityTotal;
   // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
   const [vacanciesUploading, setVacanciesUploading] = useState(false);
@@ -242,6 +240,8 @@ export default function EmployerRegister() {
     : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
     : "standard";
   const PAKET_BOOTH = PAKET_BOOTH_BY_SIZE[activeSizeType];
+  const paketTotal = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1].harga : 0;
+  const grandTotal = (totalAmount: number) => totalAmount + paketTotal + facilityTotal;
 
   // Reset paket jika ukuran booth berubah — HARUS di sini, setelah selectedBoothDefs & liveBooths siap
   const handleBoothChange = (newIds: string[]) => {
