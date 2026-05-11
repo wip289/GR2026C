@@ -707,8 +707,25 @@ export default function SuperAdmin() {
                   <div style={{ fontSize: "0.73rem", color: "#475569", marginTop: "0.25rem" }}>08.00–16.00, 7 slot/hari</div>
                 </div>
               </div>
-              <div style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#60a5fa" }}>
-                ℹ️ Jatah slot: Main = 8 slot · Extra = 6 slot · Standard = 4 slot (total 2 hari)
+              <div style={{ marginTop: "1rem" }}>
+                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#60a5fa", marginBottom: "0.75rem" }}>🎯 Jatah Slot Interview per Perusahaan (total 2 hari)</div>
+                <div style={s.row3}>
+                  <div>
+                    <label style={s.label}>Main Booth (slot)</label>
+                    <input style={s.input} type="number" min="1" max="14" value={config.mainBoothSlots || "4"} onChange={e => upd("mainBoothSlots", e.target.value)}/>
+                    <div style={{ fontSize: "0.73rem", color: "#D4A017", marginTop: "0.25rem" }}>Default: 4 slot</div>
+                  </div>
+                  <div>
+                    <label style={s.label}>Standard Booth (slot)</label>
+                    <input style={s.input} type="number" min="1" max="14" value={config.stdBoothSlots || "2"} onChange={e => upd("stdBoothSlots", e.target.value)}/>
+                    <div style={{ fontSize: "0.73rem", color: "#14b8a6", marginTop: "0.25rem" }}>Default: 2 slot</div>
+                  </div>
+                  <div>
+                    <label style={s.label}>Extra Booth (slot)</label>
+                    <input style={s.input} type="number" min="1" max="14" value={config.extraBoothSlots || "3"} onChange={e => upd("extraBoothSlots", e.target.value)}/>
+                    <div style={{ fontSize: "0.73rem", color: "#a78bfa", marginTop: "0.25rem" }}>Default: 3 slot</div>
+                  </div>
+                </div>
               </div>
             </div>
 

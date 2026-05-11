@@ -201,12 +201,15 @@ export default function EmployerDashboard() {
     </div>
   );
 
-  // Max interview slots based on booth types
+  // Max interview slots based on booth types (configurable via SuperAdmin)
   const booths = Array.isArray(booking.booths) ? booking.booths : [];
   const mainCount  = booths.filter((b: any) => b.type === "main").length;
   const stdCount   = booths.filter((b: any) => b.type === "standard").length;
   const extraCount = booths.filter((b: any) => b.type === "extra").length;
-  const maxSlots   = (mainCount * 2) + (stdCount * 1) + (extraCount * 1);
+  const mainSlotPerBooth  = parseInt((eventConfig as any).mainBoothSlots  || "4");
+  const stdSlotPerBooth   = parseInt((eventConfig as any).stdBoothSlots   || "2");
+  const extraSlotPerBooth = parseInt((eventConfig as any).extraBoothSlots || "3");
+  const maxSlots = (mainCount * mainSlotPerBooth) + (stdCount * stdSlotPerBooth) + (extraCount * extraSlotPerBooth);
   const maxStaff   = (mainCount * 4) + (stdCount * 2) + (extraCount * 2);
   const totalAmount = parseFloat((booking as any).totalAmount || "0");
 
@@ -684,7 +687,12 @@ export default function EmployerDashboard() {
                     </div>
                     <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "0.75rem 1.25rem" }}>
                       <div style={{ fontSize: "0.78rem", color: "#64748b", lineHeight: 1.6 }}>
-                        {booking.booths.map(b => b.type === "main" ? "Main Booth = 2 slot" : "Standard Booth = 1 slot").join(" · ")}
+                        {[
+                          mainCount > 0  && `Main × ${mainCount} = ${mainCount * mainSlotPerBooth} slot`,
+                          stdCount > 0   && `Standard × ${stdCount} = ${stdCount * stdSlotPerBooth} slot`,
+                          extraCount > 0 && `Extra × ${extraCount} = ${extraCount * extraSlotPerBooth} slot`,
+                        ].filter(Boolean).join(" · ")}
+                        <br/><span style={{ color: "#94a3b8" }}>Total selama 2 hari event</span>
                       </div>
                     </div>
                   </div>
