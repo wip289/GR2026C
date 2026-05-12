@@ -842,10 +842,108 @@ export default function EmployerRegister() {
                 placeholder="Tulis di sini jika ada kebutuhan yang tidak ada dalam daftar di atas. Contoh: posisi dekat entrance, kebutuhan internet, dll."
               />
             </div>
+
+            {/* ── Fascia Booth ── */}
+            <div style={{ background: "rgba(249,115,22,0.06)", border: "1.5px solid rgba(249,115,22,0.3)", borderRadius: 16, padding: "1.5rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fb923c", marginBottom: "0.35rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                🏷️ Nama Fascia Booth
+                <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#64748b", padding: "0.15rem 0.5rem", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>Maks. 24 karakter</span>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Teks yang akan dicetak di papan nama atas booth Anda (sticker). Gunakan huruf kapital.
+              </div>
+              <div style={{ position: "relative" }}>
+                <input
+                  style={{ ...css.input, border: `1.5px solid ${fasciaName.length > 24 ? "#ef4444" : fasciaName.length > 0 ? "rgba(249,115,22,0.6)" : "rgba(255,255,255,0.1)"}`, fontSize: "1.05rem", fontWeight: 700, letterSpacing: "0.08em", paddingRight: "4.5rem", textTransform: "uppercase", background: fasciaName.length > 0 ? "rgba(249,115,22,0.05)" : "rgba(255,255,255,0.05)" }}
+                  value={fasciaName}
+                  onChange={e => setFasciaName(e.target.value.toUpperCase())}
+                  placeholder="NAMA PERUSAHAAN"
+                  maxLength={30}
+                />
+                <div style={{ position: "absolute", right: "0.9rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.75rem", fontWeight: 700, color: fasciaName.length > 24 ? "#ef4444" : fasciaName.length >= 20 ? "#f97316" : "#475569" }}>
+                  {fasciaName.length}/24
+                </div>
+              </div>
+              {fasciaName.length > 0 && fasciaName.length <= 24 && (
+                <div style={{ marginTop: "0.9rem", background: "rgba(249,115,22,0.08)", border: "1px dashed rgba(249,115,22,0.4)", borderRadius: 8, padding: "0.65rem 1rem" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#64748b", marginBottom: "0.3rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Preview Fascia</div>
+                  <div style={{ fontWeight: 900, fontSize: "1rem", color: "#fff", letterSpacing: "0.1em", textTransform: "uppercase" }}>{fasciaName}</div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Exhibitor Order Catalog ── */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fbbf24", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                🛒 Pesan Fasilitas Tambahan
+                <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#64748b", padding: "0.15rem 0.5rem", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>Opsional</span>
+              </div>
+              {EO_CATS.map(cat => {
+                const items = EXHIBITOR_CATALOG.filter(f => {
+                  if (f.cat !== cat) return false;
+                  if (!f.boothSize) return true;
+                  if (f.boothSize === "main")     return hasMainBooth;
+                  if (f.boothSize === "standard") return hasStandardBooth;
+                  if (f.boothSize === "extra")    return hasExtraBooth;
+                  return true;
+                });
+                if (items.length === 0) return null;
+                return (
+                  <div key={cat} style={{ marginBottom: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "1.25rem" }}>
+                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      {EO_CAT_ICONS[cat]} {cat}
+                      {cat === "Flooring & Backdrop" && (
+                        <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#60a5fa", padding: "0.1rem 0.4rem", background: "rgba(96,165,250,0.1)", borderRadius: 6, border: "1px solid rgba(96,165,250,0.25)" }}>
+                          disesuaikan dengan ukuran booth Anda
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 180px), 1fr))", gap: "0.75rem" }}>
+                      {items.map(f => {
+                        const qty = exhibitorOrder[f.key] || 0;
+                        const days = f.per === "hari" ? 2 : 1;
+                        const subtotal = qty * f.harga * days;
+                        return (
+                          <div key={f.key} style={{ background: qty > 0 ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${qty > 0 ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
+                            <img src={f.img} alt={f.label} style={{ width: "100%", height: 110, objectFit: "cover", display: "block", background: "#0c1a2e" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            <div style={{ padding: "0.65rem 0.75rem" }}>
+                              <div style={{ fontSize: "0.75rem", color: "#e2e8f0", fontWeight: 600, marginBottom: "0.2rem", lineHeight: 1.4 }}>{f.label}</div>
+                              <div style={{ fontSize: "0.68rem", color: "#64748b", marginBottom: "0.6rem" }}>
+                                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(f.harga)}/{f.unit}/{f.per}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: qty > 0 ? "0.5rem" : 0 }}>
+                                <button onClick={() => setExhibitorOrder(prev => ({ ...prev, [f.key]: Math.max(0, (prev[f.key] || 0) - 1) }))}
+                                  style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#f1f5f9", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                                <span style={{ fontSize: "0.95rem", fontWeight: 700, color: qty > 0 ? "#fbbf24" : "#475569", minWidth: 20, textAlign: "center" }}>{qty}</span>
+                                <button onClick={() => setExhibitorOrder(prev => ({ ...prev, [f.key]: (prev[f.key] || 0) + 1 }))}
+                                  style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#f1f5f9", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                              </div>
+                              {qty > 0 && (
+                                <div style={{ background: "rgba(251,191,36,0.08)", borderRadius: 6, padding: "0.35rem 0.6rem", fontSize: "0.7rem", color: "#94a3b8" }}>
+                                  {qty} {f.unit} × {f.per === "hari" ? "2 hari" : "1 event"} × {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(f.harga)}
+                                  <span style={{ color: "#fbbf24", fontWeight: 700, marginLeft: "0.4rem" }}>= {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(subtotal)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {exhibitorTotal > 0 && (
+                <div style={{ background: "rgba(251,191,36,0.06)", border: "1.5px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: "0.85rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi total order fasilitas:</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 800, color: "#fbbf24" }}>
+                    {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(exhibitorTotal)}
+                  </span>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
-
-
 
         {/* ── STEP 3: Konfirmasi ── */}
         {step === 3 && (
