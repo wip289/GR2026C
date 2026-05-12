@@ -107,7 +107,7 @@ export default function BoothManagement() {
 
   // Interview constants
   const SLOTS = ["08.00–09.00","09.00–10.00","10.00–11.00","11.00–12.00","13.00–14.00","14.00–15.00","15.00–16.00"];
-  const DAYS  = ["Rabu, 10 Jun 2026","Kamis, 11 Jun 2026"];
+  const DAYS  = ["Senin, 8 Jun 2026","Selasa, 9 Jun 2026"];
   const INT_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
   // Build taken slots from DB
