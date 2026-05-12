@@ -10,7 +10,7 @@ const content = {
     navBooth: "Denah Booth",
     navBond: "Ikatan",
     navJoin: "Bergabung",
-    badgeText: "10 – 11 Juni 2026 · Dome NHI Bandung",
+    badgeText: "8 – 9 Juni 2026 · Dome NHI Bandung",
     heroTitle: "Di Sinilah Mimpi Bertemu Peluang",
     heroSub: "Grand Recruitment 2026 adalah ruang di mana pejuang karier, pembuka pintu, dan penopang ekosistem bertemu — dan saling menggerakkan.",
     ctaPrimary: "Daftar sebagai Jobseeker",
@@ -70,7 +70,7 @@ const content = {
     navBooth: "Booth Map",
     navBond: "The Bond",
     navJoin: "Join",
-    badgeText: "June 10 – 11, 2026 · Dome NHI Bandung",
+    badgeText: "June 8 – 9, 2026 · Dome NHI Bandung",
     heroTitle: "Where Dreams Meet Opportunity",
     heroSub: "Grand Recruitment 2026 is a space where career seekers, door openers, and ecosystem builders meet — and move each other forward.",
     ctaPrimary: "Register as Jobseeker",
@@ -552,7 +552,7 @@ export default function LandingPage() {
 
         <p style={{ color: "#64748b", fontSize: "0.85rem", lineHeight: 1.7, marginBottom: "0.5rem" }}>
           The International Tourism & Hospitality Grand Recruitment 2026<br/>
-          <span style={{ color: "#475569" }}>Politeknik Pariwisata NHI Bandung · Gedung Dome · 10–11 Juni 2026</span>
+          <span style={{ color: "#475569" }}>Politeknik Pariwisata NHI Bandung · Gedung Dome · 8–9 Juni 2026</span>
         </p>
 
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", margin: "1.25rem 0" }}>

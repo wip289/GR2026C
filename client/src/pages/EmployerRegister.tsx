@@ -483,7 +483,7 @@ export default function EmployerRegister() {
             Daftar sebagai <span style={{ color: "#14b8a6" }}>Employer</span>
           </h1>
           <p style={{ color: "#475569", fontSize: "0.85rem" }}>
-            Grand Recruitment 2026 · June 10–11 · Gedung Dome NHI Bandung
+            Grand Recruitment 2026 · June 8–9 · Gedung Dome NHI Bandung
           </p>
           <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "#64748b" }}>
             Sudah terdaftar?{" "}

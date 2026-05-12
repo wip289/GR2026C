@@ -115,7 +115,7 @@ export function generateInvoiceHTML(data: BookingData): string {
   <div class="logo-area">
     <h1>GRAND RECRUITMENT 2026</h1>
     <p>The International Hospitality and Tourism Job Fair</p>
-    <p>10–11 Juni 2026 · Gedung Dome NHI Bandung</p>
+    <p>8–9 Juni 2026 · Gedung Dome NHI Bandung</p>
     <p style="margin-top:6px;font-size:10px;color:#666">Politeknik Pariwisata NHI Bandung</p>
   </div>
   <div class="invoice-meta">
@@ -216,7 +216,7 @@ ${data.specialRequest ? `
 <div class="footer">
   Invoice ini dibuat secara otomatis oleh sistem Grand Recruitment 2026.<br/>
   Pertanyaan? Hubungi kami di grandrecruitment@nhi.ac.id | WhatsApp: 0812-xxxx-xxxx<br/>
-  Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 10–11 Juni 2026
+  Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 8–9 Juni 2026
 </div>
 
 ${data.lunasStamp ? `
@@ -266,7 +266,7 @@ export function generateFacilityInvoiceHTML(data: BookingData): string {
       <div>
         <div style="font-size:22px;font-weight:900;color:#0a1628">INVOICE FASILITAS TAMBAHAN</div>
         <div style="font-size:13px;color:#64748b;margin-top:4px">Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung</div>
-        <div style="font-size:13px;color:#64748b">10–11 Juni 2026 · Gedung Dome NHI Bandung</div>
+        <div style="font-size:13px;color:#64748b">8–9 Juni 2026 · Gedung Dome NHI Bandung</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:12px;color:#64748b">Nomor Invoice</div>
@@ -307,7 +307,7 @@ export function generateFacilityInvoiceHTML(data: BookingData): string {
       Setelah transfer, kirim bukti ke WhatsApp panitia.
     </div>
     <div style="text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px">
-      Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 10–11 Juni 2026
+      Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · 8–9 Juni 2026
     </div>
     <div style="position:fixed;bottom:24px;right:24px;z-index:999">
       <button onclick="window.print()" style="background:#D4A017;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer">
@@ -439,7 +439,7 @@ export function generateJobseekerId(params: {
 }
 
 export function getPaymentDeadline(): string {
-  // H-7 before June 10, 2026 = June 3, 2026
+  // H-7 before June 8, 2026 = June 1, 2026
   return "1 Juni 2026";
 }
 
@@ -652,7 +652,7 @@ export function generateIdCardHTML(data: {
           onerror="this.outerHTML='<div style=\'width:14mm;height:14mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
         <div class="qr-label">Scan untuk verifikasi</div>
       </div>
-      <div class="event-info">10–11 Juni 2026 · Dome NHI Bandung</div>
+      <div class="event-info">8–9 Juni 2026 · Dome NHI Bandung</div>
     </div>
   </div>
 
