@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import BoothMapPicker, { ALL_BOOTHS } from "@/components/BoothMapPicker";
-import { generateBookingId, getPaymentDeadline, openInvoiceForPrint, openFacilityInvoice, openCombinedInvoice, type BookingData, type FacilityItem } from "@/lib/invoiceGenerator";
+import { generateBookingId, getPaymentDeadline, openCombinedInvoice, type BookingData, type FacilityItem } from "@/lib/invoiceGenerator";
 import { trpc } from "@/lib/trpc";
 import { uploadToSupabase } from "@/lib/supabase";
 
@@ -242,15 +242,6 @@ export default function EmployerRegister() {
     main: "5×5m", extra: "4×2m", standard: "3×3m",
   };
 
-  const FACILITY_LIST = [
-    { key: "facilityChair",  label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
-    { key: "facilityTable",  label: "Meja + cover hitam",   unit: "buah", price: 125000 },
-    { key: "facilityTV42",   label: "TV 42 Inch",           unit: "unit", price: 750000 },
-    { key: "facilityTV55",   label: "TV 55 Inch",           unit: "unit", price: 1500000 },
-    { key: "facilityPower2A",label: "Listrik tambahan 2A",  unit: "titik", price: 250000 },
-    { key: "facilityPower4A",label: "Listrik tambahan 4A",  unit: "titik", price: 400000 },
-    { key: "facilityCable",  label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
-  ];
 
   const exhibitorTotal = EXHIBITOR_CATALOG.reduce((sum, f) => {
     const qty = exhibitorOrder[f.key] || 0;
@@ -258,7 +249,7 @@ export default function EmployerRegister() {
     const days = f.per === "hari" ? 2 : 1;
     return sum + qty * f.harga * days;
   }, 0);
-  const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * (facilityDays[f.key] || 2) * f.price, 0);
+  const facilityTotal = 0; // removed - now using exhibitorTotal
   // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
   const [vacanciesUploading, setVacanciesUploading] = useState(false);
@@ -305,7 +296,7 @@ export default function EmployerRegister() {
     : "standard";
   const PAKET_BOOTH = PAKET_BOOTH_BY_SIZE[activeSizeType];
   const paketTotal = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1].harga : 0;
-  const grandTotal = (totalAmount: number) => totalAmount + paketTotal + facilityTotal;
+  const grandTotal = (totalAmount: number) => totalAmount + paketTotal + exhibitorTotal;
 
   // Reset paket jika ukuran booth berubah — HARUS di sini, setelah selectedBoothDefs & liveBooths siap
   const handleBoothChange = (newIds: string[]) => {
@@ -353,21 +344,10 @@ export default function EmployerRegister() {
       const now = new Date();
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
       // Build facility items untuk invoice
-      const FACILITY_LABELS: Record<string, { label: string; unit: string; price: number }> = {
-        facilityChair:   { label: "Kursi + cover hitam",  unit: "buah", price: 25000 },
-        facilityTable:   { label: "Meja + cover hitam",   unit: "buah", price: 125000 },
-        facilityTV42:    { label: "TV 42 Inch",           unit: "unit", price: 750000 },
-        facilityTV55:    { label: "TV 55 Inch",           unit: "unit", price: 1500000 },
-        facilityPower2A: { label: "Listrik tambahan 2A",  unit: "titik", price: 250000 },
-        facilityPower4A: { label: "Listrik tambahan 4A",  unit: "titik", price: 400000 },
-        facilityCable:   { label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
-      };
-      const facilityItems: FacilityItem[] = Object.entries(facilities)
-        .filter(([, qty]) => qty > 0)
-        .map(([key, qty]) => ({ ...FACILITY_LABELS[key], qty, days: 2, pricePerDay: FACILITY_LABELS[key].price }));
+
+      const facilityItems: FacilityItem[] = [];
       const paketData = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1] : null;
-      const facTotal = facilityItems.reduce((s, f) => s + f.qty * f.pricePerDay * f.days, 0)
-        + (paketData ? paketData.harga : 0);
+      const facTotal = exhibitorTotal + (paketData ? paketData.harga : 0);
       const fullTotal = variables.totalAmount + facTotal;
 
       const data: BookingData = {
@@ -387,7 +367,7 @@ export default function EmployerRegister() {
         paymentDeadline: getPaymentDeadline(),
         facilities: facilityItems,
         paketBooth: paketData ? { nama: paketData.nama, harga: paketData.harga, spesifikasi: paketData.spesifikasi } : null,
-        facilityTotal: facTotal,
+        facilityTotal: facTotal, // exhibitorTotal + paket
       };
       setBookingData(data);
       toast.success("Booking berhasil!", { description: "Invoice siap didownload." });
@@ -443,7 +423,7 @@ export default function EmployerRegister() {
         specialRequest || "",
       ].filter(Boolean).join(" | ") || undefined,
       exhibitorOrder: Object.values(exhibitorOrder).some(v => v > 0) ? JSON.stringify(exhibitorOrder) : undefined,
-      facilities: facilityTotal > 0 ? JSON.stringify(facilities) : undefined,
+      exhibitorOrder: exhibitorTotal > 0 ? JSON.stringify(exhibitorOrder) : undefined,
       paketBooth: selectedPaket !== null ? String(selectedPaket) : undefined,
 
       jobVacanciesUrl: jobVacanciesUrls.length > 0 ? jobVacanciesUrls : undefined,
@@ -848,24 +828,7 @@ export default function EmployerRegister() {
               {/* Divider */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
 
-              {/* 3. Fasilitas Tambahan */}
-              <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "0.5rem" }}>🛠️ Fasilitas Tambahan <span style={{ color: "#334155", fontWeight: 400 }}>(ditagih terpisah vendor)</span></div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px,1fr))", gap: "0.6rem", marginBottom: "0.85rem" }}>
-                {// 7 item dasar dihapus — semua ada di catalog 33 item
-                        style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f1f5f9", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                      <span style={{ width: 22, textAlign: "center", fontWeight: 700, fontSize: "0.9rem", color: facilities[f.key] > 0 ? "#fbbf24" : "#64748b" }}>{facilities[f.key] || 0}</span>
-                      <button onClick={() => setFacilities(p => ({ ...p, [f.key]: (p[f.key]||0) + 1 }))}
-                        style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24", cursor: "pointer", fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {facilityTotal > 0 && (
-                <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 10, padding: "0.65rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi biaya fasilitas tambahan (2 hari, dibayar melalui panitia):</span>
-                  <span style={{ fontWeight: 800, color: "#fbbf24" }}>{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(facilityTotal)} / event</span>
-                </div>
-              )}
+
 
               {/* Divider */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginBottom: "1.5rem" }}/>
