@@ -22,6 +22,58 @@ const POSITIONS = [
 
 const STEPS = ["Perusahaan", "PIC", "Rekrutmen", "Booth", "Exhibitor Order", "Konfirmasi"];
 
+// ── Exhibitor Order Catalog (33 item) ──────────────────────────
+const GD = (id: string) => `https://drive.google.com/uc?export=view&id=${id}`;
+const EXHIBITOR_CATALOG = [
+  // FURNITURE
+  { key: "eo_kursi",       cat: "Furniture",             label: "Kursi + cover hitam",                                    harga: 25000,   unit: "buah", per: "hari", boothSize: null, img: GD("1bWeDOtmQhYTBQTBMnPugv_uOHBUWqN3f") },
+  { key: "eo_meja",        cat: "Furniture",             label: "Meja + cover hitam",                                     harga: 125000,  unit: "buah", per: "hari", boothSize: null, img: GD("1lhVStFbmfkR2X6VYdcR5J9pXOD1NBixZ") },
+  { key: "eo_barstool_h",  cat: "Furniture",             label: "Hidrolik barstool hitam",                                harga: 150000,  unit: "buah", per: "hari", boothSize: null, img: GD("1JEIl6PDZNV1DdUWIKH57ciyR0XY2L4tw") },
+  { key: "eo_barstool_m",  cat: "Furniture",             label: "Melinda barstool putih",                                 harga: 150000,  unit: "buah", per: "hari", boothSize: null, img: GD("1V9jvwxIc_tRpKwNtF7Nyzi1Hi9-CX6Zb") },
+  { key: "eo_bartable",    cat: "Furniture",             label: "Bartable lingkaran Ø75×100cm putih",                     harga: 100000,  unit: "buah", per: "hari", boothSize: null, img: GD("1SFRMxoH2hVcOQkbys0PUliTFbaUal1Ya") },
+  { key: "eo_meja_kaca",   cat: "Furniture",             label: "Meja kaca Ø80×75cm",                                    harga: 150000,  unit: "buah", per: "hari", boothSize: null, img: GD("1GHW9KPoxy44yWPCImsIuA3bg56nUyIV3") },
+  { key: "eo_sofa",        cat: "Furniture",             label: "Kursi sofa single hitam",                                harga: 300000,  unit: "buah", per: "hari", boothSize: null, img: GD("1CkTAUVSOJCTTyvVChHijq9Gt8dVsz2AN") },
+  // ELEKTRONIK & LISTRIK
+  { key: "eo_tv42",        cat: "Elektronik & Listrik",  label: "TV 42 Inch + standing + rangka",                        harga: 750000,  unit: "unit", per: "hari", boothSize: null, img: GD("1laNkhgXZ9uQY3vgS--V6XM7HM_J67oJO") },
+  { key: "eo_tv55",        cat: "Elektronik & Listrik",  label: "TV 55 Inch + standing + rangka",                        harga: 1500000, unit: "unit", per: "hari", boothSize: null, img: GD("1qH0TaDBoxorWHMboTDuh-bxW1KRv_Dmw") },
+  { key: "eo_listrik2a",   cat: "Elektronik & Listrik",  label: "Listrik tambahan 2 Ampere",                             harga: 250000,  unit: "titik", per: "hari", boothSize: null, img: GD("13o69CM-uZiBMDKtsquzOj6WHa1OeQXtf") },
+  { key: "eo_listrik4a",   cat: "Elektronik & Listrik",  label: "Listrik tambahan 4 Ampere",                             harga: 400000,  unit: "titik", per: "hari", boothSize: null, img: GD("1aoud9cqdHoZZrv3FcDaP4h-P2TQ7JZpU") },
+  { key: "eo_kabel",       cat: "Elektronik & Listrik",  label: "Perpanjangan Kabel + Socket 3 lubang",                  harga: 250000,  unit: "buah", per: "hari", boothSize: null, img: GD("1nSMA84Z3TT4RY7jjK2h5G4zmnjrQ5GpN") },
+  // DISPLAY & BANNER
+  { key: "eo_zigzag",      cat: "Display & Banner",      label: "Zigzag standing brochure rack",                         harga: 450000,  unit: "buah", per: "hari", boothSize: null, img: GD("1w24DM8W2RmqLlKqOPbIXXqtsIe38AvBj") },
+  { key: "eo_acrylic",     cat: "Display & Banner",      label: "Acrylic display brosur A5 3 susun",                     harga: 150000,  unit: "buah", per: "event", boothSize: null, img: GD("1hMWYLjudsZ9JbIZ4be_2JD-TGoLX5gw-") },
+  { key: "eo_tripod",      cat: "Display & Banner",      label: "Tripod banner (base polyfoam + printing A3 by client)", harga: 175000,  unit: "buah", per: "hari", boothSize: null, img: GD("1gu9y5U2oUIlzA-61bqSRGDxMMBGhtaLV") },
+  { key: "eo_xbanner",     cat: "Display & Banner",      label: "X Banner 60×160cm + rangka X (design by client)",       harga: 175000,  unit: "buah", per: "event", boothSize: null, img: GD("1VdpkrFdaNnWvI4vrRWZG-JMP9vmOhrcy") },
+  { key: "eo_rollbanner",  cat: "Display & Banner",      label: "Roll Banner 80×200cm + rangka roll (design by client)", harga: 425000,  unit: "buah", per: "event", boothSize: null, img: GD("197BrQd0f6G1Y0y1w-Ie3qJIqVwoKyuY3") },
+  { key: "eo_displaybox",  cat: "Display & Banner",      label: "Display Box Medium 50×50×70cm (bahan partisi)",          harga: 757000,  unit: "buah", per: "hari", boothSize: null, img: GD("1ELFXY0CE_eB8iSFj640NeLO8eWELjhPs") },
+  // FLOORING (booth size specific)
+  { key: "eo_floor33",     cat: "Flooring & Backdrop",   label: "Flooring panel 3×3, tinggi 10cm + karpet + pasang bongkar", harga: 1575000, unit: "paket", per: "event", boothSize: "standard", img: GD("1JPRr55Tf3v-hed-Ojx4ozLKhvcJ72VZL") },
+  { key: "eo_floor55",     cat: "Flooring & Backdrop",   label: "Flooring panel 5×5, tinggi 10cm + karpet + pasang bongkar", harga: 4375000, unit: "paket", per: "event", boothSize: "main",     img: GD("1RoIA4WwOFSDfzL-QhKS4uP7L1gNHFpV4") },
+  { key: "eo_floor42",     cat: "Flooring & Backdrop",   label: "Flooring panel 4×2, tinggi 10cm + karpet + pasang bongkar", harga: 1400000, unit: "paket", per: "event", boothSize: "extra",    img: GD("1kRVmNruTAxw24HhbEBrZL6LM5lvV9U7S") },
+  { key: "eo_backdrop33",  cat: "Flooring & Backdrop",   label: "Backdrop panel 3×2, tinggi 2.5m + printing (design by client)", harga: 2250000, unit: "paket", per: "event", boothSize: "standard", img: GD("1_BFrHipUgObf1rIOqvqTvb5AT5BBcx-K") },
+  { key: "eo_backdrop52",  cat: "Flooring & Backdrop",   label: "Backdrop panel 5×2, tinggi 2.5m + printing (design by client)", harga: 5000000, unit: "paket", per: "event", boothSize: "main",     img: GD("1SvoZXhphi_PlYPJDXQ_io0r5TD-xeIHn") },
+  { key: "eo_backdrop42",  cat: "Flooring & Backdrop",   label: "Backdrop panel 4×2, tinggi 2.5m + printing (design by client)", harga: 4687500, unit: "paket", per: "event", boothSize: "extra",    img: GD("10uuvZwHjrnCFrup_L-H065ySi2mvCcLI") },
+  { key: "eo_wall33",      cat: "Flooring & Backdrop",   label: "Wall sticker 3×2.5m + print + pasang (Booth 3×3, design by client)", harga: 2812500, unit: "sisi", per: "event", boothSize: "standard", img: GD("1thZ6r-mcQiGLNAtRZAcPpC4o7-Cph3cr") },
+  { key: "eo_wall55",      cat: "Flooring & Backdrop",   label: "Wall sticker 5×2.5m + print + pasang (Booth 5×5, design by client)", harga: 2187500, unit: "sisi", per: "event", boothSize: "main",     img: GD("1TgCBOgNL_i9GqcKtDUY5AUKQ919tZ0Fb") },
+  { key: "eo_wall42",      cat: "Flooring & Backdrop",   label: "Wall sticker 4×2.5m + print + pasang (Booth 4×2, design by client)", harga: 1750000, unit: "sisi", per: "event", boothSize: "extra",    img: GD("1_H5-K7wKVNJUsjPOeyEo34s8q4IuWC0R") },
+  // DEKORASI & AKSESORI
+  { key: "eo_bunga_meja",  cat: "Dekorasi & Aksesori",   label: "Rangkaian bunga meja",                                  harga: 350000,  unit: "buah", per: "event", boothSize: null, img: GD("1IrFuFmXhWKg52XomrnDzDPCbJbXCp-pA") },
+  { key: "eo_anggrek",     cat: "Dekorasi & Aksesori",   label: "Bunga meja Anggrek 1 tangkai",                          harga: 250000,  unit: "buah", per: "event", boothSize: null, img: GD("10C88AX69SDm1sn0LSdHQC7qnlWZ5BwaN") },
+  { key: "eo_bunga_tinggi",cat: "Dekorasi & Aksesori",   label: "Rangkaian bunga tinggi 80cm",                           harga: 500000,  unit: "buah", per: "event", boothSize: null, img: GD("1QyTZ48zIMKFhVKlVMZoKRb3G4ILdBKSb") },
+  { key: "eo_rope",        cat: "Dekorasi & Aksesori",   label: "Rope Barrier – QLIne tinggi 90cm (per tiang)",          harga: 100000,  unit: "tiang", per: "hari", boothSize: null, img: GD("1o3le1DVgwmxnKZ8aFBa_EltCsGu4vLi3") },
+  { key: "eo_sampah",      cat: "Dekorasi & Aksesori",   label: "Tempat sampah Ø28×28cm",                               harga: 75000,   unit: "buah", per: "event", boothSize: null, img: GD("1LtAAHWwLMN7LEoLA8HABSKM2wsf58UlD") },
+  { key: "eo_kain",        cat: "Dekorasi & Aksesori",   label: "Kain hitam polos per meter",                            harga: 125000,  unit: "meter", per: "event", boothSize: null, img: GD("19wmdW8ZquoXf72uNw8vCXftST0-56nt6") },
+];
+const EO_CATS = ["Furniture", "Elektronik & Listrik", "Display & Banner", "Flooring & Backdrop", "Dekorasi & Aksesori"];
+const EO_CAT_ICONS: Record<string, string> = {
+  "Furniture": "🪑",
+  "Elektronik & Listrik": "📺",
+  "Display & Banner": "🪧",
+  "Flooring & Backdrop": "🖼️",
+  "Dekorasi & Aksesori": "🌸",
+};
+
+
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
 // ── Styles ────────────────────────────────────────────────────
@@ -115,6 +167,7 @@ export default function EmployerRegister() {
   });
 
   const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
+  const [exhibitorOrder, setExhibitorOrder] = useState<Record<string, number>>({});
 
   const DRAFT_KEY = "gr2026_employer_draft";
 
@@ -133,6 +186,7 @@ export default function EmployerRegister() {
       if (d.needsDesign !== undefined) setNeedsDesign(d.needsDesign);
       if (d.specialRequest) setSpecialRequest(d.specialRequest);
       if (d.fasciaName)     setFasciaName(d.fasciaName);
+      if (d.exhibitorOrder) setExhibitorOrder(d.exhibitorOrder);
       if (d.companyAddress) setCompanyAddress(d.companyAddress);
       if (d.facilities)     setFacilities(d.facilities);
       if (d.facilityDays)   setFacilityDays(d.facilityDays);
@@ -148,7 +202,8 @@ export default function EmployerRegister() {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({
         company, pic1, pic2, showPic2, positions,
         selectedBooths, needsDesign, specialRequest,
-        fasciaName, companyAddress, facilities, facilityDays,
+        fasciaName,
+        exhibitorOrder, companyAddress, facilities, facilityDays,
         selectedPaket, step,
       }));
     } catch { /* abaikan error storage penuh */ }
@@ -197,6 +252,12 @@ export default function EmployerRegister() {
     { key: "facilityCable",  label: "Perpanjangan Kabel",   unit: "buah", price: 250000 },
   ];
 
+  const exhibitorTotal = EXHIBITOR_CATALOG.reduce((sum, f) => {
+    const qty = exhibitorOrder[f.key] || 0;
+    if (qty === 0) return sum;
+    const days = f.per === "hari" ? 2 : 1;
+    return sum + qty * f.harga * days;
+  }, 0);
   const facilityTotal = FACILITY_LIST.reduce((sum, f) => sum + (facilities[f.key] || 0) * (facilityDays[f.key] || 2) * f.price, 0);
   // Logo diupload di dashboard
   const [jobVacanciesUrls, setJobVacanciesUrls] = useState<{ url: string; name: string }[]>([]);
@@ -236,7 +297,10 @@ export default function EmployerRegister() {
   const totalAmount = selectedBoothDefs.reduce((sum, b) => sum + b.price, 0);
 
   // Deteksi ukuran booth dominan: main(5×5) > extra(4×2) > standard(3×3)
-  const activeSizeType = selectedBoothDefs.some(b => b.type === "main") ? "main"
+  const hasMainBooth     = selectedBoothDefs.some(b => b.type === "main");
+  const hasStandardBooth = selectedBoothDefs.some(b => b.type === "standard");
+  const hasExtraBooth    = selectedBoothDefs.some(b => b.type === "extra");
+  const activeSizeType = selectedBoothDefs.some(b => b.type === "main") ? "main" 
     : selectedBoothDefs.some(b => b.type === "extra") ? "extra"
     : "standard";
   const PAKET_BOOTH = PAKET_BOOTH_BY_SIZE[activeSizeType];
@@ -380,6 +444,7 @@ export default function EmployerRegister() {
         companyAddress ? `[ALAMAT] ${companyAddress}` : "",
         specialRequest || "",
       ].filter(Boolean).join(" | ") || undefined,
+      exhibitorOrder: Object.values(exhibitorOrder).some(v => v > 0) ? JSON.stringify(exhibitorOrder) : undefined,
       facilities: facilityTotal > 0 ? JSON.stringify(facilities) : undefined,
       paketBooth: selectedPaket !== null ? String(selectedPaket) : undefined,
 
@@ -929,6 +994,91 @@ export default function EmployerRegister() {
               />
             </div>
 
+            {/* ── Exhibitor Order Catalog ── */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fbbf24", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                🛒 Pesan Fasilitas Tambahan
+                <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#64748b", padding: "0.15rem 0.5rem", background: "rgba(255,255,255,0.04)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}>Ditagih oleh vendor</span>
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#64748b", marginBottom: "1.25rem", lineHeight: 1.6 }}>
+                Pilih item yang dibutuhkan untuk booth Anda. Semua biaya di bagian ini ditagih langsung oleh vendor, terpisah dari pembayaran booth ke panitia.
+              </div>
+              {EO_CATS.map(cat => {
+                const items = EXHIBITOR_CATALOG.filter(f => {
+                  if (f.cat !== cat) return false;
+                  if (!f.boothSize) return true;
+                  if (f.boothSize === "main")     return hasMainBooth;
+                  if (f.boothSize === "standard") return hasStandardBooth;
+                  if (f.boothSize === "extra")    return hasExtraBooth;
+                  return true;
+                });
+                if (items.length === 0) return null;
+                return (
+                  <div key={cat} style={{ marginBottom: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "1.25rem" }}>
+                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1rem" }}>
+                      {EO_CAT_ICONS[cat]} {cat}
+                      {cat === "Flooring & Backdrop" && (
+                        <span style={{ fontSize: "0.68rem", fontWeight: 500, color: "#60a5fa", marginLeft: "0.5rem", padding: "0.1rem 0.4rem", background: "rgba(96,165,250,0.1)", borderRadius: 6, border: "1px solid rgba(96,165,250,0.25)" }}>
+                          auto-filter ukuran booth
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 200px), 1fr))", gap: "0.75rem" }}>
+                      {items.map(f => {
+                        const qty = exhibitorOrder[f.key] || 0;
+                        const days = f.per === "hari" ? 2 : 1;
+                        const subtotal = qty * f.harga * days;
+                        return (
+                          <div key={f.key} style={{ background: qty > 0 ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${qty > 0 ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
+                            <img
+                              src={f.img}
+                              alt={f.label}
+                              style={{ width: "100%", height: 110, objectFit: "cover", display: "block", background: "#0c1a2e" }}
+                              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                            <div style={{ padding: "0.65rem 0.75rem" }}>
+                              <div style={{ fontSize: "0.78rem", color: "#e2e8f0", fontWeight: 600, marginBottom: "0.25rem", lineHeight: 1.4 }}>{f.label}</div>
+                              <div style={{ fontSize: "0.7rem", color: "#64748b", marginBottom: "0.6rem" }}>
+                                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(f.harga)}/{f.unit}/{f.per}
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                  <button
+                                    onClick={() => setExhibitorOrder(prev => ({ ...prev, [f.key]: Math.max(0, (prev[f.key] || 0) - 1) }))}
+                                    style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#f1f5f9", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    −
+                                  </button>
+                                  <span style={{ fontSize: "0.88rem", fontWeight: 700, color: qty > 0 ? "#fbbf24" : "#475569", minWidth: 16, textAlign: "center" }}>{qty}</span>
+                                  <button
+                                    onClick={() => setExhibitorOrder(prev => ({ ...prev, [f.key]: (prev[f.key] || 0) + 1 }))}
+                                    style={{ width: 26, height: 26, borderRadius: 6, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#f1f5f9", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    +
+                                  </button>
+                                </div>
+                                {subtotal > 0 && (
+                                  <span style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700 }}>
+                                    {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(subtotal)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {exhibitorTotal > 0 && (
+                <div style={{ background: "rgba(251,191,36,0.06)", border: "1.5px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: "0.85rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem" }}>
+                  <span style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Estimasi total order fasilitas (ditagih vendor):</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 800, color: "#fbbf24" }}>
+                    {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(exhibitorTotal)}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Ringkasan fasilitas yg sudah dipilih */}
             {(Object.values(facilities).some(v => v > 0) || selectedPaket !== null || needsDesign) && (
               <div style={{
@@ -1013,6 +1163,33 @@ export default function EmployerRegister() {
                       <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: "#14b8a6", textDecoration: "none", fontWeight: 600 }}>{f.name}</a>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Exhibitor Order Summary */}
+              {exhibitorTotal > 0 && (
+                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>
+                    🛒 Fasilitas Tambahan (Exhibitor Order)
+                  </div>
+                  {EXHIBITOR_CATALOG.filter(f => (exhibitorOrder[f.key] || 0) > 0).map(f => {
+                    const qty = exhibitorOrder[f.key];
+                    const days = f.per === "hari" ? 2 : 1;
+                    return (
+                      <div key={f.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                        <span>{f.label} × {qty}</span>
+                        <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+                          {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(qty * f.harga * days)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#94a3b8", marginTop: "0.5rem", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "0.5rem" }}>
+                    <span>Total order fasilitas (ditagih vendor)</span>
+                    <span style={{ color: "#fbbf24", fontWeight: 700 }}>
+                      {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(exhibitorTotal)}
+                    </span>
+                  </div>
                 </div>
               )}
 
