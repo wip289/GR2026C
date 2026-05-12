@@ -89,9 +89,9 @@ export default function BossPanel() {
   const jobseekers = jobseekerData || [];
 
   const totalRevenue = employers.filter((e: any) => e.status === "confirmed")
-    .reduce((s: number, e: any) => s + (Array.isArray(e.booths) ? e.booths.reduce((bs: number, b: any) => bs + (b.price || 0), 0) : 0), 0);
+    .reduce((s: number, e: any) => s + parseFloat(e.totalAmount || 0), 0);
   const pendingRevenue = employers.filter((e: any) => e.status === "pending")
-    .reduce((s: number, e: any) => s + (Array.isArray(e.booths) ? e.booths.reduce((bs: number, b: any) => bs + (b.price || 0), 0) : 0), 0);
+    .reduce((s: number, e: any) => s + parseFloat(e.totalAmount || 0), 0);
   const totalBooths = employers.reduce((s: number, e: any) => s + (Array.isArray(e.booths) ? e.booths.length : 0), 0);
   const bookedSlots = ((interviewRaw || []) as any[]).filter((b: any) => b.status === "active").length;
 
@@ -280,7 +280,7 @@ export default function BossPanel() {
                   <tbody>
                     {employers.map((emp: any) => (
                       <tr key={emp.bookingId} onClick={() => setSelectedEmployer(emp.bookingId === selectedEmployer ? null : emp.bookingId)}
-                        style={{ cursor: "pointer", background: selectedEmployer === emp.id ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
+                        style={{ cursor: "pointer", background: selectedEmployer === emp.bookingId ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
                         <td style={s.td}>
                           <div style={{ fontWeight: 700 }}>{emp.companyName}</div>
                           <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{emp.pic1Name} · {emp.pic1Whatsapp}</div>
@@ -288,8 +288,10 @@ export default function BossPanel() {
                         <td style={{ ...s.td, fontFamily: "monospace", fontSize: "0.78rem", color: "#14b8a6" }}>{emp.bookingId}</td>
                         <td style={s.td}>
                           <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
-                            {Array.isArray(emp.booths) && emp.booths.map((b: any) => (
-                              <span key={b.id} style={s.badge(b.type === "main" ? "#D4A017" : "#14b8a6")}>{b.label}</span>
+                            {Array.isArray(emp.booths) ? emp.booths.map((b: any) => (
+                              <span key={b.id} style={s.badge(b.type === "main" ? "#D4A017" : b.type === "extra" ? "#a78bfa" : "#14b8a6")}>{b.label}</span>
+                            )) : (typeof emp.booths === "string" ? JSON.parse(emp.booths) : []).map((b: any) => (
+                              <span key={b.id} style={s.badge(b.type === "main" ? "#D4A017" : b.type === "extra" ? "#a78bfa" : "#14b8a6")}>{b.label}</span>
                             ))}
                           </div>
                         </td>
