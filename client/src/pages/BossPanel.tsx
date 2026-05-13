@@ -21,7 +21,10 @@ const s = {
 };
 
 const SLOTS = ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"];
-const DAYS  = ["Senin 8 Juni", "Selasa 9 Juni"];
+const DAYS  = ["Rabu, 10 Juni", "Kamis, 11 Juni"];
+// Hari pertama (day 0) dimulai jam 10.00 — skip slot idx 0 & 1
+const getVisibleSlots = (day: number) =>
+  SLOTS.map((label, idx) => ({ label, idx })).filter(s => day !== 0 || s.idx >= 2);
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
 export default function BossPanel() {
@@ -554,14 +557,15 @@ export default function BossPanel() {
                 <thead>
                   <tr>
                     <th style={s.th}>Booth</th>
-                    {SLOTS.map(slot => <th key={slot} style={{ ...s.th, textAlign: "center" }}>{slot}</th>)}
+                    {getVisibleSlots(selectedDay).map(sl => <th key={sl.label} style={{ ...s.th, textAlign: "center" }}>{sl.label}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {INTERVIEW_BOOTHS.map(booth => (
                     <tr key={booth}>
                       <td style={{ ...s.td, fontWeight: 700, color: "#60a5fa" }}>{booth}</td>
-                      {SLOTS.map((_, slotIdx) => {
+                      {getVisibleSlots(selectedDay).map(sl => {
+                        const slotIdx = sl.idx;
                         const key = `${booth}-${selectedDay}-${slotIdx}`;
                         const company = realTakenSlots[key];
                         const bookingId = realTakenIds[key];
@@ -598,11 +602,19 @@ export default function BossPanel() {
             <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.78rem", color: "#64748b" }}>
                 <div style={{ width: 14, height: 14, borderRadius: 3, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }} />
-                Terisi ({Object.keys(realTakenSlots).filter(k => k.includes(`-${selectedDay}-`)).length} slot)
+                Terisi ({Object.keys(realTakenSlots).filter(k => {
+                  const parts = k.split("-");
+                  const slotIdx = parseInt(parts[parts.length - 1]);
+                  return k.includes(`-${selectedDay}-`) && getVisibleSlots(selectedDay).some(s => s.idx === slotIdx);
+                }).length} slot)
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.78rem", color: "#64748b" }}>
                 <div style={{ width: 14, height: 14, borderRadius: 3, background: "#1e3a5f" }} />
-                Kosong ({INTERVIEW_BOOTHS.length * SLOTS.length - Object.keys(realTakenSlots).filter(k => k.includes(`-${selectedDay}-`)).length} slot)
+                Kosong ({INTERVIEW_BOOTHS.length * getVisibleSlots(selectedDay).length - Object.keys(realTakenSlots).filter(k => {
+                  const parts = k.split("-");
+                  const slotIdx = parseInt(parts[parts.length - 1]);
+                  return k.includes(`-${selectedDay}-`) && getVisibleSlots(selectedDay).some(s => s.idx === slotIdx);
+                }).length} slot)
               </div>
             </div>
           </div>
