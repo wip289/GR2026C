@@ -424,7 +424,7 @@ export default function EmployerRegister() {
       pic2Email: showPic2 && pic2.email ? pic2.email : undefined,
       pic2Whatsapp: showPic2 && pic2.whatsapp ? pic2.whatsapp : undefined,
       booths: selectedBoothDefs.map(b => ({ id: b.id, label: b.label, type: b.type, price: b.price })),
-      totalAmount,
+      totalAmount: grandTotal(totalAmount), // simpan grand total ke DB (booth + paket + fasilitas)
       positions,
       needsBoothDesign: needsDesign,
       specialRequest: [
@@ -464,14 +464,28 @@ export default function EmployerRegister() {
 
             {bookingData.booths.map((b, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.4rem" }}>
-                <span>Booth {b.label} · {b.type === "main" ? "Main 5×5m" : "Standard 3×3m"}</span>
+                <span>Booth {b.label} · {b.type === "main" ? "Main 5×5m" : b.type === "extra" ? "Extra 4×2m" : "Standard 3×3m"}</span>
                 <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price)}</span>
               </div>
             ))}
 
-            <div style={{ borderTop: "1px solid rgba(20,184,166,0.2)", paddingTop: "0.75rem", marginTop: "0.75rem", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "1.05rem" }}>
-              <span>Total</span>
-              <span style={{ color: "#D4A017" }}>{fmt(bookingData.totalAmount)}</span>
+            {bookingData.paketBooth && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.4rem" }}>
+                <span>🎨 {bookingData.paketBooth.nama}</span>
+                <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(bookingData.paketBooth.harga)}</span>
+              </div>
+            )}
+
+            {(bookingData.facilityTotal || 0) - (bookingData.paketBooth?.harga || 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.4rem" }}>
+                <span>🛒 Fasilitas Tambahan</span>
+                <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt((bookingData.facilityTotal || 0) - (bookingData.paketBooth?.harga || 0))}</span>
+              </div>
+            )}
+
+            <div style={{ borderTop: "1px solid rgba(20,184,166,0.2)", paddingTop: "0.75rem", marginTop: "0.75rem", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "1.1rem" }}>
+              <span>Grand Total</span>
+              <span style={{ color: "#D4A017" }}>{fmt(bookingData.totalAmount + (bookingData.facilityTotal || 0))}</span>
             </div>
           </div>
 

@@ -5,11 +5,8 @@ import { trpc } from "@/lib/trpc";
 import { openInvoiceForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
 import { uploadToSupabase } from "@/lib/supabase";
 
-const DAYS = ["Rabu, 10 Juni 2026", "Kamis, 11 Juni 2026"];
+const DAYS = ["Senin, 8 Juni 2026", "Selasa, 9 Juni 2026"];
 const SLOTS = ["08.00 – 09.00", "09.00 – 10.00", "10.00 – 11.00", "11.00 – 12.00", "13.00 – 14.00", "14.00 – 15.00", "15.00 – 16.00"];
-// Hari pertama (day 0) dimulai jam 10.00 — skip slot idx 0 & 1
-const getVisibleSlots = (day: number) =>
-  SLOTS.map((label, idx) => ({ label, idx })).filter(s => day !== 0 || s.idx >= 2);
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
 
@@ -180,6 +177,9 @@ export default function EmployerDashboard() {
     if (!booking) return;
     const b = booking as any;
     const booths = Array.isArray(b.booths) ? b.booths : [];
+    const boothSubtotal = booths.reduce((sum: number, bt: any) => sum + (bt.price || 0), 0);
+    const dbTotal = parseFloat(b.totalAmount || "0");
+    const facilityTotal = Math.max(0, dbTotal - boothSubtotal);
     openInvoiceForPrint({
       bookingId: b.bookingId || bookingId,
       bookingDate: b.createdAt ? new Date(b.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : new Date().toLocaleDateString("id-ID"),
@@ -193,7 +193,8 @@ export default function EmployerDashboard() {
       booths: booths.map((bt: any) => ({ boothId: bt.id, label: bt.label, type: bt.type, price: bt.price || 0 })),
       needsBoothDesign: b.needsBoothDesign || false,
       specialRequest: b.specialRequest || "",
-      totalAmount: parseFloat(b.totalAmount || "0"),
+      totalAmount: boothSubtotal,
+      facilityTotal: facilityTotal > 0 ? facilityTotal : undefined,
       paymentDeadline: getPaymentDeadline(),
     });
   };
@@ -359,27 +360,63 @@ export default function EmployerDashboard() {
             {/* Booking summary */}
             <div style={s.teal}>
               <div style={s.secHd}>📋 Ringkasan Booking</div>
+
+              {/* Booth breakdown */}
               {booths.map((b: any, i: number) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem" }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0", borderBottom: "1px solid rgba(20,184,166,0.08)", fontSize: "0.9rem" }}>
                   <span style={{ color: "#cbd5e1" }}>
-                    Booth <strong style={{ color: "#14b8a6" }}>{b.label}</strong> · {b.type === "main" ? "Main Booth 5×5m" : b.type === "extra" ? "Extra Booth" : "Standard Booth 3×3m"}
+                    Booth <strong style={{ color: "#14b8a6" }}>{b.label}</strong> · {b.type === "main" ? "Main Booth 5×5m" : b.type === "extra" ? "Extra Booth 4×2m" : "Standard Booth 3×3m"}
                   </span>
                   <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price || 0)}</span>
                 </div>
               ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem", borderBottom: "1px solid rgba(20,184,166,0.1)" }}>
-                <span>Total</span>
-                <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
-              </div>
+
+              {/* Subtotal booth */}
+              {(() => {
+                const boothSubtotal = booths.reduce((sum: number, b: any) => sum + (b.price || 0), 0);
+                const facilityTotal = Math.max(0, totalAmount - boothSubtotal);
+                return (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0", fontWeight: 700, fontSize: "0.95rem", borderBottom: facilityTotal > 0 ? "1px solid rgba(20,184,166,0.1)" : "none" }}>
+                      <span>{facilityTotal > 0 ? "Subtotal Booth" : "Total"}</span>
+                      <span style={{ color: "#D4A017" }}>{fmt(boothSubtotal)}</span>
+                    </div>
+                    {facilityTotal > 0 && (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0", fontSize: "0.9rem", borderBottom: "1px solid rgba(20,184,166,0.08)", color: "#cbd5e1" }}>
+                          <span>Paket & Fasilitas Tambahan</span>
+                          <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(facilityTotal)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem" }}>
+                          <span>Grand Total</span>
+                          <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+
               {(booking as any).needsBoothDesign && (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
                   <span>📐</span><span>Layanan desain & dekorasi booth: <strong style={{ color: "#D4A017" }}>Requested</strong></span>
                 </div>
               )}
               {(booking as any).specialRequest && (
-                <div style={{ padding: "0.6rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
-                  <span>📝 Special Request: </span>
-                  <span style={{ color: "#f1f5f9" }}>{(booking as any).specialRequest}</span>
+                <div style={{ padding: "0.5rem 0", fontSize: "0.82rem", color: "#94a3b8" }}>
+                  <span>📝 {(booking as any).specialRequest}</span>
+                </div>
+              )}
+
+              {/* Posisi Rekrutmen */}
+              {Array.isArray((booking as any).positions) && (booking as any).positions.filter((p: any) => p.position || p.customPosition).length > 0 && (
+                <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(20,184,166,0.1)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>Kebutuhan Rekrutmen</div>
+                  {(booking as any).positions.filter((p: any) => p.position || p.customPosition).map((p: any, i: number) => (
+                    <div key={i} style={{ fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.2rem" }}>
+                      • {p.position || p.customPosition} — {p.count} kandidat
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -720,9 +757,9 @@ export default function EmployerDashboard() {
                           <th style={{ padding: "0.6rem 0.75rem", textAlign: "left", fontSize: "0.78rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                             Booth \ Waktu
                           </th>
-                          {getVisibleSlots(selectedDay).map(s => (
-                            <th key={s.label} style={{ padding: "0.6rem 0.5rem", textAlign: "center", fontSize: "0.72rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>
-                              {s.label}
+                          {SLOTS.map(slot => (
+                            <th key={slot} style={{ padding: "0.6rem 0.5rem", textAlign: "center", fontSize: "0.72rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>
+                              {slot}
                             </th>
                           ))}
                         </tr>
@@ -733,8 +770,7 @@ export default function EmployerDashboard() {
                             <td style={{ padding: "0.5rem 0.75rem", fontWeight: 700, color: "#60a5fa", fontSize: "0.85rem", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                               {booth}
                             </td>
-                            {getVisibleSlots(selectedDay).map(s => {
-                              const slotIdx = s.idx;
+                            {SLOTS.map((_, slotIdx) => {
                               const key = `${booth}-${selectedDay}-${slotIdx}`;
                               const isMine = mySlots.includes(key);
                               const isTaken = !!(isRescheduling ? blockedByOthers[key] : takenSlots[key]);
