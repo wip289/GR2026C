@@ -168,6 +168,7 @@ export default function EmployerRegister() {
 
   const [selectedPaket, setSelectedPaket] = useState<number | null>(null);
   const [exhibitorOrder, setExhibitorOrder] = useState<Record<string, number>>({});
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const DRAFT_KEY = "gr2026_employer_draft";
 
@@ -1134,6 +1135,19 @@ export default function EmployerRegister() {
           )}
         </div>
       </div>
+    {/* ── Lightbox ── */}
+    {lightboxImg && (
+      <div
+        onClick={() => setLightboxImg(null)}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out", padding: "1rem" }}>
+        <img src={lightboxImg} alt="preview"
+          style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 12, boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }} />
+        <button onClick={() => setLightboxImg(null)}
+          style={{ position: "absolute", top: "1.25rem", right: "1.25rem", width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", fontSize: "1.2rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          ✕
+        </button>
+      </div>
+    )}
     </div>
   );
 }
