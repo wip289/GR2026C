@@ -905,7 +905,7 @@ export default function EmployerRegister() {
                         const subtotal = qty * f.harga * days;
                         return (
                           <div key={f.key} style={{ background: qty > 0 ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${qty > 0 ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
-                            <img src={f.img} alt={f.label} style={{ width: "100%", height: 110, objectFit: "cover", display: "block", background: "#0c1a2e" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                            <img src={f.img} alt={f.label} style={{ width: "100%", height: 160, objectFit: "cover", display: "block", background: "#0c1a2e" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                             <div style={{ padding: "0.65rem 0.75rem" }}>
                               <div style={{ fontSize: "0.75rem", color: "#e2e8f0", fontWeight: 600, marginBottom: "0.2rem", lineHeight: 1.4 }}>{f.label}</div>
                               <div style={{ fontSize: "0.68rem", color: "#64748b", marginBottom: "0.6rem" }}>
