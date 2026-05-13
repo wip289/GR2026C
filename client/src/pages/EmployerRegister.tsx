@@ -346,10 +346,19 @@ export default function EmployerRegister() {
       const dateStr = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
       // Build facility items untuk invoice
 
-      const facilityItems: FacilityItem[] = [];
       const paketData = selectedPaket !== null ? PAKET_BOOTH[selectedPaket - 1] : null;
       const facTotal = exhibitorTotal + (paketData ? paketData.harga : 0);
       const fullTotal = variables.totalAmount + facTotal;
+      // Populate facility items dari exhibitor order
+      const facilityItems: FacilityItem[] = EXHIBITOR_CATALOG
+        .filter(f => (exhibitorOrder[f.key] || 0) > 0)
+        .map(f => ({
+          label: f.label,
+          qty: exhibitorOrder[f.key],
+          unit: f.unit,
+          pricePerDay: f.harga,
+          days: f.per === "hari" ? 2 : 1,
+        }));
 
       const data: BookingData = {
         bookingId: variables.bookingId,
@@ -423,7 +432,6 @@ export default function EmployerRegister() {
         companyAddress ? `[ALAMAT] ${companyAddress}` : "",
         specialRequest || "",
       ].filter(Boolean).join(" | ") || undefined,
-      exhibitorOrder: Object.values(exhibitorOrder).some(v => v > 0) ? JSON.stringify(exhibitorOrder) : undefined,
       exhibitorOrder: exhibitorTotal > 0 ? JSON.stringify(exhibitorOrder) : undefined,
       paketBooth: selectedPaket !== null ? String(selectedPaket) : undefined,
 
@@ -949,27 +957,84 @@ export default function EmployerRegister() {
         {/* ── STEP 3: Konfirmasi ── */}
         {step === 3 && (
           <div>
+            {/* ── RINGKASAN HARGA: Booth → Paket → Fasilitas → Grand Total ── */}
             <div style={css.teal}>
-              <div style={css.secHd}>📋 Review Booking</div>
+              <div style={css.secHd}>💰 Ringkasan Pesanan</div>
+
+              {/* 1. Booth yang dipesan */}
+              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.6rem" }}>Booth yang Dipesan</div>
+                {selectedBoothDefs.map((b, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
+                    <span>Booth {b.label} · {b.type === "main" ? "Main 5×5m" : b.type === "extra" ? "Extra 4×2m" : "Standard 3×3m"}</span>
+                    <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price)}</span>
+                  </div>
+                ))}
+                {fasciaName && <div style={{ fontSize: "0.78rem", color: "#fb923c", marginTop: "0.3rem" }}>🏷️ Fascia: <strong>{fasciaName}</strong></div>}
+                {needsDesign && <div style={{ fontSize: "0.78rem", color: "#D4A017", marginTop: "0.3rem" }}>📐 Desain & Dekorasi Booth <em style={{ fontWeight: 400, color: "#64748b" }}>(biaya dikonfirmasi vendor)</em></div>}
+                {specialRequest && <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: "0.3rem" }}>📝 {specialRequest}</div>}
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "0.95rem", paddingTop: "0.6rem", marginTop: "0.6rem", borderTop: "1px solid rgba(20,184,166,0.15)" }}>
+                  <span>Subtotal Booth</span>
+                  <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
+                </div>
+              </div>
+
+              {/* 2. Paket Booth Khusus (jika dipilih) */}
+              {selectedPaket !== null && (
+                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#D4A017", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.6rem" }}>Paket Booth Khusus</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.25rem" }}>
+                    <span>🎨 {PAKET_BOOTH[selectedPaket - 1].nama}</span>
+                    <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(PAKET_BOOTH[selectedPaket - 1].harga)}</span>
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748b", lineHeight: 1.5 }}>{PAKET_BOOTH[selectedPaket - 1].spesifikasi}</div>
+                </div>
+              )}
+
+              {/* 3. Fasilitas Tambahan / Exhibitor Order (jika ada) */}
+              {exhibitorTotal > 0 && (
+                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.6rem" }}>🛒 Fasilitas Tambahan</div>
+                  {EXHIBITOR_CATALOG.filter(f => (exhibitorOrder[f.key] || 0) > 0).map(f => {
+                    const qty = exhibitorOrder[f.key];
+                    const days = f.per === "hari" ? 2 : 1;
+                    return (
+                      <div key={f.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
+                        <span>{f.label} × {qty}{f.per === "hari" ? " × 2 hari" : ""}</span>
+                        <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+                          {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(qty * f.harga * days)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "0.88rem", paddingTop: "0.5rem", marginTop: "0.4rem", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ color: "#94a3b8" }}>Subtotal Fasilitas</span>
+                    <span style={{ color: "#fbbf24" }}>{fmt(exhibitorTotal)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Grand Total */}
+              <div style={{ background: "rgba(212,160,23,0.12)", border: "1.5px solid rgba(212,160,23,0.3)", borderRadius: 10, padding: "0.9rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 800, fontSize: "1.2rem" }}>
+                <span>Grand Total</span>
+                <span style={{ color: "#D4A017", fontSize: "1.25rem" }}>{fmt(grandTotal(totalAmount))}</span>
+              </div>
+            </div>
+
+            {/* ── DATA BOOKING ── */}
+            <div style={css.card}>
+              <div style={css.secHd}>📋 Data Booking</div>
 
               {/* Company */}
-              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>Perusahaan</div>
                 <div style={{ fontSize: "1rem", fontWeight: 700, color: "#f1f5f9" }}>{company.name}</div>
-                {fasciaName && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.4rem" }}>
-                    <span style={{ fontSize: "0.72rem", background: "rgba(249,115,22,0.15)", color: "#fb923c", border: "1px solid rgba(249,115,22,0.35)", padding: "0.15rem 0.55rem", borderRadius: 6, fontWeight: 700 }}>FASCIA</span>
-                    <span style={{ fontSize: "0.85rem", color: "#fb923c", fontWeight: 700, letterSpacing: "0.08em" }}>{fasciaName}</span>
-                  </div>
-                )}
-                {companyAddress && (
-                  <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.35rem" }}>📍 {companyAddress}</div>
-                )}
+                {companyAddress && <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "0.35rem" }}>📍 {companyAddress}</div>}
                 <div style={{ fontSize: "0.85rem", color: "#64748b" }}>{company.industry} · {company.city}{company.website ? ` · ${company.website}` : ""}</div>
               </div>
 
               {/* PIC */}
-              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>Person in Charge</div>
                 <div style={{ fontSize: "0.9rem", color: "#cbd5e1" }}>{pic1.name}{pic1.title ? ` · ${pic1.title}` : ""}</div>
                 <div style={{ fontSize: "0.82rem", color: "#64748b" }}>{pic1.email} · {pic1.whatsapp}</div>
@@ -977,18 +1042,20 @@ export default function EmployerRegister() {
               </div>
 
               {/* Positions */}
-              <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
-                <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>Kebutuhan Rekrutmen</div>
-                {positions.filter(p => p.position || p.customPosition).map((p, i) => (
-                  <div key={i} style={{ fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.25rem" }}>
-                    • {p.position || p.customPosition} — {p.count} kandidat
-                  </div>
-                ))}
-              </div>
+              {positions.filter(p => p.position || p.customPosition).length > 0 && (
+                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>Kebutuhan Rekrutmen</div>
+                  {positions.filter(p => p.position || p.customPosition).map((p, i) => (
+                    <div key={i} style={{ fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.25rem" }}>
+                      • {p.position || p.customPosition} — {p.count} kandidat
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Job Vacancies */}
               {jobVacanciesUrls.length > 0 && (
-                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
+                <div>
                   <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>File Job Vacancies</div>
                   {jobVacanciesUrls.map((f, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
@@ -998,108 +1065,17 @@ export default function EmployerRegister() {
                   ))}
                 </div>
               )}
-
-              {/* Exhibitor Order Summary */}
-              {exhibitorTotal > 0 && (
-                <div style={{ marginBottom: "1.25rem", paddingBottom: "1.25rem", borderBottom: "1px solid rgba(20,184,166,0.12)" }}>
-                  <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>
-                    🛒 Fasilitas Tambahan (Exhibitor Order)
-                  </div>
-                  {EXHIBITOR_CATALOG.filter(f => (exhibitorOrder[f.key] || 0) > 0).map(f => {
-                    const qty = exhibitorOrder[f.key];
-                    const days = f.per === "hari" ? 2 : 1;
-                    return (
-                      <div key={f.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
-                        <span>{f.label} × {qty}</span>
-                        <span style={{ color: "#fbbf24", fontWeight: 600 }}>
-                          {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(qty * f.harga * days)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#94a3b8", marginTop: "0.5rem", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "0.5rem" }}>
-                    <span>Total order fasilitas ()</span>
-                    <span style={{ color: "#fbbf24", fontWeight: 700 }}>
-                      {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(exhibitorTotal)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Booths */}
-              <div>
-                <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>Booth yang Dipesan</div>
-                {selectedBoothDefs.map((b, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
-                    <span>Booth {b.label} · {b.type === "main" ? "Main 5×5m" : "Standard 3×3m"}</span>
-                    <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmt(b.price)}</span>
-                  </div>
-                ))}
-                {needsDesign && <div style={{ fontSize: "0.82rem", color: "#D4A017", marginTop: "0.5rem" }}>📐 + Desain booth ()</div>}
-                {specialRequest && <div style={{ fontSize: "0.82rem", color: "#94a3b8", marginTop: "0.5rem" }}>📝 {specialRequest}</div>}
-                <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(20,184,166,0.2)", paddingTop: "0.75rem", marginTop: "0.75rem", fontWeight: 800, fontSize: "1.1rem" }}>
-                  <span>Subtotal Booth</span>
-                  <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
-                </div>
-
-                {/* Fasilitas & Paket tambahan */}
-                {(selectedPaket !== null || Object.values(facilities).some(v => v > 0) || needsDesign) && (
-                  <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(212,160,23,0.2)" }}>
-                    <div style={{ fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>Fasilitas & Paket Tambahan (ditagih terpisah)</div>
-                    {needsDesign && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
-                        <span>📐 Desain & Dekorasi Booth</span>
-                        <span style={{ color: "#fbbf24", fontSize: "0.78rem", fontStyle: "italic" }}>Harga dikonfirmasi vendor</span>
-                      </div>
-                    )}
-                    {selectedPaket !== null && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#cbd5e1", marginBottom: "0.3rem" }}>
-                        <span>🎨 {PAKET_BOOTH[selectedPaket-1].nama}</span>
-                        <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(PAKET_BOOTH[selectedPaket-1].harga)}</span>
-                      </div>
-                    )}
-                    {Object.entries(facilities).filter(([,v]) => v > 0).map(([key, qty]) => {
-                      const labels: Record<string,{label:string;price:number}> = {
-                        facilityChair:{label:"Kursi",price:25000}, facilityTable:{label:"Meja",price:125000},
-                        facilityTV42:{label:"TV 42 Inch",price:750000}, facilityTV55:{label:"TV 55 Inch",price:1500000},
-                        facilityPower2A:{label:"Listrik 2A",price:250000}, facilityPower4A:{label:"Listrik 4A",price:400000},
-                        facilityCable:{label:"Kabel",price:250000},
-                      };
-                      return (
-                        <div key={key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.25rem" }}>
-                          <span>🛠️ {labels[key].label} × {qty} × 2 hari</span>
-                          <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(qty * labels[key].price * 2)}</span>
-                        </div>
-                      );
-                    })}
-                    <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(251,191,36,0.2)", paddingTop: "0.5rem", marginTop: "0.5rem", fontWeight: 800, fontSize: "0.95rem" }}>
-                      <span style={{ color: "#fbbf24" }}>Subtotal Fasilitas</span>
-                      <span style={{ color: "#fbbf24" }}>{fmt(
-                        (selectedPaket !== null ? PAKET_BOOTH[selectedPaket-1].harga : 0) +
-                        Object.entries(facilities).filter(([,v])=>v>0).reduce((s,[k,v])=>{
-                          const p:{[key:string]:number}={facilityChair:25000,facilityTable:125000,facilityTV42:750000,facilityTV55:1500000,facilityPower2A:250000,facilityPower4A:400000,facilityCable:250000};
-                          return s + v * (p[k]||0) * 2;
-                        },0)
-                      )}</span>
-                    </div>
-                  </div>
-                )}
-                <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(212,160,23,0.1)", borderRadius: 8, padding: "0.75rem 0.85rem", marginTop: "0.75rem", fontWeight: 800, fontSize: "1.15rem" }}>
-                  <span>Grand Total</span>
-                  <span style={{ color: "#D4A017" }}>{fmt(grandTotal(totalAmount))}</span>
-                </div>
-              </div>
             </div>
 
-            {/* Payment info */}
+            {/* ── INFORMASI PEMBAYARAN ── */}
             <div style={css.card}>
               <div style={css.secHd}>🏦 Informasi Pembayaran</div>
               <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 10, padding: "1.25rem", marginBottom: "1rem" }}>
                 {[
-                  { label: "Bank",        val: "Bank BTN" },
-                  { label: "No. Rekening",val: "0095 01 30 00000 38" },
-                  { label: "Atas Nama",   val: "Koperasi STP Bandung" },
-                  { label: "Nominal",     val: fmt(grandTotal(totalAmount)) },
+                  { label: "Bank",         val: "Bank BTN" },
+                  { label: "No. Rekening", val: "0095 01 30 00000 38" },
+                  { label: "Atas Nama",    val: "Koperasi STP Bandung" },
+                  { label: "Nominal",      val: fmt(grandTotal(totalAmount)) },
                 ].map(row => (
                   <div key={row.label} style={{ display: "flex", gap: "1rem", marginBottom: "0.55rem", flexWrap: "wrap" }}>
                     <span style={{ fontSize: "0.8rem", color: "#64748b", minWidth: 130 }}>{row.label}</span>

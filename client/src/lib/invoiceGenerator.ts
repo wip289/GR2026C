@@ -37,11 +37,46 @@ export function generateInvoiceHTML(data: BookingData): string {
   const boothRows = data.booths.map((b, i) => `
     <tr>
       <td>${i + 1}</td>
-      <td>${b.type === "main" ? "Main Booth (5×5m)" : b.type === "extra" ? "Extra Booth" : "Standard Booth (3×3m)"} — ${b.label}</td>
+      <td>${b.type === "main" ? "Main Booth (5×5m)" : b.type === "extra" ? "Extra Booth (4×2m)" : "Standard Booth (3×3m)"} — ${b.label}</td>
       <td style="text-align:center">1</td>
       <td style="text-align:right">${fmt(b.price)}</td>
       <td style="text-align:right">${fmt(b.price)}</td>
     </tr>`).join("");
+
+  let rowNum = data.booths.length + 1;
+  const extraRows: string[] = [];
+  if (data.paketBooth) {
+    extraRows.push(`
+    <tr>
+      <td>${rowNum++}</td>
+      <td>Paket Booth Khusus — <strong>${data.paketBooth.nama}</strong><br/><em style="color:#888;font-size:9px">${data.paketBooth.spesifikasi}</em></td>
+      <td style="text-align:center">1</td>
+      <td style="text-align:right">${fmt(data.paketBooth.harga)}</td>
+      <td style="text-align:right">${fmt(data.paketBooth.harga)}</td>
+    </tr>`);
+  }
+  const exhibitorOnlyTotal = (data.facilityTotal || 0) - (data.paketBooth?.harga || 0);
+  if (exhibitorOnlyTotal > 0) {
+    extraRows.push(`
+    <tr>
+      <td>${rowNum++}</td>
+      <td>Fasilitas Tambahan (Exhibitor Order) <em style="color:#888;font-size:9px">— detail lihat halaman 2</em></td>
+      <td style="text-align:center">1</td>
+      <td style="text-align:right">${fmt(exhibitorOnlyTotal)}</td>
+      <td style="text-align:right">${fmt(exhibitorOnlyTotal)}</td>
+    </tr>`);
+  }
+  if (data.needsBoothDesign) {
+    extraRows.push(`
+    <tr>
+      <td>${rowNum++}</td>
+      <td>Booth Design Service <em style="color:#666;font-size:10px">(estimasi dari vendor — ditagih terpisah)</em></td>
+      <td style="text-align:center">1</td>
+      <td style="text-align:right">—</td>
+      <td style="text-align:right">—</td>
+    </tr>`);
+  }
+  const grandTotal = data.totalAmount + (data.facilityTotal || 0);
 
   const positionList = data.positions
     .filter(p => p.position || p.customPosition)
@@ -167,14 +202,15 @@ export function generateInvoiceHTML(data: BookingData): string {
   </thead>
   <tbody>
     ${boothRows}
-    ${data.needsBoothDesign ? `<tr><td>${data.booths.length + 1}</td><td>Booth Design Service <em style="color:#666;font-size:10px">(estimasi dari vendor — ditagih terpisah)</em></td><td style="text-align:center">1</td><td style="text-align:right">—</td><td style="text-align:right">—</td></tr>` : ""}
+    ${extraRows.join("")}
   </tbody>
 </table>
 
 <div class="total-section">
   <div class="total-row"><span>Subtotal Booth</span><span>${fmt(data.totalAmount)}</span></div>
+  ${(data.facilityTotal || 0) > 0 ? `<div class="total-row"><span>Paket &amp; Fasilitas Tambahan</span><span>${fmt(data.facilityTotal || 0)}</span></div>` : ""}
   <div class="total-row"><span>PPN (0%)</span><span>Rp 0</span></div>
-  <div class="total-final"><span>TOTAL PEMBAYARAN</span><span>${fmt(data.totalAmount)}</span></div>
+  <div class="total-final"><span>TOTAL PEMBAYARAN</span><span>${fmt(grandTotal)}</span></div>
 </div>
 
 <div class="payment-box">
@@ -182,7 +218,7 @@ export function generateInvoiceHTML(data: BookingData): string {
   <div class="pay-row"><span class="pay-label">Bank</span><span class="pay-value">Bank BTN</span></div>
   <div class="pay-row"><span class="pay-label">No. Rekening</span><span class="pay-value">0095 01 30 00000 38</span></div>
   <div class="pay-row"><span class="pay-label">Atas Nama</span><span class="pay-value">Koperasi STP Bandung</span></div>
-  <div class="pay-row"><span class="pay-label">Nominal</span><span class="pay-value amount">${fmt(data.totalAmount)}</span></div>
+  <div class="pay-row"><span class="pay-label">Nominal</span><span class="pay-value amount">${fmt(grandTotal)}</span></div>
   <div class="pay-row"><span class="pay-label">Berita Transfer</span><span class="pay-value">${data.bookingId}</span></div>
 </div>
 
@@ -191,7 +227,7 @@ export function generateInvoiceHTML(data: BookingData): string {
   <p>
     Harap lakukan pembayaran paling lambat <strong>${data.paymentDeadline}</strong> (H-7 sebelum acara).<br/>
     Booking yang belum dikonfirmasi pembayarannya akan otomatis dibatalkan dan booth akan dilepas ke publik.
-    Setelah pembayaran, kirim bukti transfer ke WhatsApp panitia atau email di atas.
+    Setelah pembayaran <strong>${fmt(grandTotal)}</strong>, kirim bukti transfer ke WhatsApp panitia atau email di atas.
   </p>
 </div>
 
