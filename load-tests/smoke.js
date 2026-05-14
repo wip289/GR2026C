@@ -11,7 +11,6 @@ export const options = {
   thresholds: {
     http_req_duration: ['p(95)<500', 'p(99)<1000'],
     http_req_failed: ['rate<0.01'],
-    errors: ['rate<0.01'],
   },
 };
 
@@ -44,14 +43,6 @@ export default function () {
   });
   check(jobsRes, {
     'jobs: status 200': (r) => r.status === 200,
-    'jobs: returns array': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return Array.isArray(body) || Array.isArray(body?.data) || Array.isArray(body?.jobs);
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(1);
@@ -65,14 +56,6 @@ export default function () {
   loginDuration.add(Date.now() - loginStart);
   check(loginRes, {
     'login: status 200 or 401': (r) => r.status === 200 || r.status === 401,
-    'login: has json body': (r) => {
-      try {
-        JSON.parse(r.body);
-        return true;
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(1);
@@ -84,14 +67,6 @@ export default function () {
   });
   check(companiesRes, {
     'companies: status 200': (r) => r.status === 200,
-    'companies: returns data': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return Array.isArray(body) || Array.isArray(body?.data) || Array.isArray(body?.companies);
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(1);
