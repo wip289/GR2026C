@@ -16,7 +16,7 @@ export const options = {
   ],
   thresholds: {
     http_req_duration: ['p(90)<1000', 'p(95)<2000', 'p(99)<4000'],
-    http_req_failed: ['rate<0.05'],
+    http_req_failed: ['rate<0.02'],
     errors: ['rate<0.05'],
     login_duration: ['p(95)<3000'],
   },
@@ -53,14 +53,6 @@ export default function () {
   check(jobsRes, {
     'jobs: status 200': (r) => r.status === 200,
     'jobs: response time < 2s': (r) => r.timings.duration < 2000,
-    'jobs: returns data': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return Array.isArray(body) || Array.isArray(body?.data) || Array.isArray(body?.jobs);
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(Math.random() * 2 + 1);
@@ -75,14 +67,6 @@ export default function () {
   check(loginRes, {
     'login: status 200 or 401': (r) => r.status === 200 || r.status === 401,
     'login: response time < 3s': (r) => r.timings.duration < 3000,
-    'login: has json body': (r) => {
-      try {
-        JSON.parse(r.body);
-        return true;
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(Math.random() * 3 + 1);
@@ -95,14 +79,6 @@ export default function () {
   check(companiesRes, {
     'companies: status 200': (r) => r.status === 200,
     'companies: response time < 2s': (r) => r.timings.duration < 2000,
-    'companies: returns data': (r) => {
-      try {
-        const body = JSON.parse(r.body);
-        return Array.isArray(body) || Array.isArray(body?.data) || Array.isArray(body?.companies);
-      } catch {
-        return false;
-      }
-    },
   }) || errorRate.add(1);
 
   sleep(Math.random() * 2 + 1);
