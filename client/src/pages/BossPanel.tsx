@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import { openInvoiceForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
+import { openInvoiceForPrint, openKwitansiForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -33,6 +33,8 @@ export default function BossPanel() {
   const [selectedEmployer, setSelectedEmployer] = useState<string | null>(null);
   const [selectedJobseeker, setSelectedJobseeker] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [discountInput, setDiscountInput] = useState<Record<string, string>>({});
+  const [discountNoteInput, setDiscountNoteInput] = useState<Record<string, string>>({});
 
   // ── Password gate ─────────────────────────────────────────────
   const [authed, setAuthed] = useState(() => sessionStorage.getItem("panitia_auth") === "1");
@@ -397,32 +399,72 @@ export default function BossPanel() {
                   </div>
                 )}
 
-                {selEmp.status === "confirmed" && (
-                  <div style={{ marginTop: "1.25rem" }}>
-                    <button
-                      onClick={() => {
-                        const booths = Array.isArray(selEmp.booths) ? selEmp.booths : [];
-                        openInvoiceForPrint({
-                          bookingId: selEmp.bookingId,
-                          bookingDate: fmtDate(selEmp.createdAt),
-                          companyName: selEmp.companyName,
-                          industry: selEmp.industry || "",
-                          city: selEmp.city || "",
-                          pic1: { name: selEmp.pic1Name || "", title: selEmp.pic1Title || "", email: selEmp.pic1Email || "", whatsapp: selEmp.pic1Whatsapp || "" },
-                          positions: Array.isArray(selEmp.positions) ? selEmp.positions : [],
-                          booths: booths.map((b: any) => ({ boothId: b.id, label: b.label, type: b.type, price: b.price || 0 })),
-                          needsBoothDesign: selEmp.needsBoothDesign || false,
-                          specialRequest: selEmp.specialRequest || "",
-                          totalAmount: parseFloat(selEmp.totalAmount || 0),
-                          paymentDeadline: getPaymentDeadline(),
-                          lunasStamp: (selEmp as any).kwitansiApproved,
-                        });
-                      }}
-                      style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 10, padding: "0.75rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
-                      📄 Download Invoice{(selEmp as any).kwitansiApproved ? " (LUNAS)" : ""}
-                    </button>
-                  </div>
-                )}
+                {selEmp.status === "confirmed" && (() => {
+                  const booths = Array.isArray(selEmp.booths) ? selEmp.booths : [];
+                  const boothSubtotal = booths.reduce((s: number, b: any) => s + (b.price || 0), 0);
+                  const dbTotal = parseFloat(selEmp.totalAmount || "0");
+                  const facilityTotal = Math.max(0, dbTotal - boothSubtotal);
+                  const disc = parseFloat(discountInput[selEmp.bookingId] || "0") || 0;
+                  const discNote = discountNoteInput[selEmp.bookingId] || "";
+                  const bookingDataBase = {
+                    bookingId: selEmp.bookingId,
+                    bookingDate: fmtDate(selEmp.createdAt),
+                    companyName: selEmp.companyName,
+                    industry: selEmp.industry || "",
+                    city: selEmp.city || "",
+                    pic1: { name: selEmp.pic1Name || "", title: selEmp.pic1Title || "", email: selEmp.pic1Email || "", whatsapp: selEmp.pic1Whatsapp || "" },
+                    positions: Array.isArray(selEmp.positions) ? selEmp.positions : [],
+                    booths: booths.map((b: any) => ({ boothId: b.id, label: b.label, type: b.type, price: b.price || 0 })),
+                    needsBoothDesign: selEmp.needsBoothDesign || false,
+                    specialRequest: selEmp.specialRequest || "",
+                    totalAmount: boothSubtotal,
+                    facilityTotal: facilityTotal > 0 ? facilityTotal : undefined,
+                    paymentDeadline: getPaymentDeadline(),
+                    discountAmount: disc > 0 ? disc : undefined,
+                    discountNote: discNote || undefined,
+                    lunasStamp: true,
+                    lunasDate: fmtDate(selEmp.updatedAt),
+                  };
+                  return (
+                    <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column" as const, gap: "0.5rem" }}>
+
+                      {/* Diskon input */}
+                      <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 8, padding: "0.75rem" }}>
+                        <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "0.5rem" }}>
+                          🏷️ Diskon (opsional)
+                        </div>
+                        <input
+                          type="number"
+                          placeholder="Nominal diskon (Rp)"
+                          value={discountInput[selEmp.bookingId] || ""}
+                          onChange={e => setDiscountInput(prev => ({ ...prev, [selEmp.bookingId]: e.target.value }))}
+                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: "0.85rem", color: "#f1f5f9", outline: "none", marginBottom: "0.4rem" }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Keterangan diskon (contoh: kontrak mitra)"
+                          value={discountNoteInput[selEmp.bookingId] || ""}
+                          onChange={e => setDiscountNoteInput(prev => ({ ...prev, [selEmp.bookingId]: e.target.value }))}
+                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: "0.85rem", color: "#f1f5f9", outline: "none" }}
+                        />
+                      </div>
+
+                      {/* Download Invoice */}
+                      <button
+                        onClick={() => openInvoiceForPrint(bookingDataBase)}
+                        style={{ width: "100%", background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.4)", color: "#D4A017", borderRadius: 10, padding: "0.7rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
+                        📄 Download Invoice (LUNAS)
+                      </button>
+
+                      {/* Download Kwitansi */}
+                      <button
+                        onClick={() => openKwitansiForPrint(bookingDataBase)}
+                        style={{ width: "100%", background: "linear-gradient(135deg,#059669,#10b981)", border: "none", color: "#fff", borderRadius: 10, padding: "0.7rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
+                        🧾 Download Kwitansi Pembayaran
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
