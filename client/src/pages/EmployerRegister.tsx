@@ -1088,7 +1088,7 @@ export default function EmployerRegister() {
                 {[
                   { label: "Bank",         val: "Bank BTN" },
                   { label: "No. Rekening", val: "0095 01 30 00000 38" },
-                  { label: "Atas Nama",    val: "Koperasi STP Bandung" },
+                  { label: "Atas Nama",    val: "Kopensi STP Bandung" },
                   { label: "Nominal",      val: fmt(grandTotal(totalAmount)) },
                 ].map(row => (
                   <div key={row.label} style={{ display: "flex", gap: "1rem", marginBottom: "0.55rem", flexWrap: "wrap" }}>
