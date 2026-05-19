@@ -574,7 +574,7 @@ export default function EmployerDashboard() {
               <div style={s.secHd}>📞 Kontak Panitia</div>
               <div style={{ fontSize: "0.85rem", color: "#64748b", lineHeight: 1.8 }}>
                 <div>WhatsApp: <strong style={{ color: "#f1f5f9" }}>{(eventConfig as any).whatsappDisplay || (eventConfig as any).whatsappNumber || "0812-xxxx-xxxx"}</strong></div>
-                <div>Email: <strong style={{ color: "#f1f5f9" }}>{(eventConfig as any).contactEmail || "grandrecruitment@nhi.ac.id"}</strong></div>
+                <div>Email: <strong style={{ color: "#f1f5f9" }}>{(eventConfig as any).contactEmail || "contact@grandrecruitment.id"}</strong></div>
                 <div style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "#475569" }}>
                   Jam operasional: Senin–Jumat 08.00–17.00 WIB
                 </div>

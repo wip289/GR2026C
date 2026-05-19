@@ -156,10 +156,16 @@ interface BoothMapPickerProps {
 export default function BoothMapPicker({ selectedIds, onChange, booths: boothsProp, readOnly, panitiaMode, bookingData, closedBooths, onToggleClose, onSelect }: BoothMapPickerProps) {
   const booths = boothsProp || ALL_BOOTHS;
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [activeBooth, setActiveBooth] = useState<BoothDef | null>(null);
   const { data: closedFromDB } = trpc.event.getClosedBooths.useQuery();
 
   const handleClick = (booth: BoothDef) => {
     if (booth.type === "area") return;
+    // readOnly mode (landing page): tampilkan popup detail
+    if (readOnly) {
+      setActiveBooth(prev => prev?.id === booth.id ? null : booth);
+      return;
+    }
     // Cek resolvedStatus — booth yang ditutup panitia (closedFromDB) tidak bisa diklik
     const resolvedSt = (!panitiaMode && closedFromDB?.includes(booth.id))
       ? "staff"
@@ -331,6 +337,50 @@ export default function BoothMapPicker({ selectedIds, onChange, booths: boothsPr
           </div>
         ))}
       </div>
+
+      {/* ── Popup Detail Booth (readOnly / landing page) ── */}
+      {readOnly && activeBooth && activeBooth.type !== "area" && (() => {
+        const st = getBoothStatus(activeBooth);
+        const company = getCompany(activeBooth.id);
+        const typeLabel = activeBooth.type === "main" ? "Main Booth (5×5m)" : activeBooth.type === "extra" ? "Extra Booth (4×2m)" : "Standard Booth (3×3m)";
+        const statusLabel = st === "booked" ? "Terisi" : st === "reserved" ? "Reserved" : st === "staff" ? "Tidak Dijual" : "Tersedia";
+        const statusColor = st === "booked" ? "#ef4444" : st === "reserved" ? "#f97316" : st === "staff" ? "#64748b" : "#10b981";
+        return (
+          <div style={{ marginTop: "0.75rem", background: "rgba(20,184,166,0.07)", border: "1px solid rgba(20,184,166,0.25)", borderRadius: 12, padding: "1rem 1.25rem", position: "relative" }}>
+            <button onClick={() => setActiveBooth(null)} style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "1.1rem", lineHeight: 1 }}>×</button>
+            <div style={{ fontSize: "0.7rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: "0.6rem" }}>
+              Detail Booth
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" as const, gap: "0.5rem" }}>
+              <div>
+                <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#f1f5f9", marginBottom: "0.25rem" }}>Booth {activeBooth.label}</div>
+                <div style={{ fontSize: "0.85rem", color: "#94a3b8", marginBottom: "0.4rem" }}>{typeLabel}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: statusColor }} />
+                  <span style={{ fontSize: "0.82rem", color: statusColor, fontWeight: 600 }}>{statusLabel}</span>
+                </div>
+                {company && (
+                  <div style={{ fontSize: "0.82rem", color: "#cbd5e1", marginTop: "0.35rem" }}>
+                    🏢 {company}
+                  </div>
+                )}
+              </div>
+              {activeBooth.price > 0 && (
+                <div style={{ background: "rgba(212,160,23,0.12)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, padding: "0.5rem 0.9rem", textAlign: "center" as const }}>
+                  <div style={{ fontSize: "0.7rem", color: "#94a3b8", marginBottom: "2px" }}>Harga</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 800, color: "#D4A017" }}>{fmt(activeBooth.price)}</div>
+                </div>
+              )}
+            </div>
+            {st === "available" && (
+              <button onClick={() => window.location.href = "/employer/register"}
+                style={{ marginTop: "0.75rem", width: "100%", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 8, padding: "0.55rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                Pesan Booth Ini →
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Selected summary */}
       {selectedBooths.length > 0 && (
