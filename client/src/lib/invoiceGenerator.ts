@@ -917,3 +917,69 @@ export function openIdCardForPrint(data: IdCardData): void {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }
+// ── Custom Invoice (panitia manual) ──────────────────────────
+export interface CustomInvoiceItem {
+  description: string;
+  qty: number;
+  unit: string;
+  unitPrice: number;
+}
+
+export interface CustomInvoiceData {
+  invoiceNo: string;
+  invoiceDate: string;
+  companyName: string;
+  picName: string;
+  picEmail: string;
+  city: string;
+  items: CustomInvoiceItem[];
+  discountAmount?: number;
+  discountNote?: string;
+  notes?: string;
+}
+
+export function generateCustomInvoiceHTML(data: CustomInvoiceData): string {
+  const fmtN = (n: number) => "Rp " + n.toLocaleString("id-ID");
+  const subtotal = data.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+  const disc = data.discountAmount || 0;
+  const grandTotal = subtotal - disc;
+  let rowNum = 1;
+  const rows = data.items.map(item => {
+    const total = item.qty * item.unitPrice;
+    return "<tr><td>" + (rowNum++) + "</td><td>" + item.description + "</td><td>" + item.qty + " " + item.unit + "</td><td class=\"r\">" + fmtN(item.unitPrice) + "</td><td class=\"r\">" + fmtN(total) + "</td></tr>";
+  }).join("");
+  const discRow = disc > 0 ? "<div class=\"t-row disc\"><span>Diskon" + (data.discountNote ? " (" + data.discountNote + ")" : "") + "</span><span>- " + fmtN(disc) + "</span></div>" : "";
+  return "<!DOCTYPE html><html lang=\"id\"><head><meta charset=\"UTF-8\"/><title>Invoice Custom</title></head><body>" +
+    "<h2>INVOICE - " + data.invoiceNo + "</h2>" +
+    "<p>" + data.invoiceDate + "</p>" +
+    "<p><strong>" + data.companyName + "</strong><br/>" + data.picName + " | " + data.picEmail + "</p>" +
+    "<table border=\"1\" cellpadding=\"8\" style=\"width:100%;border-collapse:collapse\">" +
+    "<thead><tr><th>No</th><th>Deskripsi</th><th>Qty</th><th>Harga Satuan</th><th>Subtotal</th></tr></thead>" +
+    "<tbody>" + rows + "</tbody></table>" +
+    "<p>Subtotal: " + fmtN(subtotal) + "</p>" +
+    discRow +
+    "<h3>TOTAL: " + fmtN(grandTotal) + "</h3>" +
+    "<p>Bank BTN | 0095 01 30 00000 38 | Kopensi STP Bandung</p>" +
+    (data.notes ? "<p>" + data.notes + "</p>" : "") +
+    "<button onclick=\"window.print()\">Print</button>" +
+    "</body></html>";
+}
+
+export function openCustomInvoice(data: CustomInvoiceData) {
+  const html = generateCustomInvoiceHTML(data);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+
+export function openKwitansiForPrint(data: BookingData) {
+  const blob = new Blob([generateKwitansiHTML(data)], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
