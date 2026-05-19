@@ -468,103 +468,91 @@ export function generateCustomInvoiceHTML(data: CustomInvoiceData): string {
   let rowNum = 1;
   const rows = data.items.map(item => {
     const total = item.qty * item.unitPrice;
-    return `<tr>
-      <td style="width:26px">${rowNum++}</td>
-      <td>${item.description}</td>
-      <td>${item.qty} ${item.unit}</td>
-      <td class="r">${fmtN(item.unitPrice)}</td>
-      <td class="r">${fmtN(total)}</td>
-    </tr>`;
+    return "<tr>" +
+      "<td style=\"width:26px\">" + (rowNum++) + "</td>" +
+      "<td>" + item.description + "</td>" +
+      "<td>" + item.qty + " " + item.unit + "</td>" +
+      "<td class=\"r\">" + fmtN(item.unitPrice) + "</td>" +
+      "<td class=\"r\">" + fmtN(total) + "</td>" +
+      "</tr>";
   }).join("");
 
-  const discRow = disc > 0 ? `<div class="t-row disc"><span>Diskon${data.discountNote ? ` (${data.discountNote})` : ""}</span><span>− ${fmtN(disc)}</span></div>` : "";
+  const discRow = disc > 0
+    ? '<div class="t-row disc"><span>Diskon' + (data.discountNote ? " (" + data.discountNote + ")" : "") + "</span><span>− " + fmtN(disc) + "</span></div>"
+    : "";
 
-  const notesSection = data.notes ? `<div style="margin-top:12px;padding:9px 13px;background:#f8fafc;border-radius:6px;font-size:9px;color:#475569;line-height:1.6"><strong>Catatan:</strong> ${data.notes}</div>` : "";
+  const notesSection = data.notes
+    ? '<div style="margin-top:12px;padding:9px 13px;background:#f8fafc;border-radius:6px;font-size:9px;color:#475569;line-height:1.6"><strong>Catatan:</strong> ' + data.notes + "</div>"
+    : "";
 
-  return \`<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8"/>
-<title>Invoice Custom — \${data.invoiceNo}</title>
-<style>\${BASE_CSS}
-.t-row.disc span:last-child { color:#0d9488;font-weight:700; }
-</style>
-</head>
-<body>
-<div class="doc-header">
-  <div style="display:flex;align-items:center;gap:14px;">
-    <img src="\${LOGO_B64}" alt="GR2026" style="height:52px;object-fit:contain;"/>
-    <div>
-      <div class="brand-title">GRAND RECRUITMENT 2026</div>
-      <div class="brand-sub">The International Hospitality &amp; Tourism Job Fair &nbsp;·&nbsp; 8–9 Juni 2026 · Gedung Dome NHI Bandung &nbsp;·&nbsp; Politeknik Pariwisata NHI Bandung</div>
-    </div>
-  </div>
-  <div class="doc-meta">
-    <div class="doc-meta-label">INVOICE</div>
-    <div class="doc-meta-id">\${data.invoiceNo}</div>
-    <div class="doc-meta-date">\${data.invoiceDate}</div>
-  </div>
-</div>
+  const html = [
+    "<!DOCTYPE html>",
+    "<html lang=\"id\">",
+    "<head>",
+    "<meta charset=\"UTF-8\"/>",
+    "<title>Invoice Custom — " + data.invoiceNo + "</title>",
+    "<style>" + BASE_CSS + ".t-row.disc span:last-child { color:#0d9488;font-weight:700; }</style>",
+    "</head>",
+    "<body>",
+    "<div class=\"doc-header\">",
+    "  <div style=\"display:flex;align-items:center;gap:14px;\">",
+    "    <img src=\"" + LOGO_B64 + "\" alt=\"GR2026\" style=\"height:52px;object-fit:contain;\"/>",
+    "    <div>",
+    "      <div class=\"brand-title\">GRAND RECRUITMENT 2026</div>",
+    "      <div class=\"brand-sub\">The International Hospitality &amp; Tourism Job Fair &nbsp;&middot;&nbsp; 8\u20139 Juni 2026 &middot; Gedung Dome NHI Bandung &nbsp;&middot;&nbsp; Politeknik Pariwisata NHI Bandung</div>",
+    "    </div>",
+    "  </div>",
+    "  <div class=\"doc-meta\">",
+    "    <div class=\"doc-meta-label\">INVOICE</div>",
+    "    <div class=\"doc-meta-id\">" + data.invoiceNo + "</div>",
+    "    <div class=\"doc-meta-date\">" + data.invoiceDate + "</div>",
+    "  </div>",
+    "</div>",
+    "<div class=\"parties\">",
+    "  <div>",
+    "    <div class=\"p-label\">Ditagihkan kepada</div>",
+    "    <div class=\"p-name\">" + data.companyName + "</div>",
+    "    <div class=\"p-detail\">" + (data.city ? data.city + "<br/>" : "") + "PIC: " + data.picName + "<br/>" + data.picEmail + "</div>",
+    "  </div>",
+    "  <div>",
+    "    <div class=\"p-label\">Dari</div>",
+    "    <div class=\"p-name\">Koperasi Konsumen PPNHI Bandung</div>",
+    "    <div class=\"p-detail\">Politeknik Pariwisata NHI Bandung<br/>Jl. Dr. Setiabudi No. 186, Bandung<br/>contact@grandrecruitment.id</div>",
+    "  </div>",
+    "</div>",
+    "<table>",
+    "  <thead><tr>",
+    "    <th style=\"width:26px\">No.</th>",
+    "    <th>Deskripsi</th>",
+    "    <th style=\"width:80px\">Qty</th>",
+    "    <th class=\"r\" style=\"width:105px\">Harga Satuan</th>",
+    "    <th class=\"r\" style=\"width:95px\">Subtotal</th>",
+    "  </tr></thead>",
+    "  <tbody>" + rows + "</tbody>",
+    "</table>",
+    "<div class=\"totals-wrap\">",
+    "  <div class=\"totals-box\">",
+    '    <div class="t-row"><span>Subtotal</span><span>' + fmtN(subtotal) + "</span></div>",
+    discRow,
+    '    <div class="t-row"><span>PPN (0%)</span><span>Rp 0</span></div>',
+    '    <div class="t-grand"><span>TOTAL PEMBAYARAN</span><span>' + fmtN(grandTotal) + "</span></div>",
+    "  </div>",
+    "</div>",
+    "<div class=\"pay-box\">",
+    "  <div class=\"pay-title\">\uD83C\uDFE6 Instruksi Pembayaran</div>",
+    '  <div class="pay-row"><span class="pay-lbl">Bank</span><span class="pay-val">Bank BTN</span></div>',
+    '  <div class="pay-row"><span class="pay-lbl">No. Rekening</span><span class="pay-val">0095 01 30 00000 38</span></div>',
+    '  <div class="pay-row"><span class="pay-lbl">Atas Nama</span><span class="pay-val">Kopensi STP Bandung</span></div>',
+    '  <div class="pay-row"><span class="pay-lbl">Nominal</span><span class="pay-val gold">' + fmtN(grandTotal) + "</span></div>",
+    '  <div class="pay-row"><span class="pay-lbl">Berita Transfer</span><span class="pay-val" style="font-family:monospace;font-size:9px">' + data.invoiceNo + "</span></div>",
+    "</div>",
+    notesSection,
+    "<div class=\"doc-footer\">Invoice ini dibuat oleh Panitia Grand Recruitment 2026 &nbsp;&middot;&nbsp; contact@grandrecruitment.id &nbsp;&middot;&nbsp; 8\u20139 Juni 2026</div>",
+    "<button class=\"print-btn no-print\" onclick=\"window.print()\">\uD83D\uDDA8\uFE0F Print / Save PDF</button>",
+    "</body></html>",
+  ].join("\n");
 
-<div class="parties">
-  <div>
-    <div class="p-label">Ditagihkan kepada</div>
-    <div class="p-name">\${data.companyName}</div>
-    <div class="p-detail">
-      \${data.city ? data.city + "<br/>" : ""}
-      PIC: \${data.picName}<br/>
-      \${data.picEmail}
-    </div>
-  </div>
-  <div>
-    <div class="p-label">Dari</div>
-    <div class="p-name">Koperasi Konsumen PPNHI Bandung</div>
-    <div class="p-detail">
-      Politeknik Pariwisata NHI Bandung<br/>
-      Jl. Dr. Setiabudi No. 186, Bandung<br/>
-      contact@grandrecruitment.id
-    </div>
-  </div>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th style="width:26px">No.</th>
-      <th>Deskripsi</th>
-      <th style="width:80px">Qty</th>
-      <th class="r" style="width:105px">Harga Satuan</th>
-      <th class="r" style="width:95px">Subtotal</th>
-    </tr>
-  </thead>
-  <tbody>\${rows}</tbody>
-</table>
-
-<div class="totals-wrap">
-  <div class="totals-box">
-    <div class="t-row"><span>Subtotal</span><span>\${fmtN(subtotal)}</span></div>
-    \${discRow}
-    <div class="t-row"><span>PPN (0%)</span><span>Rp 0</span></div>
-    <div class="t-grand"><span>TOTAL PEMBAYARAN</span><span>\${fmtN(grandTotal)}</span></div>
-  </div>
-</div>
-
-<div class="pay-box">
-  <div class="pay-title">🏦 Instruksi Pembayaran</div>
-  <div class="pay-row"><span class="pay-lbl">Bank</span><span class="pay-val">Bank BTN</span></div>
-  <div class="pay-row"><span class="pay-lbl">No. Rekening</span><span class="pay-val">0095 01 30 00000 38</span></div>
-  <div class="pay-row"><span class="pay-lbl">Atas Nama</span><span class="pay-val">Kopensi STP Bandung</span></div>
-  <div class="pay-row"><span class="pay-lbl">Nominal</span><span class="pay-val gold">\${fmtN(grandTotal)}</span></div>
-  <div class="pay-row"><span class="pay-lbl">Berita Transfer</span><span class="pay-val" style="font-family:monospace;font-size:9px">\${data.invoiceNo}</span></div>
-</div>
-
-\${notesSection}
-
-<div class="doc-footer">
-  Invoice ini dibuat oleh Panitia Grand Recruitment 2026 &nbsp;·&nbsp; contact@grandrecruitment.id &nbsp;·&nbsp; 8–9 Juni 2026
-</div>
-<button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save PDF</button>
-</body></html>\`;
+  return html;
 }
 
 export function openCustomInvoice(data: CustomInvoiceData) {
