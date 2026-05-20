@@ -1,13 +1,15 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { openInvoiceForPrint, openKwitansiForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
+import { openCustomInvoice } from "@/lib/customInvoice";
+import type { CustomInvoiceData } from "@/lib/customInvoice";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-type TabId = "overview" | "employer" | "jobseeker" | "interview";
+type TabId = "overview" | "employer" | "jobseeker" | "interview" | "invoice";
 
 const s = {
   page:  { minHeight: "100vh", background: "#0a1628", fontFamily: "system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
@@ -26,6 +28,160 @@ const DAYS  = ["Rabu, 10 Juni", "Kamis, 11 Juni"];
 const getVisibleSlots = (day: number) =>
   SLOTS.map((label, idx) => ({ label, idx })).filter(s => day !== 0 || s.idx >= 2);
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
+
+
+// ── Invoice Custom Tab ────────────────────────────────────────
+function InvoiceCustomTab({ employers, openCustomInvoice }: {
+  employers: any[];
+  openCustomInvoice: (data: any) => void;
+}) {
+  const [mode, setMode] = React.useState<"select" | "manual">("select");
+  const [selectedEmpId, setSelectedEmpId] = React.useState("");
+  const [manualName, setManualName] = React.useState("");
+  const [manualPic, setManualPic] = React.useState("");
+  const [manualEmail, setManualEmail] = React.useState("");
+  const [manualCity, setManualCity] = React.useState("");
+  const [items, setItems] = React.useState([
+    { description: "", qty: 1, unit: "paket", unitPrice: 0 }
+  ]);
+  const [discountAmount, setDiscountAmount] = React.useState("");
+  const [discountNote, setDiscountNote] = React.useState("");
+  const [notes, setNotes] = React.useState("");
+  const [invoiceNo, setInvoiceNo] = React.useState(() => {
+    const now = new Date();
+    return "INV-GR26-" + String(now.getMonth()+1).padStart(2,"0") + String(now.getDate()).padStart(2,"0") + "-" + String(now.getHours()).padStart(2,"0") + String(now.getMinutes()).padStart(2,"0");
+  });
+
+  const selEmp = employers.find((e: any) => e.bookingId === selectedEmpId);
+  const companyName = mode === "select" ? (selEmp?.companyName || "") : manualName;
+  const picName     = mode === "select" ? (selEmp?.pic1Name || "") : manualPic;
+  const picEmail    = mode === "select" ? (selEmp?.pic1Email || "") : manualEmail;
+  const city        = mode === "select" ? (selEmp?.city || "") : manualCity;
+
+  const addItem = () => setItems(prev => [...prev, { description: "", qty: 1, unit: "paket", unitPrice: 0 }]);
+  const removeItem = (i: number) => setItems(prev => prev.filter((_, idx) => idx !== i));
+  const updateItem = (i: number, field: string, val: string | number) =>
+    setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
+
+  const subtotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+  const disc = parseFloat(discountAmount) || 0;
+  const grandTotal = subtotal - disc;
+  const fmtRp = (n: number) => "Rp " + n.toLocaleString("id-ID");
+  const canGenerate = companyName && picName && items.some(i => i.description && i.unitPrice > 0);
+
+  const inp: React.CSSProperties = { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, padding: "0.45rem 0.7rem", fontSize: "0.85rem", color: "#f1f5f9", outline: "none" };
+  const lbl: React.CSSProperties = { fontSize: "0.72rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: "0.3rem", display: "block" };
+  const card: React.CSSProperties = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" };
+
+  return (
+    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#f1f5f9", marginBottom: "0.25rem" }}>📝 Invoice Custom</div>
+        <div style={{ fontSize: "0.82rem", color: "#64748b" }}>Buat invoice manual untuk kebutuhan di luar sistem — custom booth, sponsorship, dll.</div>
+      </div>
+
+      {/* No Invoice */}
+      <div style={card}>
+        <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const, marginBottom: "1rem" }}>Nomor Invoice</div>
+        <label style={lbl}>No. Invoice</label>
+        <input style={inp} value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} />
+      </div>
+
+      {/* Perusahaan */}
+      <div style={card}>
+        <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const, marginBottom: "1rem" }}>Data Perusahaan</div>
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+          {(["select", "manual"] as const).map(m => (
+            <button key={m} onClick={() => setMode(m)}
+              style={{ flex: 1, padding: "0.5rem", borderRadius: 8, border: "1px solid " + (mode === m ? "#14b8a6" : "rgba(255,255,255,0.1)"), background: mode === m ? "rgba(20,184,166,0.15)" : "transparent", color: mode === m ? "#14b8a6" : "#64748b", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
+              {m === "select" ? "📋 Pilih dari daftar" : "✏️ Ketik manual"}
+            </button>
+          ))}
+        </div>
+        {mode === "select" ? (
+          <div>
+            <label style={lbl}>Pilih Employer</label>
+            <select style={{ ...inp, appearance: "none" as const }} value={selectedEmpId} onChange={e => setSelectedEmpId(e.target.value)}>
+              <option value="">-- Pilih perusahaan --</option>
+              {employers.map((e: any) => (
+                <option key={e.bookingId} value={e.bookingId}>{e.companyName} ({e.bookingId})</option>
+              ))}
+            </select>
+            {selEmp && (
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "rgba(20,184,166,0.05)", borderRadius: 8, fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.7 }}>
+                PIC: <strong style={{ color: "#f1f5f9" }}>{selEmp.pic1Name}</strong> · {selEmp.pic1Email}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ gridColumn: "1/-1" }}>
+              <label style={lbl}>Nama Perusahaan *</label>
+              <input style={inp} value={manualName} onChange={e => setManualName(e.target.value)} placeholder="PT. Nama Perusahaan" />
+            </div>
+            <div><label style={lbl}>Nama PIC *</label><input style={inp} value={manualPic} onChange={e => setManualPic(e.target.value)} placeholder="Nama PIC" /></div>
+            <div><label style={lbl}>Email PIC</label><input style={inp} value={manualEmail} onChange={e => setManualEmail(e.target.value)} placeholder="email@co.com" /></div>
+            <div style={{ gridColumn: "1/-1" }}><label style={lbl}>Kota</label><input style={inp} value={manualCity} onChange={e => setManualCity(e.target.value)} placeholder="Bandung" /></div>
+          </div>
+        )}
+      </div>
+
+      {/* Items */}
+      <div style={card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const }}>Item Invoice</div>
+          <button onClick={addItem} style={{ background: "rgba(20,184,166,0.15)", border: "1px solid rgba(20,184,166,0.4)", color: "#14b8a6", borderRadius: 8, padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>+ Tambah Baris</button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 70px 110px 28px", gap: "0.4rem", marginBottom: "0.4rem" }}>
+          {["Deskripsi Item", "Qty", "Satuan", "Harga Satuan", ""].map((h, i) => (
+            <div key={i} style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" as const }}>{h}</div>
+          ))}
+        </div>
+        {items.map((item, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 70px 110px 28px", gap: "0.4rem", marginBottom: "0.4rem", alignItems: "center" }}>
+            <input style={inp} value={item.description} onChange={e => updateItem(i, "description", e.target.value)} placeholder="Nama item / layanan" />
+            <input style={{ ...inp, textAlign: "center" }} type="number" min="1" value={item.qty} onChange={e => updateItem(i, "qty", parseInt(e.target.value) || 1)} />
+            <input style={inp} value={item.unit} onChange={e => updateItem(i, "unit", e.target.value)} placeholder="pkt" />
+            <input style={{ ...inp, textAlign: "right" }} type="number" min="0" value={item.unitPrice || ""} onChange={e => updateItem(i, "unitPrice", parseInt(e.target.value) || 0)} placeholder="0" />
+            <button onClick={() => removeItem(i)} disabled={items.length === 1}
+              style={{ background: "none", border: "none", color: items.length === 1 ? "#334155" : "#f87171", cursor: items.length === 1 ? "default" : "pointer", fontSize: "1rem", padding: 0 }}>×</button>
+          </div>
+        ))}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: "0.75rem", paddingTop: "0.75rem", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "1rem" }}>
+          <span>Grand Total</span>
+          <span style={{ color: "#D4A017" }}>{fmtRp(grandTotal)}</span>
+        </div>
+      </div>
+
+      {/* Diskon & Catatan */}
+      <div style={card}>
+        <div style={{ fontSize: "0.72rem", color: "#14b8a6", fontWeight: 700, textTransform: "uppercase" as const, marginBottom: "1rem" }}>Diskon & Catatan</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+          <div><label style={lbl}>Diskon (Rp)</label><input style={inp} type="number" min="0" value={discountAmount} onChange={e => setDiscountAmount(e.target.value)} placeholder="0" /></div>
+          <div><label style={lbl}>Keterangan Diskon</label><input style={inp} value={discountNote} onChange={e => setDiscountNote(e.target.value)} placeholder="contoh: kontrak mitra" /></div>
+        </div>
+        <div><label style={lbl}>Catatan Tambahan</label>
+          <textarea style={{ ...inp, minHeight: 64, resize: "vertical" as const }} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Catatan khusus yang akan muncul di invoice..." />
+        </div>
+      </div>
+
+      {/* Generate */}
+      <button onClick={() => canGenerate && openCustomInvoice({
+        invoiceNo,
+        invoiceDate: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+        companyName, picName, picEmail, city,
+        items: items.filter(i => i.description && i.unitPrice > 0),
+        discountAmount: disc > 0 ? disc : undefined,
+        discountNote: discountNote || undefined,
+        notes: notes || undefined,
+      })}
+        style={{ width: "100%", background: canGenerate ? "linear-gradient(135deg,#D4A017,#B8860B)" : "rgba(100,116,139,0.3)", border: "none", color: canGenerate ? "#fff" : "#64748b", borderRadius: 12, padding: "0.9rem", fontSize: "0.95rem", fontWeight: 800, cursor: canGenerate ? "pointer" : "not-allowed", marginBottom: "0.5rem" }}>
+        📄 Generate & Download Invoice
+      </button>
+      {!canGenerate && <div style={{ fontSize: "0.75rem", color: "#64748b", textAlign: "center" as const }}>Lengkapi nama perusahaan, PIC, dan minimal 1 item dengan harga</div>}
+    </div>
+  );
+}
 
 export default function BossPanel() {
   const [, navigate] = useLocation();
@@ -160,6 +316,7 @@ export default function BossPanel() {
             { id: "employer" as TabId, label: `🏢 Employer (${employers.length})` },
             { id: "jobseeker" as TabId, label: `🎓 Jobseeker (${jobseekers.length})` },
             { id: "interview" as TabId, label: "📅 Interview Slots" },
+            { id: "invoice" as TabId, label: "📝 Invoice Custom" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -660,6 +817,11 @@ export default function BossPanel() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── TAB: INVOICE CUSTOM ── */}
+        {activeTab === "invoice" && (
+          <InvoiceCustomTab employers={employers} openCustomInvoice={openCustomInvoice} />
         )}
       </div>
     </div>
