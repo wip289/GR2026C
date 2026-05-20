@@ -25,6 +25,8 @@ function fmtRp(n: number): string {
   return "Rp " + n.toLocaleString("id-ID");
 }
 
+const LOGO_URL = "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/Logo%20%26%20Layout%20Grand%20Recruitment%202026%20NHI.png";
+
 export function generateCustomInvoiceHTML(data: CustomInvoiceData): string {
   const subtotal = data.items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const disc = data.discountAmount || 0;
@@ -67,7 +69,7 @@ export function generateCustomInvoiceHTML(data: CustomInvoiceData): string {
     "</style></head><body>" +
     "<div style='background:#0a1628;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px'>" +
     "<div style='display:flex;align-items:center;gap:12px'>" +
-    "<img src='/logo-gr2026.png' alt='GR2026' style='height:48px;object-fit:contain' onerror='this.style.display=&quot;none&quot;'/>" +
+    "<img src='" + LOGO_URL + "' alt='GR2026' style='height:48px;object-fit:contain' onerror='this.style.display=\"none\"'/>" +
     "<div><div style='font-size:13px;font-weight:700;color:#14b8a6'>GRAND RECRUITMENT 2026</div>" +
     "<div style='font-size:8px;color:#94a3b8;margin-top:2px'>The International Hospitality &amp; Tourism Job Fair &nbsp;&middot;&nbsp; 8&ndash;9 Juni 2026 &middot; Gedung Dome NHI Bandung</div></div>" +
     "</div>" +
