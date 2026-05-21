@@ -649,7 +649,6 @@ export default function BossPanel() {
         {activeTab === "jobseeker" && (
           <div style={{ display: "grid", gridTemplateColumns: selJS ? "1fr 360px" : "1fr", gap: "1.5rem" }}>
             <div style={s.card}>
-              <div style={s.card}>
   <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
     <button
       onClick={() => exportJobseekersCSV(jobseekers)}
@@ -668,7 +667,6 @@ export default function BossPanel() {
     </button>
   </div>
 
-  <div style={{ overflowX: "auto" }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
