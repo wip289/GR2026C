@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { openInvoiceForPrint, openKwitansiForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator";
 import { openCustomInvoice } from "@/lib/customInvoice";
 import type { CustomInvoiceData } from "@/lib/customInvoice";
+import { exportJobseekersCSV, exportEmployersCSV } from '@/lib/exportUtils';
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -430,6 +431,23 @@ export default function BossPanel() {
         {activeTab === "employer" && (
           <div style={{ display: "grid", gridTemplateColumns: selEmp ? "1fr 380px" : "1fr", gap: "1.5rem" }}>
             <div style={s.card}>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
+                  <button
+                    onClick={() => exportEmployersCSV(employers)}
+                    style={{
+                      padding: "0.4rem 1rem",
+                      background: "#16a34a",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ⬇ Export Excel
+                  </button>
+              </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
@@ -631,6 +649,26 @@ export default function BossPanel() {
         {activeTab === "jobseeker" && (
           <div style={{ display: "grid", gridTemplateColumns: selJS ? "1fr 360px" : "1fr", gap: "1.5rem" }}>
             <div style={s.card}>
+              <div style={s.card}>
+  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
+    <button
+      onClick={() => exportJobseekersCSV(jobseekers)}
+      style={{
+        padding: "0.4rem 1rem",
+        background: "#16a34a",
+        color: "white",
+        border: "none",
+        borderRadius: "6px",
+        cursor: "pointer",
+        fontSize: "0.85rem",
+        fontWeight: 600,
+      }}
+    >
+      ⬇ Export Excel
+    </button>
+  </div>
+
+  <div style={{ overflowX: "auto" }}>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
