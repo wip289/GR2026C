@@ -864,12 +864,29 @@ export const eventRouter = router({
       igUsername:   z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const { registrationId, ...updates } = input;
-      const db = await getDb();
-      await db.update(jobseekers)
-        .set({ ...updates, updatedAt: new Date() })
-        .where(eq(jobseekers.registrationId, registrationId));
-      return { success: true };
+      try {
+        const { registrationId, ...updates } = input;
+        const db = await getDb();
+
+        if (input.whatsapp) {
+          const existingWa = await db.select().from(jobseekers).where(eq(jobseekers.whatsapp, input.whatsapp));
+          const conflict = existingWa.find(js => js.registrationId !== registrationId);
+          if (conflict) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Nomor WhatsApp ini sudah digunakan oleh pendaftar lain. Silakan gunakan nomor WhatsApp yang berbeda atau hubungi panitia GR2026 via WhatsApp jika ada kendala.",
+            });
+          }
+        }
+
+        await db.update(jobseekers)
+          .set({ ...updates, updatedAt: new Date() })
+          .where(eq(jobseekers.registrationId, registrationId));
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Gagal memperbarui data jobseeker." });
+      }
     }),
 
   deleteJobseekerDocument: publicProcedure

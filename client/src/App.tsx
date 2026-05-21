@@ -87,7 +87,7 @@ function App() {
         <EventProvider>
           <Phase1Provider>
             <TooltipProvider>
-              <Toaster />
+              <Toaster position="top-center" />
               <Router />
             </TooltipProvider>
           </Phase1Provider>
