@@ -357,6 +357,29 @@ export const eventRouter = router({
           const cfg = await getEventConfig() as any;
           resolvedEventId = cfg?.eventId || cfg?.id || null;
         }
+
+        const db = await getDb();
+
+        if (input.nik) {
+          const existingNik = await db.select().from(jobseekers).where(eq(jobseekers.nik, input.nik));
+          if (existingNik.length > 0) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "NIK kamu sudah terdaftar di sistem. Kemungkinan kamu sudah pernah mendaftar sebelumnya. Silakan login menggunakan Registration ID dan email yang kamu gunakan saat mendaftar. Butuh bantuan? Hubungi panitia GR2026 via WhatsApp.",
+            });
+          }
+        }
+
+        if (input.whatsapp) {
+          const existingWa = await db.select().from(jobseekers).where(eq(jobseekers.whatsapp, input.whatsapp));
+          if (existingWa.length > 0) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Nomor WhatsApp kamu sudah terdaftar di sistem. Kemungkinan kamu sudah pernah mendaftar sebelumnya. Silakan login menggunakan Registration ID dan email yang kamu gunakan saat mendaftar. Butuh bantuan? Hubungi panitia GR2026 via WhatsApp.",
+            });
+          }
+        }
+
         await createJobseeker({
           registrationId: input.registrationId,
           eventId: resolvedEventId,
@@ -389,6 +412,7 @@ export const eventRouter = router({
         });
         return { success: true };
       } catch (error: any) {
+        if (error instanceof TRPCError) throw error;
         console.error("[createJobseeker] DETAIL:", error?.message, error?.code, JSON.stringify(error));
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Gagal menyimpan: ${error?.message || error}` });
       }
