@@ -226,6 +226,7 @@ export const eventRouter = router({
         kwitansiApproved: (booking as any).kwitansiApproved,
         jobVacanciesUrl: (booking as any).jobVacanciesUrl,
         rescheduleCount: (booking as any).rescheduleCount ?? 0,
+        exhibitorOrder: (booking as any).exhibitorOrder ?? null,
       };
     }),
 
