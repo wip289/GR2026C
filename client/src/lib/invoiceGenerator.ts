@@ -1,5 +1,42 @@
 // ── Invoice Generator for GR2026 Employer Booking ──────────────
 
+// ── Exhibitor Order Catalog (tanpa gambar, untuk invoice) ──────
+const EO_CATALOG: Record<string, { label: string; harga: number; unit: string; per: "hari" | "event" }> = {
+  eo_kursi:       { label: "Kursi + cover hitam",                                          harga: 25000,   unit: "buah",  per: "hari"  },
+  eo_meja:        { label: "Meja + cover hitam",                                           harga: 125000,  unit: "buah",  per: "hari"  },
+  eo_barstool_h:  { label: "Hidrolik barstool hitam",                                      harga: 150000,  unit: "buah",  per: "hari"  },
+  eo_barstool_m:  { label: "Melinda barstool putih",                                       harga: 150000,  unit: "buah",  per: "hari"  },
+  eo_bartable:    { label: "Bartable lingkaran Ø75×100cm putih",                           harga: 100000,  unit: "buah",  per: "hari"  },
+  eo_meja_kaca:   { label: "Meja kaca Ø80×75cm",                                          harga: 150000,  unit: "buah",  per: "hari"  },
+  eo_sofa:        { label: "Kursi sofa single hitam",                                      harga: 300000,  unit: "buah",  per: "hari"  },
+  eo_tv42:        { label: "TV 42 Inch + standing + rangka",                               harga: 750000,  unit: "unit",  per: "hari"  },
+  eo_tv55:        { label: "TV 55 Inch + standing + rangka",                               harga: 1500000, unit: "unit",  per: "hari"  },
+  eo_listrik2a:   { label: "Listrik tambahan 2 Ampere",                                    harga: 250000,  unit: "titik", per: "hari"  },
+  eo_listrik4a:   { label: "Listrik tambahan 4 Ampere",                                    harga: 400000,  unit: "titik", per: "hari"  },
+  eo_kabel:       { label: "Perpanjangan Kabel + Socket 3 lubang",                        harga: 250000,  unit: "buah",  per: "hari"  },
+  eo_zigzag:      { label: "Zigzag standing brochure rack",                                harga: 450000,  unit: "buah",  per: "hari"  },
+  eo_acrylic:     { label: "Acrylic display brosur A5 3 susun",                           harga: 150000,  unit: "buah",  per: "event" },
+  eo_tripod:      { label: "Tripod banner (base polyfoam + printing A3 by client)",       harga: 175000,  unit: "buah",  per: "hari"  },
+  eo_xbanner:     { label: "X Banner 60×160cm + rangka X (design by client)",             harga: 175000,  unit: "buah",  per: "event" },
+  eo_rollbanner:  { label: "Roll Banner 80×200cm + rangka roll (design by client)",       harga: 425000,  unit: "buah",  per: "event" },
+  eo_displaybox:  { label: "Display Box Medium 50×50×70cm (bahan partisi)",               harga: 757000,  unit: "buah",  per: "hari"  },
+  eo_floor33:     { label: "Flooring panel 3×3, tinggi 10cm + karpet + pasang bongkar",  harga: 1575000, unit: "paket", per: "event" },
+  eo_floor55:     { label: "Flooring panel 5×5, tinggi 10cm + karpet + pasang bongkar",  harga: 4375000, unit: "paket", per: "event" },
+  eo_floor42:     { label: "Flooring panel 4×2, tinggi 10cm + karpet + pasang bongkar",  harga: 1400000, unit: "paket", per: "event" },
+  eo_backdrop33:  { label: "Backdrop panel 3×2, tinggi 2.5m + printing (design by client)", harga: 2250000, unit: "paket", per: "event" },
+  eo_backdrop52:  { label: "Backdrop panel 5×2, tinggi 2.5m + printing (design by client)", harga: 5000000, unit: "paket", per: "event" },
+  eo_backdrop42:  { label: "Backdrop panel 4×2, tinggi 2.5m + printing (design by client)", harga: 4687500, unit: "paket", per: "event" },
+  eo_wall33:      { label: "Wall sticker 3×2.5m + print + pasang (Booth 3×3)",           harga: 2812500, unit: "sisi",  per: "event" },
+  eo_wall55:      { label: "Wall sticker 5×2.5m + print + pasang (Booth 5×5)",           harga: 2187500, unit: "sisi",  per: "event" },
+  eo_wall42:      { label: "Wall sticker 4×2.5m + print + pasang (Booth 4×2)",           harga: 1750000, unit: "sisi",  per: "event" },
+  eo_bunga_meja:  { label: "Rangkaian bunga meja",                                        harga: 350000,  unit: "buah",  per: "event" },
+  eo_anggrek:     { label: "Bunga meja Anggrek 1 tangkai",                                harga: 250000,  unit: "buah",  per: "event" },
+  eo_bunga_tinggi:{ label: "Rangkaian bunga tinggi 80cm",                                 harga: 500000,  unit: "buah",  per: "event" },
+  eo_rope:        { label: "Rope Barrier – QLine tinggi 90cm (per tiang)",               harga: 100000,  unit: "tiang", per: "hari"  },
+  eo_sampah:      { label: "Tempat sampah Ø28×28cm",                                     harga: 75000,   unit: "buah",  per: "event" },
+  eo_kain:        { label: "Kain hitam polos per meter",                                  harga: 125000,  unit: "meter", per: "event" },
+};
+
 export interface FacilityItem {
   label: string;
   qty: number;
@@ -31,6 +68,8 @@ export interface BookingData {
   facilities?: FacilityItem[];
   paketBooth?: { nama: string; harga: number; spesifikasi: string } | null;
   facilityTotal?: number;
+  // Raw exhibitor order JSON — diparse otomatis di invoice jika facilities kosong
+  exhibitorOrder?: Record<string, number> | string;
 }
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -177,8 +216,35 @@ export function generateInvoiceHTML(data: BookingData): string {
       <td class="r">${fmt(f.qty * f.pricePerDay * f.days)}</td>
     </tr>`).join("");
 
-  // Exhibitor summary row (if no detail but total exists)
-  const exhibitorRow = exhibitorOnly > 0 && (data.facilities || []).length === 0 ? `
+  // Exhibitor Order rows — parse dari exhibitorOrder JSON jika facilities kosong
+  const resolvedEO: { label: string; qty: number; unit: string; harga: number; per: "hari" | "event" }[] = [];
+  if ((data.facilities || []).length === 0 && data.exhibitorOrder) {
+    const eoRaw = typeof data.exhibitorOrder === "string"
+      ? JSON.parse(data.exhibitorOrder) as Record<string, number>
+      : data.exhibitorOrder;
+    for (const [key, qty] of Object.entries(eoRaw)) {
+      if (qty > 0 && EO_CATALOG[key]) {
+        resolvedEO.push({ ...EO_CATALOG[key], qty });
+      }
+    }
+  }
+
+  const exhibitorDetailRows = resolvedEO.map(item => {
+    const days = item.per === "hari" ? 2 : 1;
+    const subtotal = item.qty * item.harga * days;
+    const qtyLabel = item.per === "hari" ? `${item.qty} ${item.unit} × 2 hari` : `${item.qty} ${item.unit}`;
+    return `
+    <tr>
+      <td>${rowNum++}</td>
+      <td class="wrap">${item.label}</td>
+      <td>${qtyLabel}</td>
+      <td class="r">${fmt(item.harga)}/${item.unit}/${item.per}</td>
+      <td class="r">${fmt(subtotal)}</td>
+    </tr>`;
+  }).join("");
+
+  // Fallback: jika tidak ada EO detail sama sekali tapi ada total
+  const exhibitorRow = exhibitorOnly > 0 && (data.facilities || []).length === 0 && resolvedEO.length === 0 ? `
     <tr>
       <td>${rowNum++}</td>
       <td>Fasilitas Tambahan (Exhibitor Order)</td>
@@ -196,9 +262,9 @@ export function generateInvoiceHTML(data: BookingData): string {
       <td class="r">—</td>
     </tr>` : "";
 
-  const facilitySection = (paketRow || facilityRows || exhibitorRow) ? `
+  const facilitySection = (paketRow || facilityRows || exhibitorDetailRows || exhibitorRow) ? `
     <tr class="cat"><td colspan="5">Fasilitas Tambahan${data.paketBooth ? " (Exhibitor Order)" : ""}</td></tr>
-    ${facilityRows}${exhibitorRow}${designRow}` : designRow ? `<tr class="cat"><td colspan="5">Layanan Tambahan</td></tr>${designRow}` : "";
+    ${facilityRows}${exhibitorDetailRows}${exhibitorRow}${designRow}` : designRow ? `<tr class="cat"><td colspan="5">Layanan Tambahan</td></tr>${designRow}` : "";
 
   // Totals
   const subtotalRows = [
