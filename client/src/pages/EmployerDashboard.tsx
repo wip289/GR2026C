@@ -382,18 +382,83 @@ export default function EmployerDashboard() {
                       <span>{facilityTotal > 0 ? "Subtotal Booth" : "Total"}</span>
                       <span style={{ color: "#D4A017" }}>{fmt(boothSubtotal)}</span>
                     </div>
-                    {facilityTotal > 0 && (
-                      <>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0", fontSize: "0.9rem", borderBottom: "1px solid rgba(20,184,166,0.08)", color: "#cbd5e1" }}>
-                          <span>Paket & Fasilitas Tambahan</span>
-                          <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(facilityTotal)}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem" }}>
-                          <span>Grand Total</span>
-                          <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
-                        </div>
-                      </>
-                    )}
+                    {facilityTotal > 0 && (() => {
+                      const EO_CATALOG: Record<string, { label: string; harga: number; unit: string; per: string }> = {
+                        eo_kursi: { label: "Kursi + cover hitam", harga: 25000, unit: "buah", per: "hari" },
+                        eo_meja: { label: "Meja + cover hitam", harga: 125000, unit: "buah", per: "hari" },
+                        eo_barstool_h: { label: "Hidrolik barstool hitam", harga: 150000, unit: "buah", per: "hari" },
+                        eo_barstool_m: { label: "Melinda barstool putih", harga: 150000, unit: "buah", per: "hari" },
+                        eo_bartable: { label: "Bartable lingkaran Ø75×100cm", harga: 100000, unit: "buah", per: "hari" },
+                        eo_meja_kaca: { label: "Meja kaca Ø80×75cm", harga: 150000, unit: "buah", per: "hari" },
+                        eo_sofa: { label: "Kursi sofa single hitam", harga: 300000, unit: "buah", per: "hari" },
+                        eo_tv42: { label: "TV 42 Inch + standing", harga: 750000, unit: "unit", per: "hari" },
+                        eo_tv55: { label: "TV 55 Inch + standing", harga: 1500000, unit: "unit", per: "hari" },
+                        eo_listrik2a: { label: "Listrik tambahan 2A", harga: 250000, unit: "titik", per: "hari" },
+                        eo_listrik4a: { label: "Listrik tambahan 4A", harga: 400000, unit: "titik", per: "hari" },
+                        eo_kabel: { label: "Kabel + Socket 3 lubang", harga: 250000, unit: "buah", per: "hari" },
+                        eo_zigzag: { label: "Zigzag brochure rack", harga: 450000, unit: "buah", per: "hari" },
+                        eo_acrylic: { label: "Acrylic display brosur A5", harga: 150000, unit: "buah", per: "event" },
+                        eo_tripod: { label: "Tripod banner", harga: 175000, unit: "buah", per: "hari" },
+                        eo_xbanner: { label: "X Banner 60×160cm", harga: 175000, unit: "buah", per: "event" },
+                        eo_rollbanner: { label: "Roll Banner 80×200cm", harga: 425000, unit: "buah", per: "event" },
+                        eo_displaybox: { label: "Display Box Medium", harga: 757000, unit: "buah", per: "hari" },
+                        eo_floor33: { label: "Flooring 3×3", harga: 1575000, unit: "paket", per: "event" },
+                        eo_floor55: { label: "Flooring 5×5", harga: 4375000, unit: "paket", per: "event" },
+                        eo_floor42: { label: "Flooring 4×2", harga: 1400000, unit: "paket", per: "event" },
+                        eo_backdrop33: { label: "Backdrop 3×2", harga: 2250000, unit: "paket", per: "event" },
+                        eo_backdrop52: { label: "Backdrop 5×2", harga: 5000000, unit: "paket", per: "event" },
+                        eo_backdrop42: { label: "Backdrop 4×2", harga: 4687500, unit: "paket", per: "event" },
+                        eo_wall33: { label: "Wall sticker 3×2.5m", harga: 2812500, unit: "sisi", per: "event" },
+                        eo_wall55: { label: "Wall sticker 5×2.5m", harga: 2187500, unit: "sisi", per: "event" },
+                        eo_wall42: { label: "Wall sticker 4×2.5m", harga: 1750000, unit: "sisi", per: "event" },
+                        eo_bunga_meja: { label: "Rangkaian bunga meja", harga: 350000, unit: "buah", per: "event" },
+                        eo_anggrek: { label: "Bunga Anggrek 1 tangkai", harga: 250000, unit: "buah", per: "event" },
+                        eo_bunga_tinggi: { label: "Rangkaian bunga tinggi", harga: 500000, unit: "buah", per: "event" },
+                        eo_rope: { label: "Rope Barrier (per tiang)", harga: 100000, unit: "tiang", per: "hari" },
+                        eo_sampah: { label: "Tempat sampah", harga: 75000, unit: "buah", per: "event" },
+                        eo_kain: { label: "Kain hitam per meter", harga: 125000, unit: "meter", per: "event" },
+                      };
+                      const eoRaw = (booking as any).exhibitorOrder;
+                      const eoItems = eoRaw ? (() => {
+                        try {
+                          const parsed = typeof eoRaw === "string" ? JSON.parse(eoRaw) : eoRaw;
+                          return Object.entries(parsed as Record<string, number>)
+                          .filter(([key, qty]) => qty > 0 && EO_CATALOG[key])
+                            .map(([key, qty]) => {
+                              const item = EO_CATALOG[key];
+                              const days = item.per === "hari" ? 2 : 1;
+                              return { ...item, qty, subtotal: item.harga * qty * days };
+                            });
+                        } catch { return []; }
+                      })() : [];
+
+                      return (
+                        <>
+                          {eoItems.length > 0 ? (
+                            <>
+                              <div style={{ padding: "0.4rem 0 0.2rem", fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                Fasilitas Tambahan (Exhibitor Order)
+                              </div>
+                              {eoItems.map((item, i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", fontSize: "0.85rem", borderBottom: "1px solid rgba(20,184,166,0.06)", color: "#cbd5e1" }}>
+                                  <span>{item.qty}× {item.label} <span style={{ color: "#64748b", fontSize: "0.78rem" }}>({item.per === "hari" ? "2 hari" : "1 event"})</span></span>
+                                  <span style={{ color: "#fbbf24", fontWeight: 600 }}>{fmt(item.subtotal)}</span>
+                                </div>
+                              ))}
+                            </>
+                          ) : (
+                            <div style={{ display: "flex", justifyContent: "space-between", padding: "0.6rem 0", fontSize: "0.9rem", borderBottom: "1px solid rgba(20,184,166,0.08)", color: "#cbd5e1" }}>
+                              <span>Paket & Fasilitas Tambahan</span>
+                              <span style={{ color: "#fbbf24", fontWeight: 700 }}>{fmt(facilityTotal)}</span>
+                            </div>
+                          )}
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem 0", fontWeight: 800, fontSize: "1.05rem" }}>
+                            <span>Grand Total</span>
+                            <span style={{ color: "#D4A017" }}>{fmt(totalAmount)}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </>
                 );
               })()}
