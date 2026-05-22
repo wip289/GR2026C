@@ -594,6 +594,7 @@ export default function BossPanel() {
                     specialRequest: selEmp.specialRequest || "",
                     totalAmount: boothSubtotal,
                     facilityTotal: facilityTotal > 0 ? facilityTotal : undefined,
+                    exhibitorOrder: selEmp.exhibitorOrder || undefined,
                     paymentDeadline: getPaymentDeadline(),
                     discountAmount: disc > 0 ? disc : undefined,
                     discountNote: discNote || undefined,

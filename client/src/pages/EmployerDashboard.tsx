@@ -195,6 +195,7 @@ export default function EmployerDashboard() {
       specialRequest: b.specialRequest || "",
       totalAmount: boothSubtotal,
       facilityTotal: facilityTotal > 0 ? facilityTotal : undefined,
+      exhibitorOrder: b.exhibitorOrder || undefined,
       paymentDeadline: getPaymentDeadline(),
     });
   };
