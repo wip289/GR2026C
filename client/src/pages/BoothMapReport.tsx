@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 
 // ── KOORDINAT PRESISI DARI BoothMapPicker.tsx (CorelDraw asli) ──
 const SW = 51, SH = 36;
@@ -269,7 +269,7 @@ export default function BoothMapReport() {
             </thead>
             <tbody>
               {TABLE_SECTIONS.map(sec=>(
-                <React.Fragment key={sec.label}>
+                <Fragment key={sec.label}>
                   <tr>
                     <td colSpan={4} style={{padding:"4px 7px",background:"#dbeafe",fontWeight:"700",fontSize:"9.5px",color:"#1e40af",letterSpacing:".3px"}}>
                       {sec.label}
@@ -295,7 +295,7 @@ export default function BoothMapReport() {
                       </tr>
                     );
                   })}
-                </React.Fragment>
+                </Fragment>
               ))}
             </tbody>
           </table>
