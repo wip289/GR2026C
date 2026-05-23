@@ -39,6 +39,7 @@ import JobseekerLogin from "./pages/JobseekerLogin";
 import JobseekerDashboard from "./pages/JobseekerDashboard";
 import SponsorManagement from "./pages/SponsorManagement";
 import PostEvent from "./pages/PostEvent";
+import BoothMapReport from "./pages/BoothMapReport";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -52,6 +53,7 @@ function Router() {
       <Route path={"/jobseeker/login"} component={JobseekerLogin} />
       <Route path={"/jobseeker/dashboard"} component={JobseekerDashboard} />
       <Route path={"/boss"} component={BossPanel} />
+      <Route path={"/boss/denah"} component={BoothMapReport} />
       <Route path={"/panitia"} component={PanitiaManagement} />
       <Route path={"/divisi/:divisi"} component={DivisiDashboard} />
       <Route path={"/booth-management"} component={BoothManagement} />
