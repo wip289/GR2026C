@@ -6,7 +6,10 @@ import { openInvoiceForPrint, getPaymentDeadline } from "@/lib/invoiceGenerator"
 import { uploadToSupabase } from "@/lib/supabase";
 
 const DAYS = ["Senin, 8 Juni 2026", "Selasa, 9 Juni 2026"];
-const SLOTS = ["08.00 – 09.00", "09.00 – 10.00", "10.00 – 11.00", "11.00 – 12.00", "13.00 – 14.00", "14.00 – 15.00", "15.00 – 16.00"];
+const SLOTS_BY_DAY = [
+  ["10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"],
+  ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"],
+];
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
 
@@ -745,7 +748,7 @@ export default function EmployerDashboard() {
                         : displaySlots.map((b: any) => (
                           <div key={b.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0", borderBottom: "1px solid rgba(20,184,166,0.1)", fontSize: "0.9rem", color: "#cbd5e1" }}>
                             <span>Booth <strong style={{ color: "#60a5fa" }}>{b.boothId}</strong></span>
-                            <span>{DAYS[b.day]?.split(",")[0]} · {SLOTS[b.slotIndex]}</span>
+                            <span>{DAYS[b.day]?.split(",")[0]} · {SLOTS_BY_DAY[b.day]?.[b.slotIndex]}</span>
                             <span style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 6, padding: "0.15rem 0.6rem", fontSize: "0.75rem", color: "#6ee7b7" }}>✓ Terkonfirmasi</span>
                           </div>
                         ));
@@ -823,7 +826,7 @@ export default function EmployerDashboard() {
                           <th style={{ padding: "0.6rem 0.75rem", textAlign: "left", fontSize: "0.78rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                             Booth \ Waktu
                           </th>
-                          {SLOTS.map(slot => (
+                          {SLOTS_BY_DAY[selectedDay].map(slot => (
                             <th key={slot} style={{ padding: "0.6rem 0.5rem", textAlign: "center", fontSize: "0.72rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>
                               {slot}
                             </th>
@@ -836,7 +839,7 @@ export default function EmployerDashboard() {
                             <td style={{ padding: "0.5rem 0.75rem", fontWeight: 700, color: "#60a5fa", fontSize: "0.85rem", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                               {booth}
                             </td>
-                            {SLOTS.map((_, slotIdx) => {
+                            {SLOTS_BY_DAY[selectedDay].map((_, slotIdx) => {
                               const key = `${booth}-${selectedDay}-${slotIdx}`;
                               const isMine = mySlots.includes(key);
                               const isTaken = !!(isRescheduling ? blockedByOthers[key] : takenSlots[key]);
@@ -886,7 +889,7 @@ export default function EmployerDashboard() {
                       const [booth, day, slot] = key.split("-");
                       return (
                         <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.4rem" }}>
-                          <span>Booth <strong style={{ color: "#60a5fa" }}>{booth}</strong> · {DAYS[parseInt(day)].split(",")[0]} · {SLOTS[parseInt(slot)]}</span>
+                          <span>Booth <strong style={{ color: "#60a5fa" }}>{booth}</strong> · {DAYS[parseInt(day)].split(",")[0]} · {SLOTS_BY_DAY[parseInt(day)]?.[parseInt(slot)]}</span>
                           <button onClick={() => setMySlots(prev => prev.filter(s => s !== key))}
                             style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: "1rem" }}>×</button>
                         </div>
