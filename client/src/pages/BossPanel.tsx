@@ -424,6 +424,76 @@ export default function BossPanel() {
                 ))}
               </div>
             </div>
+
+            {/* Rekap Staff ID Card */}
+            {(() => {
+              const allStaff = employers
+                .filter((e: any) => e.status === "confirmed")
+                .flatMap((e: any) => {
+                  const members = Array.isArray(e.staffMembers) ? e.staffMembers as {nama:string;posisi:string}[] : [];
+                  return members.map(st => ({ ...st, company: e.companyName, bookingId: e.bookingId }));
+                });
+              const confirmedWithBooth = employers.filter((e: any) => e.status === "confirmed");
+              const totalQuota = confirmedWithBooth.reduce((sum: number, e: any) => {
+                const booths = Array.isArray(e.booths) ? e.booths : [];
+                const main = booths.filter((b: any) => b.type === "main").length;
+                const std  = booths.filter((b: any) => b.type === "standard" || b.type === "extra").length;
+                return sum + main * 4 + std * 2;
+              }, 0);
+
+              return (
+                <div style={{ ...s.card, marginTop: "1rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                    <div style={{ fontWeight: 700, color: "#818cf8", fontSize: "0.9rem" }}>
+                      🪪 Rekap Staff ID Card
+                    </div>
+                    <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.8rem" }}>
+                      <span style={{ background: "rgba(129,140,248,0.1)", border: "1px solid rgba(129,140,248,0.2)", borderRadius: 6, padding: "0.2rem 0.65rem", color: "#818cf8", fontWeight: 700 }}>
+                        {allStaff.length} / {totalQuota} terdaftar
+                      </span>
+                      {allStaff.length > 0 && (
+                        <button
+                          onClick={() => {
+                            const rows = allStaff.map((st, i) => `${i+1}\t${st.company}\t${st.nama}\t${st.posisi}`).join("\n");
+                            const blob = new Blob([`No\tPerusahaan\tNama\tJabatan\n${rows}`], { type: "text/plain" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a"); a.href = url; a.download = "staff-idcard-gr2026.txt"; a.click();
+                          }}
+                          style={{ background: "rgba(20,184,166,0.1)", border: "1px solid rgba(20,184,166,0.3)", color: "#14b8a6", borderRadius: 6, padding: "0.2rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>
+                          ⬇ Export
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {allStaff.length === 0 ? (
+                    <p style={{ color: "#475569", fontSize: "0.85rem" }}>Belum ada employer yang mengisi data staff.</p>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.83rem" }}>
+                        <thead>
+                          <tr>
+                            {["No", "Perusahaan", "Nama Staff", "Jabatan"].map(h => (
+                              <th key={h} style={{ padding: "0.5rem 0.75rem", textAlign: "left", fontSize: "0.72rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allStaff.map((st, i) => (
+                            <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                              <td style={{ padding: "0.5rem 0.75rem", color: "#475569", width: "32px" }}>{i + 1}</td>
+                              <td style={{ padding: "0.5rem 0.75rem", color: "#94a3b8", fontWeight: 600 }}>{st.company}</td>
+                              <td style={{ padding: "0.5rem 0.75rem", color: "#f1f5f9", fontWeight: 700 }}>{st.nama}</td>
+                              <td style={{ padding: "0.5rem 0.75rem", color: "#64748b" }}>{st.posisi}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
 
