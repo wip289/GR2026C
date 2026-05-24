@@ -47,16 +47,16 @@ export default function EmployerDashboard() {
   const [staffForm, setStaffForm] = useState<StaffMember>({ nama: "", posisi: "" });
   const [staffSaved, setStaffSaved] = useState(false);
 
-  const staffQuery = trpc.getStaffList.useQuery(
+  const staffQuery = trpc.event.getStaffList.useQuery(
     { bookingId: bookingId || "" },
-    { enabled: !!bookingId, onSuccess: (data) => {
+    { enabled: !!bookingId, onSuccess: (data: any) => {
       if (data.staffMembers.length > 0) {
         setStaffList(data.staffMembers);
         setStaffSaved(true);
       }
     }}
   );
-  const saveStaffMutation = trpc.saveStaffList.useMutation({
+  const saveStaffMutation = trpc.event.saveStaffList.useMutation({
     onSuccess: () => {
       setStaffSaved(true);
       toast.success("Daftar staff berhasil disimpan!", { description: "Panitia akan memproses pencetakan ID Card Anda" });
