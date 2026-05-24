@@ -228,6 +228,7 @@ export const employerBookings = mysqlTable("employerBookings", {
   jobVacanciesUrl: json("jobVacanciesUrl"), // [{url, name}]
   rescheduleCount: int("rescheduleCount").default(0),
   exhibitorOrder: text("exhibitorOrder"), // JSON string pesanan fasilitas tambahan
+  staffMembers: json("staffMembers"), // [{nama, posisi}] — daftar staff ID Card
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

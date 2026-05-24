@@ -289,6 +289,30 @@ export const eventRouter = router({
       return { success: true };
     }),
 
+  // ── Staff ID Card ──────────────────────────────────────────────
+  saveStaffList: publicProcedure
+    .input(z.object({
+      bookingId: z.string(),
+      staffMembers: z.array(z.object({ nama: z.string(), posisi: z.string() })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      await db.update(employerBookings)
+        .set({ staffMembers: input.staffMembers })
+        .where(eq(employerBookings.bookingId, input.bookingId));
+      return { success: true };
+    }),
+
+  getStaffList: publicProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const [row] = await db.select({ staffMembers: employerBookings.staffMembers })
+        .from(employerBookings)
+        .where(eq(employerBookings.bookingId, input.bookingId));
+      return { staffMembers: (row?.staffMembers as {nama:string;posisi:string}[] | null) ?? [] };
+    }),
+
   deleteEmployerBooking: publicProcedure
     .input(z.object({ bookingId: z.string() }))
     .mutation(async ({ input }) => {

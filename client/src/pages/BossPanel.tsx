@@ -353,7 +353,6 @@ export default function BossPanel() {
                 { icon: "🗺️", label: "Booth Management", desc: "Denah, rekap, special request", link: "/booth-management", color: "#D4A017" },
                 { icon: "👥", label: "Manajemen Panitia", desc: "Struktur organisasi & divisi", link: "/panitia", color: "#818cf8" },
                 { icon: "📋", label: "Generate Proposal", desc: "Proposal employer & sponsor", link: "/proposal", color: "#f97316" },
-                { icon: "🖨️", label: "Laporan Denah Booth", desc: "Print / PDF denah + daftar perusahaan", link: "/boss/denah", color: "#14b8a6" },
               ].map(item => (
                 <div key={item.label} onClick={() => navigate(item.link)}
                   style={{ background: `${item.color}08`, border: `1px solid ${item.color}25`, borderRadius: 12, padding: "1rem", cursor: "pointer", transition: "all 0.2s" }}
@@ -553,6 +552,23 @@ export default function BossPanel() {
                   ) : (
                     <span style={{ color: "#f97316" }}>⏳ Belum upload</span>
                   )}
+                </div>
+
+                {/* Staff ID Card */}
+                <div style={{ marginTop: "1rem", padding: "0.75rem", background: "rgba(129,140,248,0.04)", border: "1px solid rgba(129,140,248,0.15)", borderRadius: 8 }}>
+                  <div style={{ fontSize: "0.72rem", color: "#818cf8", textTransform: "uppercase" as const, letterSpacing: "0.05em", fontWeight: 700, marginBottom: "0.5rem" }}>
+                    🪪 Staff ID Card
+                  </div>
+                  {(() => {
+                    const staff = Array.isArray(selEmp.staffMembers) ? selEmp.staffMembers as {nama:string;posisi:string}[] : [];
+                    if (staff.length === 0) return <div style={{ fontSize: "0.8rem", color: "#475569" }}>Belum ada data staff</div>;
+                    return staff.map((st, i) => (
+                      <div key={i} style={{ fontSize: "0.82rem", padding: "0.3rem 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                        <span style={{ color: "#f1f5f9", fontWeight: 600 }}>{st.nama}</span>
+                        <span style={{ color: "#64748b", marginLeft: "0.5rem" }}>— {st.posisi}</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
 
                 {selEmp.status === "pending" && (

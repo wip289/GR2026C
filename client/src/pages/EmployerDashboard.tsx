@@ -47,6 +47,23 @@ export default function EmployerDashboard() {
   const [staffForm, setStaffForm] = useState<StaffMember>({ nama: "", posisi: "" });
   const [staffSaved, setStaffSaved] = useState(false);
 
+  const staffQuery = trpc.getStaffList.useQuery(
+    { bookingId: bookingId || "" },
+    { enabled: !!bookingId, onSuccess: (data) => {
+      if (data.staffMembers.length > 0) {
+        setStaffList(data.staffMembers);
+        setStaffSaved(true);
+      }
+    }}
+  );
+  const saveStaffMutation = trpc.saveStaffList.useMutation({
+    onSuccess: () => {
+      setStaffSaved(true);
+      toast.success("Daftar staff berhasil disimpan!", { description: "Panitia akan memproses pencetakan ID Card Anda" });
+    },
+    onError: () => toast.error("Gagal menyimpan daftar staff"),
+  });
+
   // ── Logo upload state ───────────────────────────────────────────
   const [logoUploading, setLogoUploading] = useState(false);
   const updateLogoMutation = trpc.event.updateEmployerLogo?.useMutation?.({
@@ -974,8 +991,8 @@ export default function EmployerDashboard() {
                   </p>
                 </div>
 
-                {/* Form tambah staff */}
-                {staffList.length < maxStaff && !staffSaved && (
+                {/* Form tambah staff — tampil selama kuota belum penuh */}
+                {staffList.length < maxStaff && (
                   <div style={{ ...s.card, border: "1px solid rgba(129,140,248,0.2)" }}>
                     <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#818cf8", marginBottom: "1rem" }}>➕ Tambah Staff</div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
@@ -1006,6 +1023,7 @@ export default function EmployerDashboard() {
                         }
                         setStaffList(prev => [...prev, { ...staffForm }]);
                         setStaffForm({ nama: "", posisi: "" });
+                        setStaffSaved(false); // reset saved state saat ada perubahan
                         toast.success("Staff ditambahkan!");
                       }}
                       style={{ background: "linear-gradient(135deg,#6366f1,#818cf8)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: "0.88rem", fontWeight: 700, cursor: "pointer" }}>
@@ -1036,23 +1054,29 @@ export default function EmployerDashboard() {
                       </div>
                     ))}
 
-                    {/* Simpan */}
+                    {/* Simpan / Edit */}
                     {!staffSaved ? (
                       <button
                         onClick={() => {
                           if (staffList.length === 0) { toast.error("Tambah minimal 1 staff"); return; }
-                          // TODO: kirim ke backend
-                          setStaffSaved(true);
-                          toast.success("Daftar staff berhasil disimpan!", { description: "Panitia akan memproses pencetakan ID Card Anda" });
+                          saveStaffMutation.mutate({ bookingId, staffMembers: staffList });
                         }}
-                        style={{ marginTop: "1.25rem", width: "100%", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.8rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer" }}>
-                        ✅ Simpan & Kirim ke Panitia
+                        disabled={saveStaffMutation.isLoading}
+                        style={{ marginTop: "1.25rem", width: "100%", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 10, padding: "0.8rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", opacity: saveStaffMutation.isLoading ? 0.7 : 1 }}>
+                        {saveStaffMutation.isLoading ? "Menyimpan..." : "✅ Simpan & Kirim ke Panitia"}
                       </button>
                     ) : (
-                      <div style={{ marginTop: "1.25rem", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, padding: "1rem", textAlign: "center" }}>
-                        <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>✅</div>
-                        <div style={{ fontWeight: 700, color: "#10b981", marginBottom: "0.25rem" }}>Daftar staff sudah dikirim ke panitia</div>
-                        <div style={{ fontSize: "0.8rem", color: "#64748b" }}>ID Card akan dicetak oleh vendor dan diserahkan saat hari H</div>
+                      <div style={{ marginTop: "1.25rem" }}>
+                        <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, padding: "1rem", textAlign: "center", marginBottom: "0.75rem" }}>
+                          <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>✅</div>
+                          <div style={{ fontWeight: 700, color: "#10b981", marginBottom: "0.25rem" }}>Daftar staff sudah dikirim ke panitia</div>
+                          <div style={{ fontSize: "0.8rem", color: "#64748b" }}>ID Card akan dicetak oleh vendor dan diserahkan saat hari H</div>
+                        </div>
+                        <button
+                          onClick={() => setStaffSaved(false)}
+                          style={{ width: "100%", background: "transparent", border: "1px solid rgba(129,140,248,0.3)", color: "#818cf8", borderRadius: 10, padding: "0.65rem", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer" }}>
+                          ✏️ Edit Daftar Staff
+                        </button>
                       </div>
                     )}
                   </div>
