@@ -1104,14 +1104,11 @@ export const eventRouter = router({
       .from(employerBookings)
       .where(eq(employerBookings.status, "confirmed"));
 
-      // Filter: harus punya ≥2 posisi valid & minimal 1 file vacancies
+      // Filter: harus punya minimal 1 file vacancies (posisi tidak wajib untuk tampil ke jobseeker)
       return employers.filter(e => {
-        const pos = Array.isArray(e.positions) ? e.positions
-          : (typeof e.positions === "string" ? (() => { try { return JSON.parse(e.positions as string); } catch { return []; } })() : []);
         const vac = Array.isArray(e.jobVacanciesUrl) ? e.jobVacanciesUrl
           : (typeof e.jobVacanciesUrl === "string" ? (() => { try { return JSON.parse(e.jobVacanciesUrl as string); } catch { return []; } })() : []);
-        const validPos = (pos as any[]).filter((p: any) => p.posisi && String(p.posisi).trim());
-        return validPos.length >= 2 && (vac as any[]).length > 0;
+        return (vac as any[]).length > 0;
       });
     }),
 });
