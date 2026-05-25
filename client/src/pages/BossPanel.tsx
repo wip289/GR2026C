@@ -516,7 +516,8 @@ export default function BossPanel() {
                 .forEach((e:any) => {
                   const booths = Array.isArray(e.booths) ? e.booths : (() => { try { return JSON.parse(e.booths||"[]"); } catch { return []; } })();
                   booths.forEach((b:any) => {
-                    asgn[b.id || b] = { company: e.companyName, status: "booked" };
+                    const boothId = b.id || b.label || b;
+                    asgn[boothId] = { company: e.companyName, status: "booked" };
                   });
                 });
 

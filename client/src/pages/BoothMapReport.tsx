@@ -146,11 +146,12 @@ export default function BoothMapReport() {
   employers
     .filter((e: any) => e.status === "confirmed")
     .forEach((e: any) => {
-      const booths: string[] = Array.isArray(e.selectedBooths)
-        ? e.selectedBooths
-        : (() => { try { return JSON.parse(e.selectedBooths || "[]"); } catch { return []; } })();
-      booths.forEach((boothId: string) => {
-        asgn[boothId] = { company: e.companyName, status: "booked" };
+      const raw = Array.isArray(e.booths)
+        ? e.booths
+        : (() => { try { return JSON.parse(e.booths || "[]"); } catch { return []; } })();
+      raw.forEach((b: any) => {
+        const boothId = typeof b === "string" ? b : (b.id || b.label);
+        if (boothId) asgn[boothId] = { company: e.companyName, status: "booked" };
       });
     });
 
