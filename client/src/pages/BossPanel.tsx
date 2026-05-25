@@ -494,6 +494,122 @@ export default function BossPanel() {
                 </div>
               );
             })()}
+
+            {/* Mini Denah Booth */}
+            {(() => {
+              // Koordinat dari BoothMapPicker (CorelDraw presisi)
+              const SW=51,SH=36,MW=90,MH=75;
+              const cA=148,cB=241,cC=295,cD=452,cE=505,cF=598;
+              const r1=328,r2=367,r3=423,r4=462,r5=517,r6=556;
+              const mA=202,mB=295,mC=412,mD=505;
+              const mr1=622,mr2=739,mr3=816;
+              const pLx=91,pRx=651,PW=50;
+
+              const HIDDEN = new Set(["S26","S27","S28","S29","S32","S33","S34","S35","M9","M12"]);
+              const SPONSOR: Record<string,string> = { M10:"Sponsor", M11:"Sponsor", S25:"Sponsor", S30:"Sponsor", S31:"Sponsor", S36:"Sponsor" };
+
+              // Build assignment map dari DB
+              const asgn: Record<string,{company:string;status:string}> = {};
+              Object.entries(SPONSOR).forEach(([id,c]) => { asgn[id] = { company:c, status:"sponsor" }; });
+              employers
+                .filter((e:any) => e.status === "confirmed")
+                .forEach((e:any) => {
+                  const booths = Array.isArray(e.booths) ? e.booths : (() => { try { return JSON.parse(e.booths||"[]"); } catch { return []; } })();
+                  booths.forEach((b:any) => {
+                    asgn[b.id || b] = { company: e.companyName, status: "booked" };
+                  });
+                });
+
+              const BOOTHS = [
+                {id:"stage",  x:241,y:205,w:316,h:60, type:"area"},
+                {id:"lounge", x:146,y:247,w:93, h:41, type:"area"},
+                {id:"S37",x:560,y:267,w:36,h:36,type:"staff"},{id:"S38",x:600,y:267,w:49,h:36,type:"staff"},
+                {id:"S36",x:cA,y:r1,w:SW,h:SH,type:"s"},{id:"S35",x:cB,y:r1,w:SW,h:SH,type:"s"},{id:"S34",x:cC,y:r1,w:SW,h:SH,type:"s"},{id:"S33",x:cD,y:r1,w:SW,h:SH,type:"s"},{id:"S32",x:cE,y:r1,w:SW,h:SH,type:"s"},{id:"S31",x:cF,y:r1,w:SW,h:SH,type:"s"},
+                {id:"S25",x:cA,y:r2,w:SW,h:SH,type:"s"},{id:"S26",x:cB,y:r2,w:SW,h:SH,type:"s"},{id:"S27",x:cC,y:r2,w:SW,h:SH,type:"s"},{id:"S28",x:cD,y:r2,w:SW,h:SH,type:"s"},{id:"S29",x:cE,y:r2,w:SW,h:SH,type:"s"},{id:"S30",x:cF,y:r2,w:SW,h:SH,type:"s"},
+                {id:"S24",x:cA,y:r3,w:SW,h:SH,type:"s"},{id:"S23",x:cB,y:r3,w:SW,h:SH,type:"s"},{id:"S22",x:cC,y:r3,w:SW,h:SH,type:"s"},{id:"S21",x:cD,y:r3,w:SW,h:SH,type:"s"},{id:"S20",x:cE,y:r3,w:SW,h:SH,type:"s"},{id:"S19",x:cF,y:r3,w:SW,h:SH,type:"s"},
+                {id:"S13",x:cA,y:r4,w:SW,h:SH,type:"s"},{id:"S14",x:cB,y:r4,w:SW,h:SH,type:"s"},{id:"S15",x:cC,y:r4,w:SW,h:SH,type:"s"},{id:"S16",x:cD,y:r4,w:SW,h:SH,type:"s"},{id:"S17",x:cE,y:r4,w:SW,h:SH,type:"s"},{id:"S18",x:cF,y:r4,w:SW,h:SH,type:"s"},
+                {id:"S12",x:cA,y:r5,w:SW,h:SH,type:"s"},{id:"S11",x:cB,y:r5,w:SW,h:SH,type:"s"},{id:"S10",x:cC,y:r5,w:SW,h:SH,type:"s"},{id:"S9",x:cD,y:r5,w:SW,h:SH,type:"s"},{id:"S8",x:cE,y:r5,w:SW,h:SH,type:"s"},{id:"S7",x:cF,y:r5,w:SW,h:SH,type:"s"},
+                {id:"S1",x:cA,y:r6,w:SW,h:SH,type:"s"},{id:"S2",x:cB,y:r6,w:SW,h:SH,type:"s"},{id:"S3",x:cC,y:r6,w:SW,h:SH,type:"s"},{id:"S4",x:cD,y:r6,w:SW,h:SH,type:"s"},{id:"S5",x:cE,y:r6,w:SW,h:SH,type:"s"},{id:"S6",x:cF,y:r6,w:SW,h:SH,type:"s"},
+                {id:"M9",x:mA,y:mr1,w:MW,h:MH,type:"m"},{id:"M10",x:mB,y:mr1,w:MW,h:MH,type:"m"},{id:"M11",x:mC,y:mr1,w:MW,h:MH,type:"m"},{id:"M12",x:mD,y:mr1,w:MW,h:MH,type:"m"},
+                {id:"M5",x:mA,y:mr2,w:MW,h:MH,type:"m"},{id:"M6",x:mB,y:mr2,w:MW,h:MH,type:"m"},{id:"M7",x:mC,y:mr2,w:MW,h:MH,type:"m"},{id:"M8",x:mD,y:mr2,w:MW,h:MH,type:"m"},
+                {id:"M1",x:mA,y:mr3,w:MW,h:MH,type:"m"},{id:"M2",x:mB,y:mr3,w:MW,h:MH,type:"m"},{id:"M3",x:mC,y:mr3,w:MW,h:MH,type:"m"},{id:"M4",x:mD,y:mr3,w:MW,h:MH,type:"m"},
+                {id:"E2",x:pLx,y:661,w:PW,h:90,type:"e"},{id:"E1",x:pLx,y:753,w:PW,h:138,type:"e"},
+                {id:"E4",x:pRx,y:661,w:PW,h:90,type:"e"},{id:"E3",x:pRx,y:753,w:PW,h:138,type:"e"},
+              ];
+
+              const getFill = (id:string, type:string) => {
+                if(type==="area") return "#c9a84c";
+                if(type==="staff") return "#2a3a52";
+                const a = asgn[id];
+                if(!a) return type==="m"||type==="e" ? "#1a2d45" : "#152235";
+                return a.status==="booked" ? "#16a34a" : "#3b82f6";
+              };
+              const getStroke = (id:string, type:string) => {
+                if(type==="area") return "#9a7b2e";
+                if(type==="staff") return "#334155";
+                const a = asgn[id];
+                if(!a) return type==="m"||type==="e" ? "#1e3a5f" : "#1a3050";
+                return a.status==="booked" ? "#4ade80" : "#93c5fd";
+              };
+
+              return (
+                <div style={{ ...s.card, marginTop: "1rem" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem", flexWrap:"wrap", gap:"0.5rem" }}>
+                    <div style={{ fontWeight:700, color:"#D4A017", fontSize:"0.9rem" }}>🗺️ Denah Booth — Realtime</div>
+                    <button onClick={() => navigate("/boss/denah")}
+                      style={{ background:"rgba(212,160,23,0.1)", border:"1px solid rgba(212,160,23,0.3)", color:"#D4A017", borderRadius:6, padding:"0.25rem 0.85rem", fontSize:"0.8rem", fontWeight:600, cursor:"pointer" }}>
+                      🖨 Buka Full Report →
+                    </button>
+                  </div>
+
+                  {/* Legend mini */}
+                  <div style={{ display:"flex", gap:"1rem", marginBottom:"0.75rem", fontSize:"0.75rem", flexWrap:"wrap" }}>
+                    {[{c:"#4ade80",l:"Terisi"},{c:"#3b82f6",l:"Sponsor"},{c:"#1a2d45",l:"Tersedia"},{c:"#c9a84c",l:"Stage/Lounge"}].map(lg=>(
+                      <div key={lg.l} style={{ display:"flex", alignItems:"center", gap:"4px" }}>
+                        <div style={{ width:10, height:10, borderRadius:2, background:lg.c }}/>
+                        <span style={{ color:"#64748b" }}>{lg.l}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <svg viewBox="0 0 800 990" style={{ width:"100%", maxWidth:680, height:"auto", display:"block", margin:"0 auto" }}>
+                    <rect width="800" height="990" fill="#0d1f35" rx="6"/>
+                    {BOOTHS.filter(b=>!HIDDEN.has(b.id)).map(b => {
+                      const a = asgn[b.id];
+                      const cx = b.x + b.w/2, cy = b.y + b.h/2;
+                      const isLarge = b.type==="m"||b.type==="e";
+                      const words = a ? a.company.split(" ") : [];
+                      const half = Math.ceil(words.length/2);
+                      const lines = words.length>2 ? [words.slice(0,half).join(" "), words.slice(half).join(" ")] : words.length>0 ? [a!.company] : [];
+                      const fs = isLarge ? 8 : 6.5;
+                      const lh = isLarge ? 10 : 8;
+                      const startY = cy - (lines.length*lh)/2 + lh/2;
+                      return (
+                        <g key={b.id}>
+                          <rect x={b.x} y={b.y} width={b.w} height={b.h}
+                            fill={getFill(b.id,b.type)} stroke={getStroke(b.id,b.type)}
+                            strokeWidth={isLarge?1.5:1} rx="3"/>
+                          {b.type==="area" ? (
+                            <text x={cx} y={cy+4} textAnchor="middle" fontSize={b.h>50?12:9} fill="#fff" fontWeight="bold">{b.id.toUpperCase()}</text>
+                          ) : b.type==="staff" ? (
+                            <text x={cx} y={cy+4} textAnchor="middle" fontSize="7" fill="#475569">{b.id}</text>
+                          ) : lines.length>0 ? (
+                            <g>
+                              <text x={cx} y={startY-lh} textAnchor="middle" fontSize="5.5" fill="rgba(255,255,255,0.5)">{b.id}</text>
+                              {lines.map((ln,i)=>(
+                                <text key={i} x={cx} y={startY+i*lh} textAnchor="middle" fontSize={fs} fill="#fff" fontWeight="bold">{ln}</text>
+                              ))}
+                            </g>
+                          ) : (
+                            <text x={cx} y={cy+4} textAnchor="middle" fontSize={isLarge?11:8} fill="#2a4a6a" fontWeight="600">{b.id}</text>
+                          )}
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              );
+            })()}
           </div>
         )}
 
