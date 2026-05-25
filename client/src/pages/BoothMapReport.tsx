@@ -144,7 +144,6 @@ export default function BoothMapReport() {
   )};
 
   employers
-    .filter((e: any) => e.status === "confirmed")
     .forEach((e: any) => {
       const raw = Array.isArray(e.booths)
         ? e.booths

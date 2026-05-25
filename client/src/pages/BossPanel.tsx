@@ -512,12 +512,11 @@ export default function BossPanel() {
               const asgn: Record<string,{company:string;status:string}> = {};
               Object.entries(SPONSOR).forEach(([id,c]) => { asgn[id] = { company:c, status:"sponsor" }; });
               employers
-                .filter((e:any) => e.status === "confirmed")
                 .forEach((e:any) => {
                   const booths = Array.isArray(e.booths) ? e.booths : (() => { try { return JSON.parse(e.booths||"[]"); } catch { return []; } })();
                   booths.forEach((b:any) => {
                     const boothId = b.id || b.label || b;
-                    asgn[boothId] = { company: e.companyName, status: "booked" };
+                    asgn[boothId] = { company: e.companyName, status: e.status };
                   });
                 });
 
@@ -543,14 +542,20 @@ export default function BossPanel() {
                 if(type==="staff") return "#2a3a52";
                 const a = asgn[id];
                 if(!a) return type==="m"||type==="e" ? "#1a2d45" : "#152235";
-                return a.status==="booked" ? "#16a34a" : "#3b82f6";
+                if(a.status==="confirmed") return "#16a34a";
+                if(a.status==="pending")   return "#d97706";
+                if(a.status==="rejected")  return "#dc2626";
+                return "#3b82f6"; // sponsor
               };
               const getStroke = (id:string, type:string) => {
                 if(type==="area") return "#9a7b2e";
                 if(type==="staff") return "#334155";
                 const a = asgn[id];
                 if(!a) return type==="m"||type==="e" ? "#1e3a5f" : "#1a3050";
-                return a.status==="booked" ? "#4ade80" : "#93c5fd";
+                if(a.status==="confirmed") return "#4ade80";
+                if(a.status==="pending")   return "#fbbf24";
+                if(a.status==="rejected")  return "#f87171";
+                return "#93c5fd";
               };
 
               return (
@@ -565,7 +570,7 @@ export default function BossPanel() {
 
                   {/* Legend mini */}
                   <div style={{ display:"flex", gap:"1rem", marginBottom:"0.75rem", fontSize:"0.75rem", flexWrap:"wrap" }}>
-                    {[{c:"#4ade80",l:"Terisi"},{c:"#3b82f6",l:"Sponsor"},{c:"#1a2d45",l:"Tersedia"},{c:"#c9a84c",l:"Stage/Lounge"}].map(lg=>(
+                    {[{c:"#4ade80",l:"Confirmed"},{c:"#fbbf24",l:"Pending"},{c:"#f87171",l:"Rejected"},{c:"#3b82f6",l:"Sponsor"},{c:"#1a2d45",l:"Kosong"}].map(lg=>(
                       <div key={lg.l} style={{ display:"flex", alignItems:"center", gap:"4px" }}>
                         <div style={{ width:10, height:10, borderRadius:2, background:lg.c }}/>
                         <span style={{ color:"#64748b" }}>{lg.l}</span>
