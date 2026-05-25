@@ -947,9 +947,7 @@ export const eventRouter = router({
   saveClosedBooths: publicProcedure
     .input(z.object({ closedBooths: z.array(z.string()) }))
     .mutation(async ({ input }) => {
-      const cfg = await getEventConfig() as any || {};
       await setEventConfig({
-        ...cfg,
         closedBooths: JSON.stringify(input.closedBooths)
       });
       return { success: true };

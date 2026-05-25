@@ -35,10 +35,14 @@ function getBoothType(bt: any): string {
 
 export default function BoothManagement() {
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const [activeTab, setActiveTab] = useState<TabId>("denah");
   const [closedBooths, setClosedBooths] = useState<Set<string>>(new Set());
   const saveClosedMutation = trpc.event.saveClosedBooths.useMutation({
-    onSuccess: () => toast.success("Perubahan denah berhasil disimpan!"),
+    onSuccess: () => {
+      toast.success("Perubahan denah berhasil disimpan!");
+      utils.event.getClosedBooths.invalidate();
+    },
     onError: () => toast.error("Gagal menyimpan perubahan"),
   });
   const { data: closedRaw } = trpc.event.getClosedBooths.useQuery();
