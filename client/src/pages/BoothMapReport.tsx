@@ -136,7 +136,7 @@ function BoothLabel({ b, asgn }: { b: typeof ALL_BOOTHS[0]; asgn: AssignmentMap 
 
 export default function BoothMapReport() {
   // ── Ambil data dari DB ──
-  const { data: employers = [], isLoading } = trpc.getAllEmployerBookings.useQuery();
+  const { data: employers = [], isLoading } = trpc.event.getAllEmployerBookings.useQuery();
 
   // ── Bangun assignment map dari data DB + sponsor tetap ──
   const asgn: AssignmentMap = { ...Object.fromEntries(
