@@ -26,7 +26,7 @@ const s = {
   tab:     (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#14b8a6" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s" }) as React.CSSProperties,
 };
 
-type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen";
+type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen" | "kandidat";
 
 export default function EmployerDashboard() {
   const [, navigate] = useLocation();
@@ -110,6 +110,11 @@ export default function EmployerDashboard() {
     onError:   (e) => toast.error("Gagal simpan: " + e.message),
   });
 
+  const savePositionsMutation = trpc.event.savePositions.useMutation({
+    onSuccess: () => { toast.success("Posisi rekrutmen berhasil disimpan!"); loginQuery.refetch(); },
+    onError:   (e) => toast.error("Gagal simpan posisi: " + e.message),
+  });
+
   const { data: takenRaw, refetch: refetchTaken } = trpc.event.getInterviewBookingsByEmployer.useQuery(
     { employerBookingId: sessionData?.bookingId || "" },
     { enabled: !!sessionData?.bookingId }
@@ -182,6 +187,16 @@ export default function EmployerDashboard() {
   useEffect(() => {
     if (loginQuery.data) {
       setBooking(loginQuery.data as any);
+      // Load posisi rekrutmen yang sudah tersimpan ke dalam form
+      const existingPos = Array.isArray((loginQuery.data as any).positions)
+        ? (loginQuery.data as any).positions : [];
+      if (existingPos.length > 0) {
+        setRekrutmenRows(existingPos.map((p: any) => ({
+          posisi: p.posisi || "",
+          jumlah:  String(p.jumlah || ""),
+          status:  p.status || "",
+        })));
+      }
     } else if (loginQuery.isFetched && !loginQuery.data) {
       navigate("/employer/login");
     }
@@ -219,6 +234,12 @@ export default function EmployerDashboard() {
       paymentDeadline: getPaymentDeadline(),
     });
   };
+
+  // ── Kandidat (Jobseeker) query ────────────────────────────────
+  const kandidatQuery = trpc.event.getJobseekersForEmployer.useQuery(
+    { bookingId: sessionData?.bookingId || "" },
+    { enabled: !!sessionData?.bookingId && activeTab === "kandidat", retry: false }
+  );
 
   if (!booking) return (
     <div style={{ ...s.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -313,6 +334,13 @@ export default function EmployerDashboard() {
             { id: "interview" as TabId, label: "📅 Interview Booth" },
             { id: "idcard" as TabId, label: "🪪 ID Card Staff" },
             { id: "rekrutmen" as TabId, label: "📄 Rekrutmen" },
+            { id: "kandidat" as TabId, label: (() => {
+              const b = booking as any;
+              const hasFiles = Array.isArray(b.jobVacanciesUrl) && b.jobVacanciesUrl.length > 0;
+              const validPos = Array.isArray(b.positions) ? b.positions.filter((p: any) => p.posisi?.trim()) : [];
+              const unlocked = b.status === "confirmed" && hasFiles && validPos.length >= 2;
+              return unlocked ? "👥 Kandidat" : "🔒 Kandidat";
+            })() },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -1204,10 +1232,16 @@ export default function EmployerDashboard() {
                 </button>
                 <button
                   onClick={async () => {
+                    const validRows = rekrutmenRows.filter(r => r.posisi.trim());
+                    if (validRows.length < 2) {
+                      toast.error("Isi minimal 2 posisi rekrutmen");
+                      return;
+                    }
                     setSavingRekrutmen(true);
-                    await new Promise(r => setTimeout(r, 600));
-                    setSavingRekrutmen(false);
-                    toast.success("Kondisi rekrutmen berhasil disimpan!");
+                    savePositionsMutation.mutate(
+                      { bookingId: sessionData?.bookingId || "", positions: validRows },
+                      { onSettled: () => setSavingRekrutmen(false) }
+                    );
                   }}
                   disabled={savingRekrutmen}
                   style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)", border: "none", color: "#fff", borderRadius: 8, padding: "0.5rem 1.25rem", fontSize: "0.82rem", fontWeight: 700, cursor: savingRekrutmen ? "not-allowed" : "pointer", opacity: savingRekrutmen ? 0.7 : 1 }}>
@@ -1217,6 +1251,111 @@ export default function EmployerDashboard() {
             </div>
           </div>
         )}
+        {activeTab === "kandidat" && (() => {
+          const b = booking as any;
+          const isConfirmed = b.status === "confirmed";
+          const hasFiles    = Array.isArray(b.jobVacanciesUrl) && b.jobVacanciesUrl.length > 0;
+          const validPos    = Array.isArray(b.positions) ? b.positions.filter((p: any) => p.posisi?.trim()) : [];
+          const unlocked    = isConfirmed && hasFiles && validPos.length >= 2;
+
+          // Belum unlock — tampilkan checklist syarat
+          if (!unlocked) {
+            return (
+              <div style={s.card}>
+                <div style={s.secHd}>🔒 Akses Kandidat Terkunci</div>
+                <p style={{ color: "#64748b", fontSize: "0.88rem", marginBottom: "1.5rem", lineHeight: 1.7 }}>
+                  Lengkapi semua syarat berikut untuk membuka daftar kandidat jobseeker.
+                </p>
+                {[
+                  { done: isConfirmed, label: "Pembayaran sudah dikonfirmasi panitia" },
+                  { done: hasFiles,    label: "Sudah upload minimal 1 file job vacancies (tab Rekrutmen)" },
+                  { done: validPos.length >= 2, label: `Sudah isi minimal 2 posisi rekrutmen (saat ini: ${validPos.length})` },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ fontSize: "1.1rem" }}>{item.done ? "✅" : "⬜"}</span>
+                    <span style={{ fontSize: "0.88rem", color: item.done ? "#94a3b8" : "#f1f5f9", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
+                  </div>
+                ))}
+                <button onClick={() => setActiveTab("rekrutmen")}
+                  style={{ marginTop: "1.5rem", background: "linear-gradient(135deg,#D4A017,#b8860b)", border: "none", color: "#fff", borderRadius: 8, padding: "0.6rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
+                  → Lengkapi di Tab Rekrutmen
+                </button>
+              </div>
+            );
+          }
+
+          // Sudah unlock — tampilkan daftar kandidat
+          const errMsg = (kandidatQuery.error as any)?.message;
+          const accessError = errMsg === "ACCESS_NOT_OPEN" ? "Akses kandidat belum dibuka oleh panitia."
+            : errMsg === "ACCESS_CLOSED" ? "Akses kandidat sudah ditutup."
+            : errMsg ? `Gagal memuat kandidat: ${errMsg}` : null;
+
+          return (
+            <div>
+              <div style={s.card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                  <div style={s.secHd}>👥 Daftar Kandidat Jobseeker</div>
+                  {kandidatQuery.data && (
+                    <span style={{ fontSize: "0.78rem", color: "#64748b" }}>{kandidatQuery.data.length} kandidat</span>
+                  )}
+                </div>
+                <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1.25rem", fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.7 }}>
+                  ℹ️ Data ini ditampilkan sesuai kebijakan UU PDP. Hanya kandidat yang memberikan consent ditampilkan. Informasi kontak (email, WhatsApp, NIK) tidak ditampilkan di sini — silakan hubungi kandidat langsung di booth saat event.
+                </div>
+
+                {kandidatQuery.isLoading && <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>⏳ Memuat kandidat...</p>}
+                {accessError && <p style={{ color: "#f87171", textAlign: "center", padding: "2rem" }}>🔒 {accessError}</p>}
+
+                {kandidatQuery.data && kandidatQuery.data.length === 0 && (
+                  <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Belum ada kandidat terdaftar.</p>
+                )}
+
+                {kandidatQuery.data && kandidatQuery.data.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+                    {kandidatQuery.data.map((js: any) => (
+                      <div key={js.registrationId} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+                          {js.fotoUrl
+                            ? <img src={js.fotoUrl} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                            : <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(212,160,23,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>👤</div>
+                          }
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#f1f5f9" }}>{js.namaLengkap}</div>
+                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{js.institusi || "—"}</div>
+                            <div style={{ fontSize: "0.75rem", color: "#475569" }}>{js.jurusan || ""}{js.tahunLulus ? ` · ${js.tahunLulus}` : ""}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                          {(js.minatKerja || js.bidangMinat) && (
+                            <span style={{ fontSize: "0.72rem", background: "rgba(20,184,166,0.12)", color: "#14b8a6", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(20,184,166,0.2)" }}>
+                              {js.minatKerja || js.bidangMinat}
+                            </span>
+                          )}
+                          {(js.statusKerja || js.status) && (
+                            <span style={{ fontSize: "0.72rem", background: "rgba(212,160,23,0.08)", color: "#D4A017", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(212,160,23,0.2)" }}>
+                              {js.statusKerja || js.status}
+                            </span>
+                          )}
+                          {js.kota && (
+                            <span style={{ fontSize: "0.72rem", background: "rgba(255,255,255,0.04)", color: "#64748b", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(255,255,255,0.08)" }}>
+                              📍 {js.kota}
+                            </span>
+                          )}
+                        </div>
+                        {js.cvUrl && (
+                          <a href={js.cvUrl} target="_blank" rel="noreferrer"
+                            style={{ fontSize: "0.78rem", color: "#D4A017", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
+                            📄 Lihat CV
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

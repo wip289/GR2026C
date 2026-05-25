@@ -41,7 +41,7 @@ const s = {
   tab:   (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#D4A017" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s", whiteSpace: "nowrap" as const }),
 };
 
-type TabId = "profil" | "consent" | "dokumen";
+type TabId = "profil" | "consent" | "dokumen" | "lowongan";
 
 export default function JobseekerDashboard() {
   const [, navigate] = useLocation();
@@ -59,6 +59,11 @@ export default function JobseekerDashboard() {
   const loginQuery = trpc.event.loginJobseeker.useQuery(
     { registrationId: sessionData?.registrationId || "", email: sessionData?.email || "" },
     { enabled: !!sessionData, retry: false }
+  );
+
+  const vacanciesQuery = trpc.event.getVacanciesForJobseeker.useQuery(
+    { registrationId: sessionData?.registrationId || "" },
+    { enabled: !!sessionData?.registrationId && activeTab === "lowongan", retry: false }
   );
 
   useEffect(() => {
@@ -252,6 +257,7 @@ export default function JobseekerDashboard() {
             { id: "profil" as TabId, label: "👤 Profil Saya" },
             { id: "consent" as TabId, label: "🔒 Consent Data" },
             { id: "dokumen" as TabId, label: "📎 Dokumen" },
+            { id: "lowongan" as TabId, label: "💼 Lowongan" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -544,10 +550,95 @@ export default function JobseekerDashboard() {
             })}
           </div>
         )}
+
+        {activeTab === "lowongan" && (
+          <div>
+            <div style={s.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div style={s.secHd}>💼 Lowongan Tersedia</div>
+                {vacanciesQuery.data && (
+                  <span style={{ fontSize: "0.78rem", color: "#64748b" }}>{vacanciesQuery.data.length} perusahaan</span>
+                )}
+              </div>
+              <div style={{ background: "rgba(212,160,23,0.04)", border: "1px solid rgba(212,160,23,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1.25rem", fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.7 }}>
+                ℹ️ Daftar lowongan dari perusahaan yang telah terkonfirmasi hadir di GR2026. Kunjungi booth mereka langsung di event untuk melamar.
+              </div>
+
+              {vacanciesQuery.isLoading && (
+                <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>⏳ Memuat lowongan...</p>
+              )}
+
+              {vacanciesQuery.error && (() => {
+                const msg = (vacanciesQuery.error as any)?.message;
+                const label = msg === "ACCESS_NOT_OPEN" ? "Akses lowongan belum dibuka. Cek kembali menjelang hari event."
+                  : msg === "ACCESS_CLOSED" ? "Akses lowongan sudah ditutup."
+                  : "Gagal memuat lowongan. Coba refresh halaman.";
+                return <p style={{ color: "#f87171", textAlign: "center", padding: "2rem" }}>🔒 {label}</p>;
+              })()}
+
+              {vacanciesQuery.data && vacanciesQuery.data.length === 0 && (
+                <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Belum ada lowongan yang dipublikasikan.</p>
+              )}
+
+              {vacanciesQuery.data && vacanciesQuery.data.map((emp: any) => {
+                const positions = Array.isArray(emp.positions) ? emp.positions
+                  : (typeof emp.positions === "string" ? (() => { try { return JSON.parse(emp.positions); } catch { return []; } })() : []);
+                const vacFiles = Array.isArray(emp.jobVacanciesUrl) ? emp.jobVacanciesUrl
+                  : (typeof emp.jobVacanciesUrl === "string" ? (() => { try { return JSON.parse(emp.jobVacanciesUrl); } catch { return []; } })() : []);
+                const validPos = (positions as any[]).filter((p: any) => p.posisi?.trim());
+
+                return (
+                  <div key={emp.bookingId} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginBottom: "0.85rem" }}>
+                      {emp.logoUrl
+                        ? <img src={emp.logoUrl} alt="" style={{ width: 48, height: 48, objectFit: "contain", borderRadius: 8, background: "#fff", padding: 4, flexShrink: 0 }} />
+                        : <div style={{ width: 48, height: 48, borderRadius: 8, background: "rgba(212,160,23,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", flexShrink: 0 }}>🏢</div>
+                      }
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: "1rem", color: "#f1f5f9" }}>{emp.companyName}</div>
+                        <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                          {emp.industry}{emp.city ? ` · ${emp.city}` : ""}
+                        </div>
+                        {emp.website && (
+                          <a href={emp.website.startsWith("http") ? emp.website : `https://${emp.website}`}
+                            target="_blank" rel="noreferrer"
+                            style={{ fontSize: "0.75rem", color: "#14b8a6", textDecoration: "none" }}>
+                            🌐 {emp.website}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {validPos.length > 0 && (
+                      <div style={{ marginBottom: "0.85rem" }}>
+                        <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Posisi yang dibuka</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                          {validPos.map((p: any, i: number) => (
+                            <span key={i} style={{ fontSize: "0.8rem", background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.2)", color: "#D4A017", borderRadius: 20, padding: "0.25rem 0.75rem" }}>
+                              {p.posisi} {p.jumlah ? `(${p.jumlah} orang)` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(vacFiles as any[]).length > 0 && (
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                        {(vacFiles as any[]).map((f: any, i: number) => (
+                          <a key={i} href={f.url} target="_blank" rel="noreferrer"
+                            style={{ fontSize: "0.78rem", color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "0.3rem 0.7rem", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            📄 {f.name || `Lowongan ${i + 1}`}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
-

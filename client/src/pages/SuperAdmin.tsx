@@ -48,6 +48,9 @@ interface EventConfig {
   jobseekerRegCloseDate: string;
   paymentDeadlineDate: string;
   allowWalkIn: string;
+  // Akses window jobseeker ↔ employer
+  jobseekerAccessStart: string;
+  jobseekerAccessEnd: string;
 }
 
 const DEFAULT_CONFIG: EventConfig = {
@@ -88,6 +91,8 @@ const DEFAULT_CONFIG: EventConfig = {
   jobseekerRegCloseDate: "2026-06-07",
   paymentDeadlineDate: "2026-05-31",
   allowWalkIn: "true",
+  jobseekerAccessStart: "2026-06-07T00:00",
+  jobseekerAccessEnd: "2026-06-13T23:59",
 };
 
 const STORAGE_KEY = "gr2026_superadmin_config";
@@ -979,6 +984,26 @@ export default function SuperAdmin() {
               </div>
               <div style={{ fontSize: "0.78rem", color: "#475569", marginTop: "0.5rem" }}>
                 Kalau diaktifkan, jobseeker yang belum daftar online tetap bisa masuk dan daftar langsung di venue.
+              </div>
+            </div>
+
+            {/* Akses Window Jobseeker ↔ Employer */}
+            <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 12, padding: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#14b8a6", marginBottom: "0.5rem" }}>👥 Akses Jobseeker ↔ Employer</div>
+              <div style={{ fontSize: "0.78rem", color: "#475569", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Periode dimana employer bisa melihat data kandidat, dan jobseeker bisa melihat lowongan employer. Rekomendasi: H-3 s/d H+2 event.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>Mulai Akses</div>
+                  <input style={s.input} type="datetime-local" value={config.jobseekerAccessStart}
+                    onChange={e => upd("jobseekerAccessStart", e.target.value)} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.4rem" }}>Tutup Akses</div>
+                  <input style={s.input} type="datetime-local" value={config.jobseekerAccessEnd}
+                    onChange={e => upd("jobseekerAccessEnd", e.target.value)} />
+                </div>
               </div>
             </div>
           </div>

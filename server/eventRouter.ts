@@ -952,4 +952,136 @@ export const eventRouter = router({
       });
       return { success: true };
     }),
+
+  // ── Recruitment Positions ─────────────────────────────────────
+  savePositions: publicProcedure
+    .input(z.object({
+      bookingId: z.string(),
+      positions: z.array(z.object({
+        posisi: z.string(),
+        jumlah: z.string(),
+        status: z.string(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      await db.update(employerBookings)
+        .set({ positions: input.positions, updatedAt: new Date() })
+        .where(eq(employerBookings.bookingId, input.bookingId));
+      return { success: true };
+    }),
+
+  // ── Employer → lihat Jobseeker ────────────────────────────────
+  getJobseekersForEmployer: publicProcedure
+    .input(z.object({ bookingId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+
+      const [employer] = await db.select()
+        .from(employerBookings)
+        .where(eq(employerBookings.bookingId, input.bookingId));
+
+      if (!employer) throw new TRPCError({ code: "NOT_FOUND", message: "Booking tidak ditemukan" });
+
+      // Layer 1: harus confirmed
+      if (employer.status !== "confirmed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "STATUS_NOT_CONFIRMED" });
+      }
+
+      // Layer 2: harus sudah upload job vacancies
+      const vacRaw = employer.jobVacanciesUrl;
+      const vacancies = Array.isArray(vacRaw) ? vacRaw
+        : (typeof vacRaw === "string" ? (() => { try { return JSON.parse(vacRaw); } catch { return []; } })() : []);
+      if (!vacancies || vacancies.length === 0) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "NO_VACANCIES" });
+      }
+
+      // Layer 3: harus isi minimal 2 posisi rekrutmen
+      const posRaw = employer.positions;
+      const posList = Array.isArray(posRaw) ? posRaw
+        : (typeof posRaw === "string" ? (() => { try { return JSON.parse(posRaw); } catch { return []; } })() : []);
+      const validPos = (posList as any[]).filter((p: any) => p.posisi && String(p.posisi).trim());
+      if (validPos.length < 2) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "MIN_POSITIONS" });
+      }
+
+      // Layer 4: cek window akses
+      const cfg = await getEventConfig() as any;
+      const startStr = cfg?.jobseekerAccessStart;
+      const endStr   = cfg?.jobseekerAccessEnd;
+      if (startStr && endStr) {
+        const now   = new Date();
+        const start = new Date(startStr);
+        const end   = new Date(endStr);
+        if (now < start) throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_NOT_OPEN" });
+        if (now > end)   throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_CLOSED" });
+      }
+
+      // Return jobseeker ber-consent1, tanpa field sensitif
+      return db.select({
+        registrationId: jobseekers.registrationId,
+        namaLengkap:    jobseekers.namaLengkap,
+        institusi:      jobseekers.institusi,
+        jurusan:        jobseekers.jurusan,
+        tahunLulus:     jobseekers.tahunLulus,
+        kota:           jobseekers.kota,
+        minatKerja:     jobseekers.minatKerja,
+        bidangMinat:    jobseekers.bidangMinat,
+        statusKerja:    jobseekers.statusKerja,
+        status:         jobseekers.status,
+        fotoUrl:        jobseekers.fotoUrl,
+        cvUrl:          jobseekers.cvUrl,
+      })
+      .from(jobseekers)
+      .where(eq(jobseekers.consent1, true));
+    }),
+
+  // ── Jobseeker → lihat Lowongan Employer ──────────────────────
+  getVacanciesForJobseeker: publicProcedure
+    .input(z.object({ registrationId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+
+      const [js] = await db.select({ consent1: jobseekers.consent1 })
+        .from(jobseekers)
+        .where(eq(jobseekers.registrationId, input.registrationId));
+
+      if (!js) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Cek window akses
+      const cfg = await getEventConfig() as any;
+      const startStr = cfg?.jobseekerAccessStart;
+      const endStr   = cfg?.jobseekerAccessEnd;
+      if (startStr && endStr) {
+        const now   = new Date();
+        const start = new Date(startStr);
+        const end   = new Date(endStr);
+        if (now < start) throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_NOT_OPEN" });
+        if (now > end)   throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_CLOSED" });
+      }
+
+      // Ambil employer confirmed yang sudah isi posisi & vacancies
+      const employers = await db.select({
+        bookingId:      employerBookings.bookingId,
+        companyName:    employerBookings.companyName,
+        industry:       employerBookings.industry,
+        city:           employerBookings.city,
+        website:        employerBookings.website,
+        logoUrl:        employerBookings.logoUrl,
+        positions:      employerBookings.positions,
+        jobVacanciesUrl: employerBookings.jobVacanciesUrl,
+      })
+      .from(employerBookings)
+      .where(eq(employerBookings.status, "confirmed"));
+
+      // Filter: harus punya ≥2 posisi valid & minimal 1 file vacancies
+      return employers.filter(e => {
+        const pos = Array.isArray(e.positions) ? e.positions
+          : (typeof e.positions === "string" ? (() => { try { return JSON.parse(e.positions as string); } catch { return []; } })() : []);
+        const vac = Array.isArray(e.jobVacanciesUrl) ? e.jobVacanciesUrl
+          : (typeof e.jobVacanciesUrl === "string" ? (() => { try { return JSON.parse(e.jobVacanciesUrl as string); } catch { return []; } })() : []);
+        const validPos = (pos as any[]).filter((p: any) => p.posisi && String(p.posisi).trim());
+        return validPos.length >= 2 && (vac as any[]).length > 0;
+      });
+    }),
 });
