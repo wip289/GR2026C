@@ -57,6 +57,8 @@ const content = {
     boothConfirmed: "Terisi",
     boothClosed: "Ditutup",
     boothCta: "Daftar & Pilih Booth →",
+    venueSectionTitle: "Sneak Peek Venue",
+    venueSectionSub: "Suasana venue Grand Recruitment 2026 — Gedung Dome, Politeknik Pariwisata NHI Bandung.",
     // CTA
     ctaTitle: "Di mana posisimu dalam cerita ini hari ini?",
     ctaBody: "Apakah kamu sedang mencari peluang, membukanya, atau membantu peluang itu bertumbuh? Apapun peranmu, Grand Recruitment 2026 adalah ruang untuk bertemu, terhubung, dan bergerak maju bersama.",
@@ -113,6 +115,8 @@ const content = {
     boothConfirmed: "Booked",
     boothClosed: "Closed",
     boothCta: "Register & Choose Booth →",
+    venueSectionTitle: "Sneak Peek Venue",
+    venueSectionSub: "A glimpse of the Grand Recruitment 2026 venue — Dome Building, Politeknik Pariwisata NHI Bandung.",
     ctaTitle: "Where do you stand in this story today?",
     ctaBody: "Are you seeking an opportunity, opening one, or helping that opportunity grow? Whatever your role may be, Grand Recruitment 2026 is a space to meet, connect, and move forward together.",
     ctaBtn1: "Register as Jobseeker",
@@ -124,6 +128,13 @@ const content = {
 
 type Lang = "id" | "en";
 
+const venueImages = [
+  { url: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/Venue/03%20Layout%20GR%20Tampat%20Atas%201.jpeg", caption: "Layout Venue — Tampak Atas" },
+  { url: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/Venue/04%20Layout%20GR%20Tampat%20Atas%201.jpeg", caption: "Layout Venue — Perspektif" },
+  { url: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/Venue/WhatsApp%20Image%202026-05-25%20at%2017.02.37.jpeg", caption: "Suasana Venue — Tampak Depan" },
+  { url: "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/Venue/WhatsApp%20Image%202026-05-25%20at%2017.02.38.jpeg", caption: "Suasana Venue — Tampak Samping" },
+];
+
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const [lang, setLang] = useState<Lang>("id");
@@ -131,6 +142,8 @@ export default function LandingPage() {
   const [activeOrb, setActiveOrb] = useState<number | null>(null);
   const [hoveredOrb, setHoveredOrb] = useState<number | null>(null);
   const [showLoginMenu, setShowLoginMenu] = useState(false);
+  const [venueSlide, setVenueSlide] = useState(0);
+  const venueTouchStart = useRef<number | null>(null);
   const journeyRef = useRef<HTMLDivElement>(null);
   const boothRef   = useRef<HTMLDivElement>(null);
   const bondRef    = useRef<HTMLDivElement>(null);
@@ -483,6 +496,72 @@ export default function LandingPage() {
               style={{ background: "linear-gradient(135deg, #0d9488, #14b8a6)", border: "none", color: "#fff", borderRadius: 99, padding: "0.85rem 2rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 24px rgba(20,184,166,0.3)" }}>
               🏢 {t.boothCta}
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SNEAK PEEK VENUE ── */}
+      <section style={{ padding: "clamp(4rem,8vw,7rem) 1.25rem", background: "#0a1628" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+            <h2 style={{ fontSize: "clamp(1.8rem,4vw,3rem)", fontWeight: 800, marginBottom: "1rem" }}>{t.venueSectionTitle}</h2>
+            <p style={{ color: "#64748b", fontSize: "1.05rem", maxWidth: 560, margin: "0 auto" }}>{t.venueSectionSub}</p>
+          </div>
+
+          {/* Carousel wrapper */}
+          <div style={{ position: "relative", userSelect: "none" }}
+            onTouchStart={e => { venueTouchStart.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              if (venueTouchStart.current === null) return;
+              const diff = venueTouchStart.current - e.changedTouches[0].clientX;
+              if (diff > 40) setVenueSlide(s => (s + 1) % venueImages.length);
+              else if (diff < -40) setVenueSlide(s => (s - 1 + venueImages.length) % venueImages.length);
+              venueTouchStart.current = null;
+            }}>
+
+            {/* Image */}
+            <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid rgba(20,184,166,0.15)", aspectRatio: "16/9", background: "#060f1e", position: "relative" }}>
+              {venueImages.map((img, i) => (
+                <img key={i} src={img.url} alt={img.caption}
+                  style={{
+                    position: "absolute", inset: 0, width: "100%", height: "100%",
+                    objectFit: "cover", opacity: i === venueSlide ? 1 : 0,
+                    transition: "opacity 0.5s ease",
+                  }} />
+              ))}
+              {/* Caption */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "1rem 1.5rem",
+                background: "linear-gradient(transparent, rgba(6,15,30,0.85))",
+                color: "#e2e8f0", fontSize: "0.85rem", fontWeight: 600 }}>
+                {venueImages[venueSlide].caption}
+              </div>
+              {/* Prev/Next arrows */}
+              {[{ dir: -1, side: "left" }, { dir: 1, side: "right" }].map(({ dir, side }) => (
+                <button key={side} onClick={() => setVenueSlide(s => (s + dir + venueImages.length) % venueImages.length)}
+                  style={{
+                    position: "absolute", top: "50%", [side]: "1rem",
+                    transform: "translateY(-50%)", width: 40, height: 40, borderRadius: "50%",
+                    background: "rgba(6,15,30,0.7)", border: "1px solid rgba(20,184,166,0.3)",
+                    color: "#14b8a6", fontSize: "1.1rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    backdropFilter: "blur(8px)", zIndex: 2,
+                  }}>
+                  {dir === -1 ? "‹" : "›"}
+                </button>
+              ))}
+            </div>
+
+            {/* Dots */}
+            <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1.25rem" }}>
+              {venueImages.map((_, i) => (
+                <button key={i} onClick={() => setVenueSlide(i)}
+                  style={{
+                    width: i === venueSlide ? 24 : 8, height: 8, borderRadius: 99, border: "none", cursor: "pointer",
+                    background: i === venueSlide ? "#14b8a6" : "rgba(20,184,166,0.25)",
+                    transition: "all 0.3s ease",
+                  }} />
+              ))}
+            </div>
           </div>
         </div>
       </section>
