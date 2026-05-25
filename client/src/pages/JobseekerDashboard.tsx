@@ -110,7 +110,9 @@ export default function JobseekerDashboard() {
   const [docUploading, setDocUploading] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({
-    institusi: "", jurusan: "", bidangMinat: "", kota: "", whatsapp: "",
+    namaLengkap: "", nik: "", whatsapp: "", kota: "",
+    institusi: "", jurusan: "", tahunLulus: "",
+    minatKerja: "", statusKerja: "",
   });
 
   const updateMutation = trpc.event.updateJobseeker.useMutation({
@@ -132,11 +134,15 @@ export default function JobseekerDashboard() {
 
   const handleEdit = () => {
     setEditForm({
-      institusi:   jobseeker?.institusi   || "",
-      jurusan:     jobseeker?.jurusan     || "",
-      bidangMinat: jobseeker?.bidangMinat || "",
-      kota:        jobseeker?.kota        || "",
-      whatsapp:    jobseeker?.whatsapp    || jobseeker?.phone || "",
+      namaLengkap: jobseeker?.namaLengkap  || "",
+      nik:         jobseeker?.nik          || "",
+      whatsapp:    jobseeker?.whatsapp     || jobseeker?.phone || "",
+      kota:        jobseeker?.kota         || "",
+      institusi:   jobseeker?.institusi    || "",
+      jurusan:     jobseeker?.jurusan      || "",
+      tahunLulus:  jobseeker?.tahunLulus   || "",
+      minatKerja:  jobseeker?.minatKerja   || jobseeker?.bidangMinat || "",
+      statusKerja: jobseeker?.statusKerja  || jobseeker?.status || "",
     });
     setEditMode(true);
   };
@@ -146,8 +152,16 @@ export default function JobseekerDashboard() {
     // Simpan whatsapp ke keduanya
     updateMutation.mutate({
       registrationId: sessionData.registrationId,
-      ...editForm,
-      phone: editForm.whatsapp,
+      namaLengkap: editForm.namaLengkap || undefined,
+      nik:         editForm.nik         || undefined,
+      whatsapp:    editForm.whatsapp    || undefined,
+      phone:       editForm.whatsapp    || undefined,
+      kota:        editForm.kota        || undefined,
+      institusi:   editForm.institusi   || undefined,
+      jurusan:     editForm.jurusan     || undefined,
+      tahunLulus:  editForm.tahunLulus  || undefined,
+      minatKerja:  (editForm.minatKerja as any)  || undefined,
+      statusKerja: (editForm.statusKerja as any) || undefined,
     });
   };
   const uploadingRef = useRef(false);
@@ -298,38 +312,60 @@ export default function JobseekerDashboard() {
               {editMode ? (
                 <div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
-                    {/* Read-only fields */}
-                    {[
-                      { label: "Nama Lengkap", val: jobseeker.namaLengkap },
-                      { label: "Email", val: jobseeker.email },
-                      { label: "Status", val: statusLabel[jobseeker.statusKerja || jobseeker.status] || jobseeker.statusKerja || jobseeker.status },
-                    ].map(item => (
-                      <div key={item.label}>
-                        <div style={s.label}>{item.label} <span style={{ color: "#334155", fontSize: "0.65rem" }}>(tidak bisa diubah)</span></div>
-                        <div style={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>{item.val}</div>
-                      </div>
-                    ))}
+                    {/* Email — tidak bisa diubah */}
+                    <div>
+                      <div style={s.label}>Email <span style={{ color: "#334155", fontSize: "0.65rem" }}>(tidak bisa diubah)</span></div>
+                      <div style={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>{jobseeker.email}</div>
+                    </div>
                   </div>
 
-                  {/* Editable fields */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+                  {/* Text fields */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1rem" }}>
                     {[
-                      { label: "No. WhatsApp / HP", key: "whatsapp", placeholder: "08xx-xxxx-xxxx" },
+                      { label: "Nama Lengkap", key: "namaLengkap", placeholder: "Nama sesuai KTP" },
+                      { label: "NIK / No. Identitas", key: "nik", placeholder: "16 digit NIK" },
+                      { label: "No. WhatsApp", key: "whatsapp", placeholder: "08xx-xxxx-xxxx" },
                       { label: "Kota", key: "kota", placeholder: "Bandung" },
                       { label: "Institusi", key: "institusi", placeholder: "Nama universitas/sekolah" },
                       { label: "Program Studi", key: "jurusan", placeholder: "Nama jurusan" },
-                      { label: "Bidang Minat", key: "bidangMinat", placeholder: "F&B, Hotel, Travel, dll" },
+                      { label: "Tahun Lulus", key: "tahunLulus", placeholder: "2024" },
                     ].map(field => (
                       <div key={field.key}>
                         <div style={s.label}>{field.label}</div>
                         <input
-                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: 8, padding: "0.6rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none" }}
+                          style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: 8, padding: "0.6rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" }}
                           value={(editForm as any)[field.key]}
                           onChange={e => setEditForm(p => ({ ...p, [field.key]: e.target.value }))}
                           placeholder={field.placeholder}
                         />
                       </div>
                     ))}
+                  </div>
+
+                  {/* Select fields */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+                    <div>
+                      <div style={s.label}>Status Kerja</div>
+                      <select value={editForm.statusKerja}
+                        onChange={e => setEditForm(p => ({ ...p, statusKerja: e.target.value }))}
+                        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: 8, padding: "0.6rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none" }}>
+                        <option value="">— Pilih status —</option>
+                        <option value="belum_bekerja">Belum Bekerja</option>
+                        <option value="pernah_bekerja">Pernah Bekerja</option>
+                        <option value="sedang_bekerja">Sedang Bekerja</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={s.label}>Minat Kerja</div>
+                      <select value={editForm.minatKerja}
+                        onChange={e => setEditForm(p => ({ ...p, minatKerja: e.target.value }))}
+                        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(20,184,166,0.3)", borderRadius: 8, padding: "0.6rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none" }}>
+                        <option value="">— Pilih minat —</option>
+                        <option value="dalam_negeri">Dalam Negeri</option>
+                        <option value="luar_negeri">Luar Negeri</option>
+                        <option value="keduanya">Keduanya</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", gap: "0.75rem" }}>

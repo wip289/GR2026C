@@ -877,8 +877,11 @@ export const eventRouter = router({
   updateJobseeker: publicProcedure
     .input(z.object({
       registrationId: z.string(),
+      namaLengkap:  z.string().optional(),
+      nik:          z.string().optional(),
       institusi:    z.string().optional(),
       jurusan:      z.string().optional(),
+      tahunLulus:   z.string().optional(),
       bidangMinat:  z.string().optional(),
       kota:         z.string().optional(),
       whatsapp:     z.string().optional(),
@@ -950,6 +953,33 @@ export const eventRouter = router({
       await setEventConfig({
         closedBooths: JSON.stringify(input.closedBooths)
       });
+      return { success: true };
+    }),
+
+  // ── Update Employer Profile ───────────────────────────────────
+  updateEmployerProfile: publicProcedure
+    .input(z.object({
+      bookingId:     z.string(),
+      companyName:   z.string().optional(),
+      industry:      z.string().optional(),
+      city:          z.string().optional(),
+      website:       z.string().optional(),
+      description:   z.string().optional(),
+      pic1Name:      z.string().optional(),
+      pic1Title:     z.string().optional(),
+      pic1Whatsapp:  z.string().optional(),
+      pic2Name:      z.string().optional(),
+      pic2Title:     z.string().optional(),
+      pic2Email:     z.string().optional(),
+      pic2Whatsapp:  z.string().optional(),
+      specialRequest: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      const { bookingId, ...updates } = input;
+      await db.update(employerBookings)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(employerBookings.bookingId, bookingId));
       return { success: true };
     }),
 

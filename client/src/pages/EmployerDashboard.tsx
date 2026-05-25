@@ -26,7 +26,7 @@ const s = {
   tab:     (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#14b8a6" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s" }) as React.CSSProperties,
 };
 
-type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen" | "kandidat";
+type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen" | "kandidat" | "editprofil";
 
 export default function EmployerDashboard() {
   const [, navigate] = useLocation();
@@ -123,6 +123,19 @@ export default function EmployerDashboard() {
   const savePositionsMutation = trpc.event.savePositions.useMutation({
     onSuccess: () => { toast.success("Posisi rekrutmen berhasil disimpan!"); loginQuery.refetch(); },
     onError:   (e) => toast.error("Gagal simpan posisi: " + e.message),
+  });
+
+  const updateProfilMutation = trpc.event.updateEmployerProfile.useMutation({
+    onSuccess: () => { toast.success("Profil berhasil diperbarui!"); loginQuery.refetch(); setEditProfilMode(false); },
+    onError:   (e) => toast.error("Gagal simpan: " + e.message),
+  });
+
+  const [editProfilMode, setEditProfilMode] = useState(false);
+  const [editProfilForm, setEditProfilForm] = useState({
+    companyName: "", industry: "", city: "", website: "", description: "",
+    pic1Name: "", pic1Title: "", pic1Whatsapp: "",
+    pic2Name: "", pic2Title: "", pic2Email: "", pic2Whatsapp: "",
+    specialRequest: "",
   });
 
   const { data: takenRaw, refetch: refetchTaken } = trpc.event.getInterviewBookingsByEmployer.useQuery(
@@ -351,6 +364,7 @@ export default function EmployerDashboard() {
               const unlocked = b.status === "confirmed" && hasFiles && validPos.length >= 2;
               return unlocked ? "👥 Kandidat" : "🔒 Kandidat";
             })() },
+            { id: "editprofil" as TabId, label: "✏️ Edit Profil" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -1466,6 +1480,176 @@ export default function EmployerDashboard() {
 
                 {!kandidatQuery.isLoading && !accessError && raw.length === 0 && (
                   <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Belum ada kandidat terdaftar.</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+        {activeTab === "editprofil" && (() => {
+          const b = booking as any;
+          const inp = { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.6rem 0.9rem", fontSize: "0.88rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" } as React.CSSProperties;
+          const inpFocus = { ...inp, border: "1px solid rgba(212,160,23,0.4)" };
+
+          const handleEdit = () => {
+            setEditProfilForm({
+              companyName:   b.companyName   || "",
+              industry:      b.industry      || "",
+              city:          b.city          || "",
+              website:       b.website       || "",
+              description:   b.description   || "",
+              pic1Name:      b.pic1Name      || "",
+              pic1Title:     b.pic1Title     || "",
+              pic1Whatsapp:  b.pic1Whatsapp  || "",
+              pic2Name:      b.pic2Name      || "",
+              pic2Title:     b.pic2Title     || "",
+              pic2Email:     b.pic2Email     || "",
+              pic2Whatsapp:  b.pic2Whatsapp  || "",
+              specialRequest: b.specialRequest || "",
+            });
+            setEditProfilMode(true);
+          };
+
+          const handleSave = () => {
+            updateProfilMutation.mutate({ bookingId: sessionData?.bookingId || "", ...editProfilForm });
+          };
+
+          const upd = (key: string, val: string) => setEditProfilForm(p => ({ ...p, [key]: val }));
+
+          return (
+            <div>
+              {/* Info perusahaan */}
+              <div style={s.card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                  <div style={s.secHd}>🏢 Profil Perusahaan</div>
+                  {!editProfilMode && (
+                    <button onClick={handleEdit}
+                      style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.4rem 0.9rem", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>
+                      ✏️ Edit Data
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)", borderRadius: 8, padding: "0.65rem 1rem", marginBottom: "1.25rem", fontSize: "0.8rem", color: "#fca5a5", lineHeight: 1.6 }}>
+                  ⚠️ Email PIC 1 (<strong>{b.pic1Email}</strong>) dan Booking ID tidak bisa diubah karena digunakan untuk login. Hubungi panitia jika ada perubahan email.
+                </div>
+
+                {editProfilMode ? (
+                  <div>
+                    {/* Perusahaan */}
+                    <div style={{ fontSize: "0.75rem", color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem", marginTop: "0.5rem" }}>Data Perusahaan</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+                      {[
+                        { label: "Nama Perusahaan", key: "companyName", placeholder: "PT. Contoh Indonesia" },
+                        { label: "Industri", key: "industry", placeholder: "Hotel, Airlines, dll" },
+                        { label: "Kota", key: "city", placeholder: "Jakarta" },
+                        { label: "Website", key: "website", placeholder: "www.perusahaan.com" },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <div style={s.label}>{f.label}</div>
+                          <input style={inp} value={(editProfilForm as any)[f.key]} onChange={e => upd(f.key, e.target.value)} placeholder={f.placeholder} />
+                        </div>
+                      ))}
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <div style={s.label}>Deskripsi Singkat Perusahaan</div>
+                        <textarea style={{ ...inp, resize: "vertical", minHeight: 80 } as React.CSSProperties}
+                          value={editProfilForm.description} onChange={e => upd("description", e.target.value)}
+                          placeholder="Deskripsi singkat perusahaan Anda..." />
+                      </div>
+                    </div>
+
+                    {/* PIC 1 */}
+                    <div style={{ fontSize: "0.75rem", color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>PIC Utama (PIC 1)</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+                      <div>
+                        <div style={s.label}>Email PIC 1 <span style={{ color: "#334155", fontSize: "0.65rem" }}>(tidak bisa diubah)</span></div>
+                        <div style={{ fontWeight: 600, color: "#475569", fontSize: "0.88rem", padding: "0.6rem 0" }}>{b.pic1Email}</div>
+                      </div>
+                      {[
+                        { label: "Nama PIC 1", key: "pic1Name", placeholder: "Nama lengkap" },
+                        { label: "Jabatan PIC 1", key: "pic1Title", placeholder: "HR Manager" },
+                        { label: "WhatsApp PIC 1", key: "pic1Whatsapp", placeholder: "08xx-xxxx-xxxx" },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <div style={s.label}>{f.label}</div>
+                          <input style={inp} value={(editProfilForm as any)[f.key]} onChange={e => upd(f.key, e.target.value)} placeholder={f.placeholder} />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* PIC 2 */}
+                    <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>PIC Kedua (Opsional)</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+                      {[
+                        { label: "Nama PIC 2", key: "pic2Name", placeholder: "Nama lengkap" },
+                        { label: "Jabatan PIC 2", key: "pic2Title", placeholder: "Recruitment Staff" },
+                        { label: "Email PIC 2", key: "pic2Email", placeholder: "email@perusahaan.com" },
+                        { label: "WhatsApp PIC 2", key: "pic2Whatsapp", placeholder: "08xx-xxxx-xxxx" },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <div style={s.label}>{f.label}</div>
+                          <input style={inp} value={(editProfilForm as any)[f.key]} onChange={e => upd(f.key, e.target.value)} placeholder={f.placeholder} />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Special request */}
+                    <div style={{ marginBottom: "1.25rem" }}>
+                      <div style={s.label}>Special Request / Catatan</div>
+                      <textarea style={{ ...inp, resize: "vertical", minHeight: 80 } as React.CSSProperties}
+                        value={editProfilForm.specialRequest} onChange={e => upd("specialRequest", e.target.value)}
+                        placeholder="Kebutuhan khusus untuk booth, dll..." />
+                    </div>
+
+                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                      <button onClick={handleSave} disabled={updateProfilMutation.isPending}
+                        style={{ background: "linear-gradient(135deg,#D4A017,#b8860b)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: "0.88rem", fontWeight: 700, cursor: updateProfilMutation.isPending ? "not-allowed" : "pointer", opacity: updateProfilMutation.isPending ? 0.7 : 1 }}>
+                        {updateProfilMutation.isPending ? "⏳ Menyimpan..." : "💾 Simpan Perubahan"}
+                      </button>
+                      <button onClick={() => setEditProfilMode(false)}
+                        style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#64748b", borderRadius: 8, padding: "0.65rem 1.25rem", fontSize: "0.88rem", cursor: "pointer" }}>
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View mode */
+                  <div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px,1fr))", gap: "1.25rem", marginBottom: "1.25rem" }}>
+                      {[
+                        { label: "Nama Perusahaan", val: b.companyName },
+                        { label: "Industri", val: b.industry || "—" },
+                        { label: "Kota", val: b.city || "—" },
+                        { label: "Website", val: b.website || "—" },
+                        { label: "Email PIC 1", val: b.pic1Email },
+                        { label: "Nama PIC 1", val: b.pic1Name || "—" },
+                        { label: "Jabatan PIC 1", val: b.pic1Title || "—" },
+                        { label: "WhatsApp PIC 1", val: b.pic1Whatsapp || "—" },
+                        ...(b.pic2Name ? [
+                          { label: "Nama PIC 2", val: b.pic2Name },
+                          { label: "Jabatan PIC 2", val: b.pic2Title || "—" },
+                          { label: "Email PIC 2", val: b.pic2Email || "—" },
+                          { label: "WhatsApp PIC 2", val: b.pic2Whatsapp || "—" },
+                        ] : []),
+                      ].map(item => (
+                        <div key={item.label}>
+                          <div style={s.label}>{item.label}</div>
+                          <div style={{ fontWeight: 600, color: "#f1f5f9", fontSize: "0.88rem", wordBreak: "break-all" }}>{item.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {b.description && (
+                      <div>
+                        <div style={s.label}>Deskripsi</div>
+                        <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.7 }}>{b.description}</div>
+                      </div>
+                    )}
+                    {b.specialRequest && (
+                      <div style={{ marginTop: "1rem" }}>
+                        <div style={s.label}>Special Request</div>
+                        <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.7 }}>{b.specialRequest}</div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
