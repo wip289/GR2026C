@@ -81,6 +81,16 @@ export default function EmployerDashboard() {
   ]);
   const [savingRekrutmen, setSavingRekrutmen] = useState(false);
 
+  // ── Kandidat table state ──────────────────────────────────────
+  const [kdSearch,      setKdSearch]      = useState("");
+  const [kdFilterMinat, setKdFilterMinat] = useState("");
+  const [kdFilterStatus,setKdFilterStatus]= useState("");
+  const [kdFilterInst,  setKdFilterInst]  = useState("");
+  const [kdSortCol,     setKdSortCol]     = useState<"namaLengkap"|"institusi"|"tahunLulus">("namaLengkap");
+  const [kdSortDir,     setKdSortDir]     = useState<"asc"|"desc">("asc");
+  const [kdPage,        setKdPage]        = useState(1);
+  const KD_PAGE_SIZE = 25;
+
   const [vacUploading, setVacUploading] = useState(false);
 
   useEffect(() => {
@@ -1255,10 +1265,9 @@ export default function EmployerDashboard() {
           const b = booking as any;
           const isConfirmed = b.status === "confirmed";
           const hasFiles    = Array.isArray(b.jobVacanciesUrl) && b.jobVacanciesUrl.length > 0;
-          const validPos    = Array.isArray(b.positions) ? b.positions.filter((p: any) => p.posisi?.trim()) : [];
+          const validPos    = rekrutmenRows.filter(r => r.posisi.trim());
           const unlocked    = isConfirmed && hasFiles && validPos.length >= 2;
 
-          // Belum unlock — tampilkan checklist syarat
           if (!unlocked) {
             return (
               <div style={s.card}>
@@ -1284,73 +1293,179 @@ export default function EmployerDashboard() {
             );
           }
 
-          // Sudah unlock — tampilkan daftar kandidat
           const errMsg = (kandidatQuery.error as any)?.message;
           const accessError = errMsg === "ACCESS_NOT_OPEN" ? "Akses kandidat belum dibuka oleh panitia."
             : errMsg === "ACCESS_CLOSED" ? "Akses kandidat sudah ditutup."
-            : errMsg ? `Gagal memuat kandidat: ${errMsg}` : null;
+            : errMsg ? `Gagal memuat: ${errMsg}` : null;
+
+          const raw: any[] = kandidatQuery.data || [];
+          const institusiOptions = Array.from(new Set(raw.map((j: any) => j.institusi).filter(Boolean))).sort() as string[];
+
+          const filtered = raw
+            .filter((j: any) => {
+              const nama = (j.namaLengkap || "").toLowerCase();
+              const inst = (j.institusi || "").toLowerCase();
+              if (kdSearch && !nama.includes(kdSearch.toLowerCase()) && !inst.includes(kdSearch.toLowerCase())) return false;
+              if (kdFilterMinat) { const m = j.minatKerja || j.bidangMinat || ""; if (!m.toLowerCase().includes(kdFilterMinat.toLowerCase())) return false; }
+              if (kdFilterStatus) { const st = j.statusKerja || j.status || ""; if (!st.toLowerCase().includes(kdFilterStatus.toLowerCase())) return false; }
+              if (kdFilterInst && (j.institusi || "") !== kdFilterInst) return false;
+              return true;
+            })
+            .sort((a: any, b: any) => {
+              const av = (a[kdSortCol] || "").toString().toLowerCase();
+              const bv = (b[kdSortCol] || "").toString().toLowerCase();
+              return kdSortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+
+          const totalPages = Math.max(1, Math.ceil(filtered.length / KD_PAGE_SIZE));
+          const safePage   = Math.min(kdPage, totalPages);
+          const paginated  = filtered.slice((safePage - 1) * KD_PAGE_SIZE, safePage * KD_PAGE_SIZE);
+
+          const thSort = (col: typeof kdSortCol) => {
+            if (kdSortCol === col) setKdSortDir(d => d === "asc" ? "desc" : "asc");
+            else { setKdSortCol(col); setKdSortDir("asc"); }
+            setKdPage(1);
+          };
+          const sortIcon = (col: typeof kdSortCol) => kdSortCol !== col ? " ↕" : kdSortDir === "asc" ? " ↑" : " ↓";
+
+          const sel = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
+          const th  = { padding: "0.65rem 0.75rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" as const, userSelect: "none" as const };
+          const td  = { padding: "0.6rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", borderBottom: "1px solid rgba(255,255,255,0.04)", verticalAlign: "middle" as const };
 
           return (
             <div>
               <div style={s.card}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
                   <div style={s.secHd}>👥 Daftar Kandidat Jobseeker</div>
-                  {kandidatQuery.data && (
-                    <span style={{ fontSize: "0.78rem", color: "#64748b" }}>{kandidatQuery.data.length} kandidat</span>
-                  )}
+                  {raw.length > 0 && <span style={{ fontSize: "0.78rem", color: "#64748b" }}>{filtered.length} dari {raw.length} kandidat</span>}
                 </div>
-                <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: "1.25rem", fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.7 }}>
-                  ℹ️ Data ini ditampilkan sesuai kebijakan UU PDP. Hanya kandidat yang memberikan consent ditampilkan. Informasi kontak (email, WhatsApp, NIK) tidak ditampilkan di sini — silakan hubungi kandidat langsung di booth saat event.
+
+                <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.65rem 1rem", marginBottom: "1.25rem", fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                  ℹ️ Data ditampilkan sesuai UU PDP. Informasi kontak (email, WhatsApp, NIK) tidak tersedia — hubungi kandidat langsung di booth saat event.
                 </div>
 
                 {kandidatQuery.isLoading && <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>⏳ Memuat kandidat...</p>}
                 {accessError && <p style={{ color: "#f87171", textAlign: "center", padding: "2rem" }}>🔒 {accessError}</p>}
 
-                {kandidatQuery.data && kandidatQuery.data.length === 0 && (
-                  <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Belum ada kandidat terdaftar.</p>
+                {raw.length > 0 && (
+                  <>
+                    <div style={{ display: "flex", gap: "0.65rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+                      <input placeholder="🔍 Cari nama / institusi..." value={kdSearch}
+                        onChange={e => { setKdSearch(e.target.value); setKdPage(1); }}
+                        style={{ ...sel, flex: "1 1 200px", minWidth: 160 }} />
+                      <select value={kdFilterMinat} onChange={e => { setKdFilterMinat(e.target.value); setKdPage(1); }} style={sel}>
+                        <option value="">Semua Minat</option>
+                        <option value="dalam_negeri">Dalam Negeri</option>
+                        <option value="luar_negeri">Luar Negeri</option>
+                        <option value="keduanya">Keduanya</option>
+                      </select>
+                      <select value={kdFilterStatus} onChange={e => { setKdFilterStatus(e.target.value); setKdPage(1); }} style={sel}>
+                        <option value="">Semua Status</option>
+                        <option value="belum_bekerja">Belum Bekerja</option>
+                        <option value="pernah_bekerja">Pernah Bekerja</option>
+                        <option value="sedang_bekerja">Sedang Bekerja</option>
+                      </select>
+                      <select value={kdFilterInst} onChange={e => { setKdFilterInst(e.target.value); setKdPage(1); }} style={{ ...sel, maxWidth: 200 }}>
+                        <option value="">Semua Institusi</option>
+                        {institusiOptions.map(inst => <option key={inst} value={inst}>{inst}</option>)}
+                      </select>
+                      {(kdSearch || kdFilterMinat || kdFilterStatus || kdFilterInst) && (
+                        <button onClick={() => { setKdSearch(""); setKdFilterMinat(""); setKdFilterStatus(""); setKdFilterInst(""); setKdPage(1); }}
+                          style={{ background: "none", border: "1px solid rgba(248,113,113,0.3)", color: "#f87171", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.78rem", cursor: "pointer" }}>
+                          ✕ Reset
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 750 }}>
+                        <thead>
+                          <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                            <th style={{ ...th, width: 44 }}>Foto</th>
+                            <th style={{ ...th, cursor: "pointer" }} onClick={() => thSort("namaLengkap")}>Nama{sortIcon("namaLengkap")}</th>
+                            <th style={{ ...th, cursor: "pointer" }} onClick={() => thSort("institusi")}>Institusi{sortIcon("institusi")}</th>
+                            <th style={th}>Jurusan</th>
+                            <th style={{ ...th, cursor: "pointer", textAlign: "center" }} onClick={() => thSort("tahunLulus")}>Lulus{sortIcon("tahunLulus")}</th>
+                            <th style={th}>Status Kerja</th>
+                            <th style={th}>Minat</th>
+                            <th style={th}>Kota</th>
+                            <th style={{ ...th, textAlign: "center" }}>CV</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paginated.length === 0 ? (
+                            <tr><td colSpan={9} style={{ ...td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Tidak ada kandidat yang sesuai filter.</td></tr>
+                          ) : paginated.map((js: any) => (
+                            <tr key={js.registrationId}
+                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                              <td style={td}>
+                                {js.fotoUrl
+                                  ? <img src={js.fotoUrl} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", display: "block" }} />
+                                  : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(212,160,23,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>👤</div>
+                                }
+                              </td>
+                              <td style={{ ...td, fontWeight: 600 }}>{js.namaLengkap}</td>
+                              <td style={{ ...td, color: "#94a3b8" }}>{js.institusi || "—"}</td>
+                              <td style={{ ...td, color: "#64748b", fontSize: "0.78rem" }}>{js.jurusan || "—"}</td>
+                              <td style={{ ...td, color: "#94a3b8", textAlign: "center" }}>{js.tahunLulus || "—"}</td>
+                              <td style={td}>
+                                <span style={{ fontSize: "0.75rem", background: "rgba(212,160,23,0.08)", color: "#D4A017", borderRadius: 12, padding: "0.2rem 0.5rem", whiteSpace: "nowrap" }}>
+                                  {(js.statusKerja || js.status || "—").replace(/_/g, " ")}
+                                </span>
+                              </td>
+                              <td style={td}>
+                                <span style={{ fontSize: "0.75rem", background: "rgba(20,184,166,0.08)", color: "#14b8a6", borderRadius: 12, padding: "0.2rem 0.5rem", whiteSpace: "nowrap" }}>
+                                  {(js.minatKerja || js.bidangMinat || "—").replace(/_/g, " ")}
+                                </span>
+                              </td>
+                              <td style={{ ...td, color: "#64748b", fontSize: "0.78rem" }}>{js.kota || "—"}</td>
+                              <td style={{ ...td, textAlign: "center" }}>
+                                {js.cvUrl
+                                  ? <a href={js.cvUrl} target="_blank" rel="noreferrer" style={{ color: "#D4A017", fontSize: "1rem", textDecoration: "none" }} title="Lihat CV">📄</a>
+                                  : <span style={{ color: "#334155" }}>—</span>
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {totalPages > 1 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Halaman {safePage} dari {totalPages} · {filtered.length} kandidat</span>
+                        <div style={{ display: "flex", gap: "0.35rem" }}>
+                          <button onClick={() => setKdPage(1)} disabled={safePage === 1}
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", color: safePage === 1 ? "#334155" : "#94a3b8", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.78rem", cursor: safePage === 1 ? "not-allowed" : "pointer" }}>«</button>
+                          <button onClick={() => setKdPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", color: safePage === 1 ? "#334155" : "#94a3b8", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.78rem", cursor: safePage === 1 ? "not-allowed" : "pointer" }}>‹</button>
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pg = i + 1;
+                            if (totalPages > 5) {
+                              if (safePage <= 3) pg = i + 1;
+                              else if (safePage >= totalPages - 2) pg = totalPages - 4 + i;
+                              else pg = safePage - 2 + i;
+                            }
+                            return (
+                              <button key={pg} onClick={() => setKdPage(pg)}
+                                style={{ background: pg === safePage ? "#D4A017" : "none", border: `1px solid ${pg === safePage ? "#D4A017" : "rgba(255,255,255,0.1)"}`, color: pg === safePage ? "#fff" : "#94a3b8", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.78rem", cursor: "pointer", minWidth: 30 }}>
+                                {pg}
+                              </button>
+                            );
+                          })}
+                          <button onClick={() => setKdPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", color: safePage === totalPages ? "#334155" : "#94a3b8", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.78rem", cursor: safePage === totalPages ? "not-allowed" : "pointer" }}>›</button>
+                          <button onClick={() => setKdPage(totalPages)} disabled={safePage === totalPages}
+                            style={{ background: "none", border: "1px solid rgba(255,255,255,0.1)", color: safePage === totalPages ? "#334155" : "#94a3b8", borderRadius: 6, padding: "0.3rem 0.6rem", fontSize: "0.78rem", cursor: safePage === totalPages ? "not-allowed" : "pointer" }}>»</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {kandidatQuery.data && kandidatQuery.data.length > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
-                    {kandidatQuery.data.map((js: any) => (
-                      <div key={js.registrationId} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                        <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
-                          {js.fotoUrl
-                            ? <img src={js.fotoUrl} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-                            : <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(212,160,23,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>👤</div>
-                          }
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#f1f5f9" }}>{js.namaLengkap}</div>
-                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{js.institusi || "—"}</div>
-                            <div style={{ fontSize: "0.75rem", color: "#475569" }}>{js.jurusan || ""}{js.tahunLulus ? ` · ${js.tahunLulus}` : ""}</div>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                          {(js.minatKerja || js.bidangMinat) && (
-                            <span style={{ fontSize: "0.72rem", background: "rgba(20,184,166,0.12)", color: "#14b8a6", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(20,184,166,0.2)" }}>
-                              {js.minatKerja || js.bidangMinat}
-                            </span>
-                          )}
-                          {(js.statusKerja || js.status) && (
-                            <span style={{ fontSize: "0.72rem", background: "rgba(212,160,23,0.08)", color: "#D4A017", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(212,160,23,0.2)" }}>
-                              {js.statusKerja || js.status}
-                            </span>
-                          )}
-                          {js.kota && (
-                            <span style={{ fontSize: "0.72rem", background: "rgba(255,255,255,0.04)", color: "#64748b", borderRadius: 20, padding: "0.2rem 0.6rem", border: "1px solid rgba(255,255,255,0.08)" }}>
-                              📍 {js.kota}
-                            </span>
-                          )}
-                        </div>
-                        {js.cvUrl && (
-                          <a href={js.cvUrl} target="_blank" rel="noreferrer"
-                            style={{ fontSize: "0.78rem", color: "#D4A017", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.35rem", marginTop: "0.25rem" }}>
-                            📄 Lihat CV
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                {!kandidatQuery.isLoading && !accessError && raw.length === 0 && (
+                  <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Belum ada kandidat terdaftar.</p>
                 )}
               </div>
             </div>
