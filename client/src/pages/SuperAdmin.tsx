@@ -51,6 +51,7 @@ interface EventConfig {
   // Akses window jobseeker ↔ employer
   jobseekerAccessStart: string;
   jobseekerAccessEnd: string;
+  lowonganOpen: string;
 }
 
 const DEFAULT_CONFIG: EventConfig = {
@@ -93,6 +94,7 @@ const DEFAULT_CONFIG: EventConfig = {
   allowWalkIn: "true",
   jobseekerAccessStart: "2026-06-07T00:00",
   jobseekerAccessEnd: "2026-06-13T23:59",
+  lowonganOpen: "true",
 };
 
 const STORAGE_KEY = "gr2026_superadmin_config";
@@ -987,11 +989,39 @@ export default function SuperAdmin() {
               </div>
             </div>
 
-            {/* Akses Window Jobseeker ↔ Employer */}
+            {/* Akses Lowongan — toggle */}
             <div style={{ background: "rgba(20,184,166,0.05)", border: "1px solid rgba(20,184,166,0.2)", borderRadius: 12, padding: "1.25rem" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#14b8a6", marginBottom: "0.5rem" }}>👥 Akses Jobseeker ↔ Employer</div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#14b8a6", marginBottom: "0.5rem" }}>💼 Lowongan (Jobseeker lihat Employer)</div>
               <div style={{ fontSize: "0.78rem", color: "#475569", marginBottom: "1rem", lineHeight: 1.6 }}>
-                Periode dimana employer bisa melihat data kandidat, dan jobseeker bisa melihat lowongan employer. Rekomendasi: H-3 s/d H+2 event.
+                Kontrol apakah jobseeker bisa melihat daftar lowongan dari employer yang sudah confirmed.
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }}>
+                  <div
+                    onClick={() => upd("lowonganOpen", config.lowonganOpen === "true" ? "false" : "true")}
+                    style={{
+                      width: 48, height: 26, borderRadius: 13, cursor: "pointer", transition: "background 0.2s",
+                      background: config.lowonganOpen === "true" ? "#14b8a6" : "#334155",
+                      position: "relative", flexShrink: 0,
+                    }}>
+                    <div style={{
+                      position: "absolute", top: 3, left: config.lowonganOpen === "true" ? 25 : 3,
+                      width: 20, height: 20, borderRadius: "50%", background: "#fff",
+                      transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                    }} />
+                  </div>
+                  <span style={{ fontSize: "0.88rem", color: "#f1f5f9", fontWeight: 600 }}>
+                    {config.lowonganOpen === "true" ? "🟢 Lowongan TERBUKA" : "🔴 Lowongan DITUTUP"}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Akses Kandidat — datetime window */}
+            <div style={{ background: "rgba(212,160,23,0.04)", border: "1px solid rgba(212,160,23,0.15)", borderRadius: 12, padding: "1.25rem" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#D4A017", marginBottom: "0.5rem" }}>👥 Kandidat (Employer lihat Jobseeker)</div>
+              <div style={{ fontSize: "0.78rem", color: "#475569", marginBottom: "1rem", lineHeight: 1.6 }}>
+                Periode employer bisa melihat data kandidat jobseeker. Lebih sensitif — rekomendasi H-3 s/d H+2.
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div>

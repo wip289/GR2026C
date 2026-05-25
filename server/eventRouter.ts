@@ -1078,16 +1078,10 @@ export const eventRouter = router({
 
       if (!js) throw new TRPCError({ code: "NOT_FOUND" });
 
-      // Cek window akses
+      // Cek toggle lowongan dari SuperAdmin
       const cfg = await getEventConfig() as any;
-      const startStr = cfg?.jobseekerAccessStart;
-      const endStr   = cfg?.jobseekerAccessEnd;
-      if (startStr && endStr) {
-        const now   = new Date();
-        const start = new Date(startStr);
-        const end   = new Date(endStr);
-        if (now < start) throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_NOT_OPEN" });
-        if (now > end)   throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_CLOSED" });
+      if (cfg?.lowonganOpen === "false") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "ACCESS_CLOSED" });
       }
 
       // Ambil employer confirmed yang sudah isi posisi & vacancies
