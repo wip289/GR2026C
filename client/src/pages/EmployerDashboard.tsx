@@ -1612,42 +1612,85 @@ export default function EmployerDashboard() {
                     </div>
                   </div>
                 ) : (
-                  /* View mode */
-                  <div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px,1fr))", gap: "1.25rem", marginBottom: "1.25rem" }}>
-                      {[
-                        { label: "Nama Perusahaan", val: b.companyName },
-                        { label: "Industri", val: b.industry || "—" },
-                        { label: "Kota", val: b.city || "—" },
-                        { label: "Website", val: b.website || "—" },
-                        { label: "Email PIC 1", val: b.pic1Email },
-                        { label: "Nama PIC 1", val: b.pic1Name || "—" },
-                        { label: "Jabatan PIC 1", val: b.pic1Title || "—" },
-                        { label: "WhatsApp PIC 1", val: b.pic1Whatsapp || "—" },
-                        ...(b.pic2Name ? [
-                          { label: "Nama PIC 2", val: b.pic2Name },
-                          { label: "Jabatan PIC 2", val: b.pic2Title || "—" },
-                          { label: "Email PIC 2", val: b.pic2Email || "—" },
-                          { label: "WhatsApp PIC 2", val: b.pic2Whatsapp || "—" },
-                        ] : []),
-                      ].map(item => (
-                        <div key={item.label}>
-                          <div style={s.label}>{item.label}</div>
-                          <div style={{ fontWeight: 600, color: "#f1f5f9", fontSize: "0.88rem", wordBreak: "break-all" }}>{item.val}</div>
+                  /* View mode — clean sectioned layout */
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+
+                    {/* Perusahaan */}
+                    <div>
+                      <div style={{ fontSize: "0.72rem", color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.85rem", fontWeight: 700 }}>Perusahaan</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: "1rem" }}>
+                        {[
+                          { label: "Nama Perusahaan", val: b.companyName    },
+                          { label: "Industri",         val: b.industry  || "—" },
+                          { label: "Kota",             val: b.city      || "—" },
+                          { label: "Website",          val: b.website   || "—" },
+                        ].map(item => (
+                          <div key={item.label}>
+                            <div style={s.label}>{item.label}</div>
+                            <div style={{ fontWeight: 600, color: "#f1f5f9", fontSize: "0.9rem", overflowWrap: "break-word", wordBreak: "break-word" }}>{item.val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {b.description && (
+                        <div style={{ marginTop: "1rem" }}>
+                          <div style={s.label}>Deskripsi</div>
+                          <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.75, overflowWrap: "break-word" }}>{b.description}</div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                    {b.description && (
-                      <div>
-                        <div style={s.label}>Deskripsi</div>
-                        <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.7 }}>{b.description}</div>
+
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+
+                    {/* PIC Utama */}
+                    <div>
+                      <div style={{ fontSize: "0.72rem", color: "#D4A017", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.85rem", fontWeight: 700 }}>PIC Utama</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: "1rem" }}>
+                        {[
+                          { label: "Nama",     val: b.pic1Name     || "—" },
+                          { label: "Jabatan",  val: b.pic1Title    || "—" },
+                          { label: "Email",    val: b.pic1Email    || "—" },
+                          { label: "WhatsApp", val: b.pic1Whatsapp || "—" },
+                        ].map(item => (
+                          <div key={item.label}>
+                            <div style={s.label}>{item.label}</div>
+                            <div style={{ fontWeight: 600, color: "#f1f5f9", fontSize: "0.9rem", overflowWrap: "break-word", wordBreak: "break-word" }}>{item.val}</div>
+                          </div>
+                        ))}
                       </div>
+                    </div>
+
+                    {/* PIC Kedua */}
+                    {b.pic2Name && (
+                      <>
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+                        <div>
+                          <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.85rem", fontWeight: 700 }}>PIC Kedua</div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: "1rem" }}>
+                            {[
+                              { label: "Nama",     val: b.pic2Name     || "—" },
+                              { label: "Jabatan",  val: b.pic2Title    || "—" },
+                              { label: "Email",    val: b.pic2Email    || "—" },
+                              { label: "WhatsApp", val: b.pic2Whatsapp || "—" },
+                            ].map(item => (
+                              <div key={item.label}>
+                                <div style={s.label}>{item.label}</div>
+                                <div style={{ fontWeight: 600, color: "#f1f5f9", fontSize: "0.9rem", overflowWrap: "break-word", wordBreak: "break-word" }}>{item.val}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
                     )}
+
+                    {/* Special Request */}
                     {b.specialRequest && (
-                      <div style={{ marginTop: "1rem" }}>
-                        <div style={s.label}>Special Request</div>
-                        <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.7 }}>{b.specialRequest}</div>
-                      </div>
+                      <>
+                        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
+                        <div>
+                          <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem", fontWeight: 700 }}>Special Request</div>
+                          <div style={{ fontSize: "0.88rem", color: "#94a3b8", lineHeight: 1.75, overflowWrap: "break-word" }}>{b.specialRequest}</div>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
