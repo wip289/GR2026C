@@ -23,11 +23,12 @@ const s = {
   td:    { padding: "0.85rem 1rem", fontSize: "0.85rem", borderBottom: "1px solid rgba(255,255,255,0.04)", verticalAlign: "middle" as const },
 };
 
-const SLOTS = ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"];
-const DAYS  = ["Rabu, 10 Juni", "Kamis, 11 Juni"];
+const SLOTS_BY_DAY = [
+  ["10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"],
+  ["08.00–09.00", "09.00–10.00", "10.00–11.00", "11.00–12.00", "13.00–14.00", "14.00–15.00", "15.00–16.00"],
+];
+const DAYS  = ["Senin, 8 Juni", "Selasa, 9 Juni"];
 // Hari pertama (day 0) dimulai jam 10.00 — skip slot idx 0 & 1
-const getVisibleSlots = (day: number) =>
-  SLOTS.map((label, idx) => ({ label, idx })).filter(s => day !== 0 || s.idx >= 2);
 const INTERVIEW_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
 
@@ -1002,15 +1003,14 @@ export default function BossPanel() {
                 <thead>
                   <tr>
                     <th style={s.th}>Booth</th>
-                    {getVisibleSlots(selectedDay).map(sl => <th key={sl.label} style={{ ...s.th, textAlign: "center" }}>{sl.label}</th>)}
+                    {SLOTS_BY_DAY[selectedDay].map(label => <th key={label} style={{ ...s.th, textAlign: "center" }}>{label}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {INTERVIEW_BOOTHS.map(booth => (
                     <tr key={booth}>
                       <td style={{ ...s.td, fontWeight: 700, color: "#60a5fa" }}>{booth}</td>
-                      {getVisibleSlots(selectedDay).map(sl => {
-                        const slotIdx = sl.idx;
+                      {SLOTS_BY_DAY[selectedDay].map((_, slotIdx) => {
                         const key = `${booth}-${selectedDay}-${slotIdx}`;
                         const company = realTakenSlots[key];
                         const bookingId = realTakenIds[key];
@@ -1050,15 +1050,15 @@ export default function BossPanel() {
                 Terisi ({Object.keys(realTakenSlots).filter(k => {
                   const parts = k.split("-");
                   const slotIdx = parseInt(parts[parts.length - 1]);
-                  return k.includes(`-${selectedDay}-`) && getVisibleSlots(selectedDay).some(s => s.idx === slotIdx);
+                  return k.includes(`-${selectedDay}-`) && slotIdx < SLOTS_BY_DAY[selectedDay].length;
                 }).length} slot)
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.78rem", color: "#64748b" }}>
                 <div style={{ width: 14, height: 14, borderRadius: 3, background: "#1e3a5f" }} />
-                Kosong ({INTERVIEW_BOOTHS.length * getVisibleSlots(selectedDay).length - Object.keys(realTakenSlots).filter(k => {
+                Kosong ({INTERVIEW_BOOTHS.length * SLOTS_BY_DAY[selectedDay].length - Object.keys(realTakenSlots).filter(k => {
                   const parts = k.split("-");
                   const slotIdx = parseInt(parts[parts.length - 1]);
-                  return k.includes(`-${selectedDay}-`) && getVisibleSlots(selectedDay).some(s => s.idx === slotIdx);
+                  return k.includes(`-${selectedDay}-`) && slotIdx < SLOTS_BY_DAY[selectedDay].length;
                 }).length} slot)
               </div>
             </div>

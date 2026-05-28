@@ -110,7 +110,6 @@ export default function BoothManagement() {
   });
 
   // Interview constants
-  const SLOTS = ["08.00–09.00","09.00–10.00","10.00–11.00","11.00–12.00","13.00–14.00","14.00–15.00","15.00–16.00"];
   const DAYS  = ["Senin, 8 Jun 2026","Selasa, 9 Jun 2026"];
   const INT_BOOTHS = ["E1","E2","E3","E4","E5","E6","E7","E8","E9","E10","E11","E12","E13","E14"];
 
@@ -132,7 +131,7 @@ export default function BoothManagement() {
   }) || { mutate: () => {}, isPending: false };
 
   const [selectedDay, setSelectedDay] = useState(0);
-  const totalSlots = INT_BOOTHS.length * SLOTS.length;
+  const totalSlots = INT_BOOTHS.length * SLOTS_BY_DAY[selectedDay].length;
   const takenToday = Object.keys(takenSlots).filter(k => k.includes(`-${selectedDay}-`)).length;
 
   // Stats
@@ -187,7 +186,7 @@ export default function BoothManagement() {
             { label: "Confirmed", val: bookings.filter(b=>b.status==="confirmed").length, color: "#10b981", sub: "employer" },
             { label: "Pending", val: bookings.filter(b=>b.status==="pending").length, color: "#f97316", sub: "menunggu" },
             { label: "Special Request", val: specialRequests.length, color: "#818cf8", sub: "employer" },
-            { label: "Slot Interview", val: `${Object.keys(takenSlots).length}/${INT_BOOTHS.length * SLOTS.length * 2}`, color: "#60a5fa", sub: "terisi" },
+            { label: "Slot Interview", val: `${Object.keys(takenSlots).length}/${INT_BOOTHS.length * SLOTS_BY_DAY[0].length + INT_BOOTHS.length * SLOTS_BY_DAY[1].length}`, color: "#60a5fa", sub: "terisi" },
           ].map(k => (
             <div key={k.label} style={{ background: `${k.color}08`, border: `1px solid ${k.color}25`, borderRadius: 12, padding: "1rem", textAlign: "center" }}>
               <div style={{ fontSize: "1.6rem", fontWeight: 800, color: k.color }}>{k.val}</div>
@@ -476,7 +475,7 @@ export default function BoothManagement() {
                 <thead>
                   <tr>
                     <th style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: "0.75rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" as const }}>Booth</th>
-                    {SLOTS.map(slot => (
+                    {SLOTS_BY_DAY[selectedDay].map(slot => (
                       <th key={slot} style={{ padding: "0.65rem 0.5rem", textAlign: "center", fontSize: "0.7rem", color: "#64748b", fontWeight: 600, borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" as const }}>{slot}</th>
                     ))}
                   </tr>
@@ -485,7 +484,7 @@ export default function BoothManagement() {
                   {INT_BOOTHS.map(booth => (
                     <tr key={booth} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <td style={{ padding: "0.65rem 1rem", fontWeight: 700, color: "#60a5fa", fontSize: "0.88rem" }}>{booth}</td>
-                      {SLOTS.map((_, slotIdx) => {
+                      {SLOTS_BY_DAY[selectedDay].map((_, slotIdx) => {
                         const key = `${booth}-${selectedDay}-${slotIdx}`;
                         const company = takenSlots[key];
                         return (
@@ -528,7 +527,7 @@ export default function BoothManagement() {
                 Kosong ({totalSlots - takenToday} slot)
               </div>
               <div style={{ fontSize: "0.78rem", color: "#475569" }}>
-                Total 2 hari: {Object.keys(takenSlots).length} / {totalSlots * 2} slot terisi
+                Total 2 hari: {Object.keys(takenSlots).length} / {INT_BOOTHS.length * SLOTS_BY_DAY[0].length + INT_BOOTHS.length * SLOTS_BY_DAY[1].length} slot terisi
               </div>
             </div>
           </div>
