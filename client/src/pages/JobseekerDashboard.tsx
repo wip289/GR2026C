@@ -265,6 +265,33 @@ export default function JobseekerDashboard() {
           </div>
         </div>
 
+        {/* Banner Dokumen */}
+        {(() => {
+          const missingDocs = [
+            !jobseeker.cvUrl,
+            !jobseeker.ktmUrl,
+          ].filter(Boolean).length;
+          if (missingDocs === 0) return null;
+          return (
+            <div style={{ background: "rgba(212,160,23,0.07)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "flex-start", gap: "0.85rem" }}>
+              <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>💡</span>
+              <div>
+                <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.9rem", marginBottom: "0.3rem" }}>
+                  Tahukah kamu?
+                </div>
+                <div style={{ fontSize: "0.83rem", color: "#cbd5e1", lineHeight: 1.75 }}>
+                  HRD menyukai kandidat yang melengkapi dokumen dirinya sendiri saat registrasi dan melamar kerja. Jangan lupa lengkapi dokumen kamu ya!{" "}
+                  <span
+                    onClick={() => setActiveTab("dokumen")}
+                    style={{ color: "#D4A017", fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
+                    Lengkapi sekarang →
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Tabs */}
         <div style={{ display: "flex", gap: "0.5rem", background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "0.5rem", marginBottom: "1.5rem", overflowX: "auto" }}>
           {([

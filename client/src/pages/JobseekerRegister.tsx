@@ -253,6 +253,17 @@ export default function JobseekerRegister() {
             Kamu sudah terdaftar di GR2026.
           </p>
 
+          {/* Banner dokumen */}
+          <div style={{ background: "rgba(212,160,23,0.07)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 12, padding: "0.9rem 1.1rem", marginBottom: "1.25rem", textAlign: "left", display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+            <span style={{ fontSize: "1.3rem", flexShrink: 0 }}>💡</span>
+            <div>
+              <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.85rem", marginBottom: "0.25rem" }}>Tahukah kamu?</div>
+              <div style={{ fontSize: "0.8rem", color: "#cbd5e1", lineHeight: 1.75 }}>
+                HRD menyukai kandidat yang melengkapi dokumen dirinya sendiri saat registrasi dan melamar kerja. Jangan lupa lengkapi dokumen kamu di dashboard ya!
+              </div>
+            </div>
+          </div>
+
           {/* ID Card preview */}
           <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, overflow: "hidden", marginBottom: "1.25rem" }}>
             <div style={{ fontSize: "0.65rem", color: "#475569", padding: "0.5rem 1rem 0.1rem", textAlign: "center", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>ID Card GR2026</div>
