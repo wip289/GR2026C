@@ -1001,6 +1001,36 @@ export default function BossPanel() {
                   ))}
                 </div>
 
+                <button
+                    onClick={async () => {
+                      const docs = [
+                        { label: "foto",       url: selJS.fotoUrl },
+                        { label: "cv",         url: selJS.cvUrl },
+                        { label: "ktm",        url: selJS.ktmUrl },
+                        { label: "sertifikat", url: selJS.sertifikatUrl },
+                      ].filter((d: any) => d.url);
+                      if (docs.length === 0) { alert("Tidak ada dokumen yang tersedia."); return; }
+                      const JSZip = (await import("jszip")).default;
+                      const zip = new JSZip();
+                      const folder = zip.folder(selJS.registrationId || "dokumen")!;
+                      await Promise.all(docs.map(async (d: any) => {
+                        try {
+                          const res  = await fetch(d.url);
+                          const blob = await res.blob();
+                          const ext  = d.url.split(".").pop()?.split("?")[0] || "file";
+                          folder.file(`${d.label}.${ext}`, blob);
+                        } catch {}
+                      }));
+                      const blob = await zip.generateAsync({ type: "blob" });
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `dokumen-${selJS.registrationId || "jobseeker"}.zip`;
+                      a.click();
+                    }}
+                    style={{ width: "100%", marginTop: "0.25rem", marginBottom: "0.5rem", background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 8, padding: "0.6rem", fontSize: "0.83rem", fontWeight: 700, cursor: "pointer" }}>
+                    ⬇ Download ZIP Dokumen
+                  </button>
+
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "1rem", marginTop: "0.5rem" }}>
                   <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>Consent (UU PDP)</div>
                   <div style={{ fontSize: "0.85rem", marginBottom: "0.35rem", color: selJS.consent1 ? "#14b8a6" : "#ef4444" }}>

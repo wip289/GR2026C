@@ -89,6 +89,7 @@ export default function EmployerDashboard() {
   const [kdSortCol,     setKdSortCol]     = useState<"namaLengkap"|"institusi"|"tahunLulus">("namaLengkap");
   const [kdSortDir,     setKdSortDir]     = useState<"asc"|"desc">("asc");
   const [kdPage,        setKdPage]        = useState(1);
+  const [selectedKandidats, setSelectedKandidats] = useState<Set<string>>(new Set());
   const KD_PAGE_SIZE = 25;
 
   const [vacUploading, setVacUploading] = useState(false);
@@ -1327,6 +1328,45 @@ export default function EmployerDashboard() {
           };
           const sortIcon = (col: typeof kdSortCol) => kdSortCol !== col ? " ↕" : kdSortDir === "asc" ? " ↑" : " ↓";
 
+          const isAllSelected = filtered.length > 0 && filtered.every((j: any) => selectedKandidats.has(j.registrationId));
+          const toggleAll = () => {
+            if (isAllSelected) {
+              setSelectedKandidats(new Set());
+            } else {
+              setSelectedKandidats(new Set(filtered.map((j: any) => j.registrationId)));
+            }
+          };
+          const toggleOne = (id: string) => {
+            setSelectedKandidats(prev => {
+              const next = new Set(prev);
+              next.has(id) ? next.delete(id) : next.add(id);
+              return next;
+            });
+          };
+
+          const downloadCSV = () => {
+            const toDownload = filtered.filter((j: any) => selectedKandidats.has(j.registrationId));
+            if (toDownload.length === 0) return;
+            const headers = ["Nama Lengkap","Institusi","Jurusan","Tahun Lulus","Status Kerja","Minat Kerja","Kota","URL Foto","URL CV"];
+            const rows = toDownload.map((j: any) => [
+              j.namaLengkap || "",
+              j.institusi || "",
+              j.jurusan || "",
+              j.tahunLulus || "",
+              (j.statusKerja || j.status || "").replace(/_/g," "),
+              (j.minatKerja || j.bidangMinat || "").replace(/_/g," "),
+              j.kota || "",
+              j.fotoUrl || "",
+              j.cvUrl || "",
+            ].map((v: any) => `"${String(v).replace(/"/g,'""')}"`).join(","));
+            const csv = [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href = url; a.download = `kandidat-gr2026-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+          };
+
           const sel = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
           const th  = { padding: "0.65rem 0.75rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" as const, userSelect: "none" as const };
           const td  = { padding: "0.6rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", borderBottom: "1px solid rgba(255,255,255,0.04)", verticalAlign: "middle" as const };
@@ -1376,10 +1416,31 @@ export default function EmployerDashboard() {
                       )}
                     </div>
 
+                    {selectedKandidats.size > 0 && (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.25)", borderRadius: 8, padding: "0.6rem 1rem", marginBottom: "0.75rem" }}>
+                        <span style={{ fontSize: "0.83rem", color: "#D4A017", fontWeight: 600 }}>✔ {selectedKandidats.size} kandidat dipilih</span>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button onClick={() => setSelectedKandidats(new Set())}
+                            style={{ background: "none", border: "1px solid rgba(248,113,113,0.35)", color: "#f87171", borderRadius: 7, padding: "0.35rem 0.75rem", fontSize: "0.78rem", cursor: "pointer" }}>
+                            ✕ Batal Pilih
+                          </button>
+                          <button onClick={downloadCSV}
+                            style={{ background: "linear-gradient(135deg,#D4A017,#b8860b)", border: "none", color: "#fff", borderRadius: 7, padding: "0.35rem 0.9rem", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+                            ⬇ Download CSV ({selectedKandidats.size})
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ overflowX: "auto" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 750 }}>
                         <thead>
                           <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                            <th style={{ ...th, width: 36, textAlign: "center" }}>
+                              <input type="checkbox" checked={isAllSelected} onChange={toggleAll}
+                                title={isAllSelected ? "Batal pilih semua" : "Pilih semua hasil filter"}
+                                style={{ cursor: "pointer", width: 15, height: 15 }} />
+                            </th>
                             <th style={{ ...th, width: 44 }}>Foto</th>
                             <th style={{ ...th, cursor: "pointer" }} onClick={() => thSort("namaLengkap")}>Nama{sortIcon("namaLengkap")}</th>
                             <th style={{ ...th, cursor: "pointer" }} onClick={() => thSort("institusi")}>Institusi{sortIcon("institusi")}</th>
@@ -1393,11 +1454,16 @@ export default function EmployerDashboard() {
                         </thead>
                         <tbody>
                           {paginated.length === 0 ? (
-                            <tr><td colSpan={9} style={{ ...td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Tidak ada kandidat yang sesuai filter.</td></tr>
+                            <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Tidak ada kandidat yang sesuai filter.</td></tr>
                           ) : paginated.map((js: any) => (
                             <tr key={js.registrationId}
-                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                              style={{ background: selectedKandidats.has(js.registrationId) ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.1s" }}
+                              onMouseEnter={e => { if (!selectedKandidats.has(js.registrationId)) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                              onMouseLeave={e => { if (!selectedKandidats.has(js.registrationId)) e.currentTarget.style.background = "transparent"; }}>
+                              <td style={{ ...td, textAlign: "center" }}>
+                                <input type="checkbox" checked={selectedKandidats.has(js.registrationId)} onChange={() => toggleOne(js.registrationId)}
+                                  style={{ cursor: "pointer", width: 15, height: 15 }} />
+                              </td>
                               <td style={td}>
                                 {js.fotoUrl
                                   ? <img src={js.fotoUrl} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", display: "block" }} />
