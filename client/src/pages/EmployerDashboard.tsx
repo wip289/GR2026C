@@ -359,9 +359,7 @@ export default function EmployerDashboard() {
             { id: "rekrutmen" as TabId, label: "📄 Rekrutmen" },
             { id: "kandidat" as TabId, label: (() => {
               const b = booking as any;
-              const hasFiles = Array.isArray(b.jobVacanciesUrl) && b.jobVacanciesUrl.length > 0;
-              const validPos = Array.isArray(b.positions) ? b.positions.filter((p: any) => p.posisi?.trim()) : [];
-              const unlocked = b.status === "confirmed" && hasFiles && validPos.length >= 2;
+              const unlocked = b.status === "confirmed";
               return unlocked ? "👥 Kandidat" : "🔒 Kandidat";
             })() },
             { id: "editprofil" as TabId, label: "✏️ Edit Profil" },
@@ -1278,31 +1276,18 @@ export default function EmployerDashboard() {
         {activeTab === "kandidat" && (() => {
           const b = booking as any;
           const isConfirmed = b.status === "confirmed";
-          const hasFiles    = Array.isArray(b.jobVacanciesUrl) && b.jobVacanciesUrl.length > 0;
-          const validPos    = rekrutmenRows.filter(r => r.posisi.trim());
-          const unlocked    = isConfirmed && hasFiles && validPos.length >= 2;
 
-          if (!unlocked) {
+          if (!isConfirmed) {
             return (
               <div style={s.card}>
                 <div style={s.secHd}>🔒 Akses Kandidat Terkunci</div>
-                <p style={{ color: "#64748b", fontSize: "0.88rem", marginBottom: "1.5rem", lineHeight: 1.7 }}>
-                  Lengkapi semua syarat berikut untuk membuka daftar kandidat jobseeker.
+                <p style={{ color: "#64748b", fontSize: "0.88rem", lineHeight: 1.7 }}>
+                  Akses daftar kandidat akan tersedia setelah pembayaran booth dikonfirmasi oleh panitia.
                 </p>
-                {[
-                  { done: isConfirmed, label: "Pembayaran sudah dikonfirmasi panitia" },
-                  { done: hasFiles,    label: "Sudah upload minimal 1 file job vacancies (tab Rekrutmen)" },
-                  { done: validPos.length >= 2, label: `Sudah isi minimal 2 posisi rekrutmen (saat ini: ${validPos.length})` },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <span style={{ fontSize: "1.1rem" }}>{item.done ? "✅" : "⬜"}</span>
-                    <span style={{ fontSize: "0.88rem", color: item.done ? "#94a3b8" : "#f1f5f9", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
-                  </div>
-                ))}
-                <button onClick={() => setActiveTab("rekrutmen")}
-                  style={{ marginTop: "1.5rem", background: "linear-gradient(135deg,#D4A017,#b8860b)", border: "none", color: "#fff", borderRadius: 8, padding: "0.6rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
-                  → Lengkapi di Tab Rekrutmen
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.7rem 0", marginTop: "1rem" }}>
+                  <span style={{ fontSize: "1.1rem" }}>{isConfirmed ? "✅" : "⬜"}</span>
+                  <span style={{ fontSize: "0.88rem", color: isConfirmed ? "#94a3b8" : "#f1f5f9" }}>Pembayaran sudah dikonfirmasi panitia</span>
+                </div>
               </div>
             );
           }

@@ -645,7 +645,7 @@ export default function BossPanel() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Perusahaan", "Booking ID", "Booth", "Total", "Bukti Bayar", "Status", "Aksi"].map(h => (
+                      {["Perusahaan", "Booking ID", "Booth", "Total", "Bukti Bayar", "Job Vacancies", "Status", "Aksi"].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
@@ -676,6 +676,14 @@ export default function BossPanel() {
                           ) : (
                             <span style={{ fontSize: "0.75rem", color: "#64748b" }}>— Belum</span>
                           )}
+                        </td>
+                        <td style={s.td}>
+                          {(() => {
+                            const files = Array.isArray(emp.jobVacanciesUrl) ? emp.jobVacanciesUrl : [];
+                            return files.length > 0
+                              ? <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: 700 }}>✅ {files.length} file</span>
+                              : <span style={{ fontSize: "0.75rem", color: "#f97316" }}>⏳ Belum</span>;
+                          })()}
                         </td>
                         <td style={s.td}>
                           <span style={s.badge(emp.status === "confirmed" ? "#14b8a6" : emp.status === "rejected" ? "#ef4444" : "#f97316")}>
@@ -761,6 +769,29 @@ export default function BossPanel() {
                         <span style={{ color: "#64748b", marginLeft: "0.5rem" }}>— {st.posisi}</span>
                       </div>
                     ));
+                  })()}
+                </div>
+
+                {/* Job Vacancies */}
+                <div style={{ marginTop: "1rem", padding: "0.75rem", background: "rgba(20,184,166,0.04)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8 }}>
+                  <div style={{ fontSize: "0.72rem", color: "#14b8a6", textTransform: "uppercase" as const, letterSpacing: "0.05em", fontWeight: 700, marginBottom: "0.5rem" }}>
+                    📄 Job Vacancies
+                  </div>
+                  {(() => {
+                    const files = Array.isArray(selEmp.jobVacanciesUrl) ? selEmp.jobVacanciesUrl as {url:string;name:string}[] : [];
+                    if (files.length === 0) return <div style={{ fontSize: "0.8rem", color: "#f97316" }}>⏳ Belum upload job vacancies</div>;
+                    return (
+                      <div>
+                        <div style={{ fontSize: "0.78rem", color: "#22c55e", marginBottom: "0.4rem" }}>✅ {files.length} file terupload</div>
+                        {files.map((f, i) => (
+                          <div key={i} style={{ fontSize: "0.78rem", marginBottom: "0.2rem" }}>
+                            <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "#7dd3fc", textDecoration: "none" }}>
+                              📎 {f.name || `File ${i+1}`}
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    );
                   })()}
                 </div>
 
