@@ -1367,7 +1367,8 @@ export default function EmployerDashboard() {
             a.click(); URL.revokeObjectURL(url);
           };
 
-          const sel = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
+          const sel = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
+          const optStyle = { background: "#0f172a", color: "#f1f5f9" };
           const th  = { padding: "0.65rem 0.75rem", fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.05em", borderBottom: "1px solid rgba(255,255,255,0.08)", whiteSpace: "nowrap" as const, userSelect: "none" as const };
           const td  = { padding: "0.6rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", borderBottom: "1px solid rgba(255,255,255,0.04)", verticalAlign: "middle" as const };
 
@@ -1393,20 +1394,20 @@ export default function EmployerDashboard() {
                         onChange={e => { setKdSearch(e.target.value); setKdPage(1); }}
                         style={{ ...sel, flex: "1 1 200px", minWidth: 160 }} />
                       <select value={kdFilterMinat} onChange={e => { setKdFilterMinat(e.target.value); setKdPage(1); }} style={sel}>
-                        <option value="">Semua Minat</option>
-                        <option value="dalam_negeri">Dalam Negeri</option>
-                        <option value="luar_negeri">Luar Negeri</option>
-                        <option value="keduanya">Keduanya</option>
+                        <option value="" style={optStyle}>Semua Minat</option>
+                        <option value="dalam_negeri" style={optStyle}>Dalam Negeri</option>
+                        <option value="luar_negeri" style={optStyle}>Luar Negeri</option>
+                        <option value="keduanya" style={optStyle}>Keduanya</option>
                       </select>
                       <select value={kdFilterStatus} onChange={e => { setKdFilterStatus(e.target.value); setKdPage(1); }} style={sel}>
-                        <option value="">Semua Status</option>
-                        <option value="belum_bekerja">Belum Bekerja</option>
-                        <option value="pernah_bekerja">Pernah Bekerja</option>
-                        <option value="sedang_bekerja">Sedang Bekerja</option>
+                        <option value="" style={optStyle}>Semua Status</option>
+                        <option value="belum_bekerja" style={optStyle}>Belum Bekerja</option>
+                        <option value="pernah_bekerja" style={optStyle}>Pernah Bekerja</option>
+                        <option value="sedang_bekerja" style={optStyle}>Sedang Bekerja</option>
                       </select>
                       <select value={kdFilterInst} onChange={e => { setKdFilterInst(e.target.value); setKdPage(1); }} style={{ ...sel, maxWidth: 200 }}>
-                        <option value="">Semua Institusi</option>
-                        {institusiOptions.map(inst => <option key={inst} value={inst}>{inst}</option>)}
+                        <option value="" style={optStyle}>Semua Institusi</option>
+                        {institusiOptions.map(inst => <option key={inst} value={inst} style={optStyle}>{inst}</option>)}
                       </select>
                       {(kdSearch || kdFilterMinat || kdFilterStatus || kdFilterInst) && (
                         <button onClick={() => { setKdSearch(""); setKdFilterMinat(""); setKdFilterStatus(""); setKdFilterInst(""); setKdPage(1); }}
