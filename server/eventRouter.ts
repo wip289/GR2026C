@@ -1018,24 +1018,7 @@ export const eventRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: "STATUS_NOT_CONFIRMED" });
       }
 
-      // Layer 2: harus sudah upload job vacancies
-      const vacRaw = employer.jobVacanciesUrl;
-      const vacancies = Array.isArray(vacRaw) ? vacRaw
-        : (typeof vacRaw === "string" ? (() => { try { return JSON.parse(vacRaw); } catch { return []; } })() : []);
-      if (!vacancies || vacancies.length === 0) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "NO_VACANCIES" });
-      }
-
-      // Layer 3: harus isi minimal 2 posisi rekrutmen
-      const posRaw = employer.positions;
-      const posList = Array.isArray(posRaw) ? posRaw
-        : (typeof posRaw === "string" ? (() => { try { return JSON.parse(posRaw); } catch { return []; } })() : []);
-      const validPos = (posList as any[]).filter((p: any) => p.posisi && String(p.posisi).trim());
-      if (validPos.length < 2) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "MIN_POSITIONS" });
-      }
-
-      // Layer 4: cek window akses
+      // Layer 2: cek window akses
       const cfg = await getEventConfig() as any;
       const startStr = cfg?.jobseekerAccessStart;
       const endStr   = cfg?.jobseekerAccessEnd;
