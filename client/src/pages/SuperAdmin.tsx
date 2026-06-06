@@ -387,7 +387,7 @@ export default function SuperAdmin() {
   const [saving, setSaving] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const [editingFin,  setEditingFin]  = useState<string | null>(null);
-  const [finForm,     setFinForm]     = useState({ additionalPrice: "", additionalNote: "", amountReceived: "", paymentDate: "", notes: "" });
+  const [finForm,     setFinForm]     = useState({ sewaOverride: "", additionalPrice: "", additionalNote: "", amountReceived: "", paymentDate: "", notes: "" });
   const [finUploading, setFinUploading] = useState(false);
 
   // Load config from DB
@@ -1101,6 +1101,9 @@ export default function SuperAdmin() {
           const finRec: Record<string, any> = (() => { try { return JSON.parse(cfg.financialRecords || "{}"); } catch { return {}; } })();
 
           const getBoothPrice = (b: any): number => {
+            // Check manual override first
+            const override = parseFloat(finRec[b.bookingId]?.sewaOverride || "0");
+            if (override > 0) return override;
             try {
               const booths = typeof b.selectedBooths === "string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths || []);
               const total = (booths as any[]).reduce((s: number, bt: any) => s + (parseFloat(bt.price) || 0), 0);
@@ -1228,7 +1231,7 @@ export default function SuperAdmin() {
                             if (isEditing) { setEditingFin(null); }
                             else {
                               setEditingFin(b.bookingId);
-                              setFinForm({ additionalPrice: rec.additionalPrice || "", additionalNote: rec.additionalNote || "", amountReceived: rec.amountReceived || "", paymentDate: rec.paymentDate || "", notes: rec.notes || "" });
+                              setFinForm({ sewaOverride: rec.sewaOverride || "", additionalPrice: rec.additionalPrice || "", additionalNote: rec.additionalNote || "", amountReceived: rec.amountReceived || "", paymentDate: rec.paymentDate || "", notes: rec.notes || "" });
                             }
                           }} style={{ cursor: "pointer", background: isEditing ? "rgba(212,160,23,0.06)" : "transparent", transition: "background 0.1s", borderLeft: isEditing ? "3px solid #D4A017" : "3px solid transparent" }}>
                             <td style={{ ...s.td, textAlign: "center" as const, color: "#64748b" }}>{i+1}</td>
@@ -1273,6 +1276,7 @@ export default function SuperAdmin() {
                   </div>
 
                   {[
+                    { label: "Tagihan Sewa Override (Rp)", key: "sewaOverride", type: "number", placeholder: "Kosongkan untuk pakai harga sistem", hint: "Isi bila harga sistem tidak sesuai (misal setelah negosiasi)" },
                     { label: "Biaya Additional (Rp)", key: "additionalPrice", type: "number", placeholder: "0", hint: "Biaya booth custom, dll" },
                     { label: "Keterangan Additional", key: "additionalNote", type: "text", placeholder: "Contoh: Booth custom LED", hint: "" },
                     { label: "Jumlah Diterima (Rp)", key: "amountReceived", type: "number", placeholder: "0", hint: "Sesuai yang benar-benar diterima" },
