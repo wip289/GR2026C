@@ -387,7 +387,7 @@ export default function SuperAdmin() {
   const [saving, setSaving] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const [editingFin,  setEditingFin]  = useState<string | null>(null);
-  const [finForm,     setFinForm]     = useState({ sewaOverride: "", additionalPrice: "", additionalNote: "", amountReceived: "", paymentDate: "", notes: "" });
+  const [finForm,     setFinForm]     = useState({ sewaOverride: "", additionalPrice: "", additionalNote: "", amountReceived: "", paymentDate: "", notes: "", pajakType: "", pajakPersen: "", pajakAmount: "" });
   const [finUploading, setFinUploading] = useState(false);
 
   // Load config from DB
@@ -1121,13 +1121,18 @@ export default function SuperAdmin() {
 
           const printReport = () => {
             const rows = bookings.map((b, i) => {
-              const rec    = finRec[b.bookingId] || {};
-              const sewa   = getBoothPrice(b);
-              const add    = parseFloat(rec.additionalPrice || 0);
-              const grand  = sewa + add;
-              const trm    = parseFloat(rec.amountReceived || 0);
-              const sel    = grand - trm;
-              const status = trm === 0 ? "Belum" : trm >= grand ? "Lunas" : "Kurang";
+              const rec       = finRec[b.bookingId] || {};
+              const sewa      = getBoothPrice(b);
+              const add       = parseFloat(rec.additionalPrice || 0);
+              const grand     = sewa + add;
+              const pajakAmt  = parseFloat(rec.pajakAmount || 0);
+              const isPPh     = rec.pajakType === "pph";
+              const isPPN     = rec.pajakType === "ppn";
+              const threshold = isPPh ? grand - pajakAmt : isPPN ? grand + pajakAmt : grand;
+              const trm       = parseFloat(rec.amountReceived || 0);
+              const sel       = threshold - trm;
+              const status    = trm === 0 ? "Belum" : trm >= threshold ? "Lunas" : "Kurang";
+              const pajakLabel= pajakAmt > 0 ? (rec.pajakType?.toUpperCase() + " Rp " + Math.round(pajakAmt).toLocaleString("id-ID")) : "—";
               const booths = (() => { try { const bs = typeof b.selectedBooths==="string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths||[]); return bs.join(", "); } catch { return "-"; } })();
               return `<tr style="border-bottom:1px solid #e5e7eb">
                 <td style="padding:8px 6px;text-align:center">${i+1}</td>
@@ -1142,6 +1147,7 @@ export default function SuperAdmin() {
                 </td>
                 <td style="padding:8px 6px;text-align:center">${rec.paymentDate || "—"}</td>
                 <td style="padding:8px 6px;text-align:center;color:${status==="Lunas"?"#059669":status==="Kurang"?"#d97706":"#6b7280"};font-weight:700">${status}</td>
+                <td style="padding:8px 6px;font-size:0.78rem;color:#6b7280">${pajakLabel}</td>
                 ${rec.notes ? `<td style="padding:8px 6px;font-size:0.78rem;color:#6b7280">${rec.notes}</td>` : "<td></td>"}
               </tr>`;
             }).join("");
@@ -1167,7 +1173,7 @@ export default function SuperAdmin() {
             </div>
             <table><thead><tr>
               <th>#</th><th>Perusahaan</th><th>Booth</th><th>Tagihan Sewa</th><th>Additional</th>
-              <th>Grand Total</th><th>Jml Diterima</th><th>Selisih</th><th>Tgl Bayar</th><th>Status</th><th>Catatan</th>
+              <th>Grand Total</th><th>Jml Diterima</th><th>Selisih</th><th>Tgl Bayar</th><th>Status</th><th>Pajak</th><th>Catatan</th>
             </tr></thead><tbody>${rows}</tbody></table>
             <p style="margin-top:32px;font-size:11px;color:#9ca3af">Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · www.grandrecruitment.id</p>
             </body></html>`;
@@ -1217,13 +1223,17 @@ export default function SuperAdmin() {
                       {bookings.length === 0 ? (
                         <tr><td colSpan={10} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Belum ada employer confirmed.</td></tr>
                       ) : bookings.map((b: any, i: number) => {
-                        const rec   = finRec[b.bookingId] || {};
-                        const sewa  = getBoothPrice(b);
-                        const add   = parseFloat(rec.additionalPrice || 0);
-                        const grand = sewa + add;
-                        const trm   = parseFloat(rec.amountReceived || 0);
-                        const sel   = grand - trm;
-                        const status = trm === 0 ? "— Belum" : trm >= grand ? "✅ Lunas" : "⚠ Kurang";
+                        const rec       = finRec[b.bookingId] || {};
+                        const sewa      = getBoothPrice(b);
+                        const add       = parseFloat(rec.additionalPrice || 0);
+                        const grand     = sewa + add;
+                        const pajakAmt  = parseFloat(rec.pajakAmount || 0);
+                        const isPPh     = rec.pajakType === "pph";
+                        const isPPN     = rec.pajakType === "ppn";
+                        const threshold = isPPh ? grand - pajakAmt : isPPN ? grand + pajakAmt : grand;
+                        const trm       = parseFloat(rec.amountReceived || 0);
+                        const sel       = threshold - trm;
+                        const status    = trm === 0 ? "— Belum" : trm >= threshold ? "✅ Lunas" : "⚠ Kurang";
                         const booths = (() => { try { const bs = typeof b.selectedBooths==="string"?JSON.parse(b.selectedBooths):(b.selectedBooths||[]); return bs.join(", "); } catch { return "-"; } })();
                         const isEditing = editingFin === b.bookingId;
                         return (
@@ -1231,7 +1241,7 @@ export default function SuperAdmin() {
                             if (isEditing) { setEditingFin(null); }
                             else {
                               setEditingFin(b.bookingId);
-                              setFinForm({ sewaOverride: rec.sewaOverride || "", additionalPrice: rec.additionalPrice || "", additionalNote: rec.additionalNote || "", amountReceived: rec.amountReceived || "", paymentDate: rec.paymentDate || "", notes: rec.notes || "" });
+                              setFinForm({ sewaOverride: rec.sewaOverride || "", additionalPrice: rec.additionalPrice || "", additionalNote: rec.additionalNote || "", amountReceived: rec.amountReceived || "", paymentDate: rec.paymentDate || "", notes: rec.notes || "", pajakType: rec.pajakType || "", pajakPersen: rec.pajakPersen || "", pajakAmount: rec.pajakAmount || "" });
                             }
                           }} style={{ cursor: "pointer", background: isEditing ? "rgba(212,160,23,0.06)" : "transparent", transition: "background 0.1s", borderLeft: isEditing ? "3px solid #D4A017" : "3px solid transparent" }}>
                             <td style={{ ...s.td, textAlign: "center" as const, color: "#64748b" }}>{i+1}</td>
@@ -1295,6 +1305,63 @@ export default function SuperAdmin() {
                       {field.hint && <div style={{ fontSize: "0.68rem", color: "#475569", marginTop: "0.2rem" }}>{field.hint}</div>}
                     </div>
                   ))}
+
+                  {/* Pajak */}
+                  <div style={{ marginBottom: "0.85rem" }}>
+                    <label style={{ fontSize: "0.75rem", color: "#94a3b8", display: "block", marginBottom: "0.4rem" }}>Jenis Pajak</label>
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                      {(["", "pph", "ppn"] as const).map(t => (
+                        <button key={t} onClick={() => setFinForm(f => ({ ...f, pajakType: t, pajakPersen: "", pajakAmount: "" }))}
+                          style={{ padding: "0.35rem 0.75rem", borderRadius: 7, border: `1px solid ${finForm.pajakType === t ? "#D4A017" : "rgba(255,255,255,0.1)"}`, background: finForm.pajakType === t ? "rgba(212,160,23,0.12)" : "transparent", color: finForm.pajakType === t ? "#D4A017" : "#64748b", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+                          {t === "" ? "Tidak Ada" : t === "pph" ? "PPh" : "PPN"}
+                        </button>
+                      ))}
+                    </div>
+                    {finForm.pajakType && (
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "0.7rem", color: "#475569", marginBottom: "0.25rem" }}>Persentase (%) — opsional</div>
+                          <input type="number" value={finForm.pajakPersen}
+                            onChange={e => {
+                              const pct   = e.target.value;
+                              const sewa  = getBoothPrice(editBkg!);
+                              const add   = parseFloat(finForm.additionalPrice || finRec[editingFin!]?.additionalPrice || 0);
+                              const grand = sewa + add;
+                              const auto  = pct ? String(Math.round(grand * parseFloat(pct) / 100)) : "";
+                              setFinForm(f => ({ ...f, pajakPersen: pct, pajakAmount: auto }));
+                            }}
+                            placeholder="2"
+                            style={{ width: "100%", boxSizing: "border-box" as const, background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", outline: "none" }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "0.7rem", color: "#D4A017", marginBottom: "0.25rem" }}>Jumlah Pajak (Rp) — bisa manual</div>
+                          <input type="number" value={finForm.pajakAmount}
+                            onChange={e => setFinForm(f => ({ ...f, pajakAmount: e.target.value, pajakPersen: "" }))}
+                            placeholder="187000"
+                            style={{ width: "100%", boxSizing: "border-box" as const, background: "#0f172a", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", outline: "none" }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {finForm.pajakType && parseFloat(finForm.pajakAmount || "0") > 0 && (() => {
+                      const sewa  = getBoothPrice(editBkg!);
+                      const add   = parseFloat(finForm.additionalPrice || finRec[editingFin!]?.additionalPrice || 0);
+                      const grand = sewa + add;
+                      const amt   = parseFloat(finForm.pajakAmount);
+                      const net   = finForm.pajakType === "pph" ? grand - amt : grand + amt;
+                      return (
+                        <div style={{ marginTop: "0.5rem", padding: "0.5rem 0.75rem", background: "rgba(212,160,23,0.06)", borderRadius: 7, fontSize: "0.78rem" }}>
+                          <span style={{ color: "#64748b" }}>{finForm.pajakType === "pph" ? "PPh" : "PPN"} = </span>
+                          <span style={{ color: "#D4A017", fontWeight: 700 }}>{fmtRp(amt)}</span>
+                          <div style={{ marginTop: "0.25rem", color: "#94a3b8" }}>
+                            {finForm.pajakType === "pph" ? "Bersih yang seharusnya diterima: " : "Total yang harus dibayar: "}
+                            <strong style={{ color: "#22c55e" }}>{fmtRp(net)}</strong>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
 
                   {/* Upload bukti bayar */}
                   <div style={{ marginBottom: "1rem" }}>
