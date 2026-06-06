@@ -1100,7 +1100,15 @@ export default function SuperAdmin() {
           const cfg = dbConfig as any || {};
           const finRec: Record<string, any> = (() => { try { return JSON.parse(cfg.financialRecords || "{}"); } catch { return {}; } })();
 
-          const totalSewa       = bookings.reduce((s, b) => s + parseFloat(b.totalAmount || 0), 0);
+          const getBoothPrice = (b: any): number => {
+            try {
+              const booths = typeof b.selectedBooths === "string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths || []);
+              const total = (booths as any[]).reduce((s: number, bt: any) => s + (parseFloat(bt.price) || 0), 0);
+              return total > 0 ? total : parseFloat(b.totalAmount || 0);
+            } catch { return parseFloat(b.totalAmount || 0); }
+          };
+
+          const totalSewa       = bookings.reduce((s, b) => s + getBoothPrice(b), 0);
           const totalAdditional = bookings.reduce((s, b) => s + parseFloat(finRec[b.bookingId]?.additionalPrice || 0), 0);
           const totalGrand      = totalSewa + totalAdditional;
           const totalDiterima   = bookings.reduce((s, b) => s + parseFloat(finRec[b.bookingId]?.amountReceived || 0), 0);
@@ -1111,7 +1119,7 @@ export default function SuperAdmin() {
           const printReport = () => {
             const rows = bookings.map((b, i) => {
               const rec    = finRec[b.bookingId] || {};
-              const sewa   = parseFloat(b.totalAmount || 0);
+              const sewa   = getBoothPrice(b);
               const add    = parseFloat(rec.additionalPrice || 0);
               const grand  = sewa + add;
               const trm    = parseFloat(rec.amountReceived || 0);
@@ -1207,7 +1215,7 @@ export default function SuperAdmin() {
                         <tr><td colSpan={10} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Belum ada employer confirmed.</td></tr>
                       ) : bookings.map((b: any, i: number) => {
                         const rec   = finRec[b.bookingId] || {};
-                        const sewa  = parseFloat(b.totalAmount || 0);
+                        const sewa  = getBoothPrice(b);
                         const add   = parseFloat(rec.additionalPrice || 0);
                         const grand = sewa + add;
                         const trm   = parseFloat(rec.amountReceived || 0);
@@ -1255,8 +1263,13 @@ export default function SuperAdmin() {
 
                   {/* Base price info */}
                   <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 8, padding: "0.75rem", marginBottom: "1.25rem" }}>
-                    <div style={{ fontSize: "0.72rem", color: "#64748b", marginBottom: "0.25rem" }}>Tagihan Sewa (dari sistem)</div>
-                    <div style={{ fontWeight: 700, color: "#818cf8" }}>{fmtRp(parseFloat(editBkg.totalAmount || 0))}</div>
+                    <div style={{ fontSize: "0.72rem", color: "#64748b", marginBottom: "0.25rem" }}>Harga Booth (referensi sistem)</div>
+                    <div style={{ fontWeight: 700, color: "#818cf8" }}>{fmtRp(getBoothPrice(editBkg))}</div>
+                    {getBoothPrice(editBkg) !== parseFloat(editBkg.totalAmount || 0) && (
+                      <div style={{ fontSize: "0.68rem", color: "#475569", marginTop: "0.2rem" }}>
+                        Total tagihan sistem: {fmtRp(parseFloat(editBkg.totalAmount || 0))} (termasuk fasilitas)
+                      </div>
+                    )}
                   </div>
 
                   {[
