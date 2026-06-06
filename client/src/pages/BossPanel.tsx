@@ -190,6 +190,9 @@ export default function BossPanel() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [selectedEmployer, setSelectedEmployer] = useState<string | null>(null);
   const [selectedJobseeker, setSelectedJobseeker] = useState<string | null>(null);
+  const [jsSearch, setJsSearch] = useState("");
+  const [jsPage,   setJsPage]   = useState(1);
+  const JS_PAGE_SIZE = 50;
   const [selectedDay, setSelectedDay] = useState(0);
   const [discountInput, setDiscountInput] = useState<Record<string, string>>({});
   const [discountNoteInput, setDiscountNoteInput] = useState<Record<string, string>>({});
@@ -888,26 +891,40 @@ export default function BossPanel() {
         )}
 
         {/* ── JOBSEEKER ── */}
-        {activeTab === "jobseeker" && (
+        {activeTab === "jobseeker" && (() => {
+          const jsFiltered = jobseekers.filter((js: any) =>
+            !jsSearch.trim() || js.namaLengkap?.toLowerCase().includes(jsSearch.trim().toLowerCase())
+          );
+          const jsTotalPages = Math.max(1, Math.ceil(jsFiltered.length / JS_PAGE_SIZE));
+          const jsSafePage   = Math.min(jsPage, jsTotalPages);
+          const jsPaginated  = jsFiltered.slice((jsSafePage - 1) * JS_PAGE_SIZE, jsSafePage * JS_PAGE_SIZE);
+
+          return (
           <div style={{ display: "grid", gridTemplateColumns: selJS ? "1fr 360px" : "1fr", gap: "1.5rem" }}>
             <div style={s.card}>
-  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
-    <button
-      onClick={() => exportJobseekersCSV(jobseekers)}
-      style={{
-        padding: "0.4rem 1rem",
-        background: "#16a34a",
-        color: "white",
-        border: "none",
-        borderRadius: "6px",
-        cursor: "pointer",
-        fontSize: "0.85rem",
-        fontWeight: 600,
-      }}
-    >
-      ⬇ Export Excel
-    </button>
-  </div>
+              {/* Toolbar */}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" as const }}>
+                <input
+                  value={jsSearch}
+                  onChange={e => { setJsSearch(e.target.value); setJsPage(1); }}
+                  placeholder="🔍 Cari nama jobseeker..."
+                  style={{ flex: 1, minWidth: 200, background: "#0f172a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "0.45rem 0.85rem", fontSize: "0.83rem", color: "#f1f5f9", outline: "none" }}
+                />
+                {jsSearch && (
+                  <button onClick={() => { setJsSearch(""); setJsPage(1); }}
+                    style={{ background: "none", border: "1px solid rgba(248,113,113,0.35)", color: "#f87171", borderRadius: 7, padding: "0.4rem 0.75rem", fontSize: "0.78rem", cursor: "pointer" }}>
+                    ✕ Reset
+                  </button>
+                )}
+                <span style={{ fontSize: "0.78rem", color: "#64748b", whiteSpace: "nowrap" as const }}>
+                  {jsSearch ? `${jsFiltered.length} hasil` : `${jobseekers.length} total`}
+                </span>
+                <button
+                  onClick={() => exportJobseekersCSV(jobseekers)}
+                  style={{ padding: "0.4rem 1rem", background: "#16a34a", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, whiteSpace: "nowrap" as const }}>
+                  ⬇ Export Excel
+                </button>
+              </div>
 
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -919,11 +936,15 @@ export default function BossPanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {jobseekers.map((js: any) => {
+                    {jsPaginated.length === 0 ? (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>
+                        {jsSearch ? `Tidak ada jobseeker dengan nama "${jsSearch}".` : "Belum ada jobseeker."}
+                      </td></tr>
+                    ) : jsPaginated.map((js: any) => {
                       const docsOk = js.fotoUrl && js.cvUrl && js.ktmUrl;
                       return (
                         <tr key={js.registrationId} onClick={() => setSelectedJobseeker(js.registrationId === selectedJobseeker ? null : js.registrationId)}
-                          style={{ cursor: "pointer", background: selectedJobseeker === js.id ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
+                          style={{ cursor: "pointer", background: selectedJobseeker === js.registrationId ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
                           <td style={s.td}>
                             <div style={{ fontWeight: 700 }}>{js.namaLengkap}</div>
                             <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{js.whatsapp}</div>
@@ -952,6 +973,28 @@ export default function BossPanel() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {jsTotalPages > 1 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "1rem", flexWrap: "wrap" as const, gap: "0.5rem" }}>
+                  <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                    Menampilkan {(jsSafePage - 1) * JS_PAGE_SIZE + 1}–{Math.min(jsSafePage * JS_PAGE_SIZE, jsFiltered.length)} dari {jsFiltered.length} jobseeker
+                  </span>
+                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                    <button onClick={() => setJsPage(1)} disabled={jsSafePage === 1}
+                      style={{ padding: "0.3rem 0.6rem", background: jsSafePage === 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: jsSafePage === 1 ? "#475569" : "#f1f5f9", borderRadius: 6, cursor: jsSafePage === 1 ? "default" : "pointer", fontSize: "0.8rem" }}>«</button>
+                    <button onClick={() => setJsPage(p => Math.max(1, p - 1))} disabled={jsSafePage === 1}
+                      style={{ padding: "0.3rem 0.7rem", background: jsSafePage === 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: jsSafePage === 1 ? "#475569" : "#f1f5f9", borderRadius: 6, cursor: jsSafePage === 1 ? "default" : "pointer", fontSize: "0.8rem" }}>‹ Prev</button>
+                    <span style={{ fontSize: "0.8rem", color: "#D4A017", fontWeight: 700, padding: "0 0.5rem" }}>
+                      {jsSafePage} / {jsTotalPages}
+                    </span>
+                    <button onClick={() => setJsPage(p => Math.min(jsTotalPages, p + 1))} disabled={jsSafePage === jsTotalPages}
+                      style={{ padding: "0.3rem 0.7rem", background: jsSafePage === jsTotalPages ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: jsSafePage === jsTotalPages ? "#475569" : "#f1f5f9", borderRadius: 6, cursor: jsSafePage === jsTotalPages ? "default" : "pointer", fontSize: "0.8rem" }}>Next ›</button>
+                    <button onClick={() => setJsPage(jsTotalPages)} disabled={jsSafePage === jsTotalPages}
+                      style={{ padding: "0.3rem 0.6rem", background: jsSafePage === jsTotalPages ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", color: jsSafePage === jsTotalPages ? "#475569" : "#f1f5f9", borderRadius: 6, cursor: jsSafePage === jsTotalPages ? "default" : "pointer", fontSize: "0.8rem" }}>»</button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Jobseeker detail */}
@@ -1043,7 +1086,8 @@ export default function BossPanel() {
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ── INTERVIEW SLOTS ── */}
         {activeTab === "interview" && (
