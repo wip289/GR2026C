@@ -1120,7 +1120,8 @@ export default function SuperAdmin() {
           const editBkg = editingFin ? bookings.find(b => b.bookingId === editingFin) : null;
 
           const printReport = () => {
-            const rows = bookings.map((b, i) => {
+            // Pre-compute per-row data
+            const rowData = bookings.map((b, i) => {
               const rec       = finRec[b.bookingId] || {};
               const sewa      = getBoothPrice(b);
               const add       = parseFloat(rec.additionalPrice || 0);
@@ -1133,52 +1134,158 @@ export default function SuperAdmin() {
               const sel       = threshold - trm;
               const status    = trm === 0 ? "Belum" : trm >= threshold ? "Lunas" : "Kurang";
               const pajakLabel= pajakAmt > 0 ? (rec.pajakType?.toUpperCase() + " Rp " + Math.round(pajakAmt).toLocaleString("id-ID")) : "—";
-              const booths = (() => { try { const bs = typeof b.selectedBooths==="string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths||[]); return bs.join(", "); } catch { return "-"; } })();
-              return `<tr style="border-bottom:1px solid #e5e7eb">
-                <td style="padding:8px 6px;text-align:center">${i+1}</td>
-                <td style="padding:8px 6px;font-weight:600">${b.companyName}</td>
-                <td style="padding:8px 6px">${booths}</td>
-                <td style="padding:8px 6px;text-align:right">Rp ${sewa.toLocaleString("id-ID")}</td>
-                <td style="padding:8px 6px;text-align:right">${add > 0 ? "Rp " + add.toLocaleString("id-ID") : "—"}</td>
-                <td style="padding:8px 6px;text-align:right;font-weight:700">Rp ${grand.toLocaleString("id-ID")}</td>
-                <td style="padding:8px 6px;text-align:right">${trm > 0 ? "Rp " + trm.toLocaleString("id-ID") : "—"}</td>
-                <td style="padding:8px 6px;text-align:right;color:${sel > 0 ? "#dc2626" : sel < 0 ? "#059669" : "#374151"};font-weight:600">
-                  ${sel === 0 ? "✓" : sel > 0 ? "-Rp " + sel.toLocaleString("id-ID") : "+Rp " + Math.abs(sel).toLocaleString("id-ID")}
+              const booths    = (() => { try { const bs = typeof b.selectedBooths==="string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths||[]); return Array.isArray(bs) ? bs.map((x:any)=>x.id||x).join(", ") : "-"; } catch { return "-"; } })();
+              return { i, b, rec, sewa, add, grand, pajakAmt, threshold, trm, sel, status, pajakLabel, booths };
+            });
+
+            // Totals for footer
+            const sumSewa      = rowData.reduce((s,r) => s + r.sewa, 0);
+            const sumAdd       = rowData.reduce((s,r) => s + r.add, 0);
+            const sumGrand     = rowData.reduce((s,r) => s + r.grand, 0);
+            const sumPajak     = rowData.reduce((s,r) => s + r.pajakAmt, 0);
+            const sumDiterima  = rowData.reduce((s,r) => s + r.trm, 0);
+            const sumSelisih   = rowData.reduce((s,r) => s + r.sel, 0);
+            const rp = (n:number) => n > 0 ? "Rp " + Math.round(n).toLocaleString("id-ID") : (n < 0 ? "-Rp " + Math.round(Math.abs(n)).toLocaleString("id-ID") : "—");
+
+            const rows = rowData.map(({i,b,rec,sewa,add,grand,pajakAmt,trm,sel,status,pajakLabel,booths}) => {
+              const rowBg  = i % 2 === 0 ? "#ffffff" : "#f8fafc";
+              const selClr = sel > 0 ? "#dc2626" : sel < 0 ? "#059669" : "#374151";
+              const stsClr = status==="Lunas" ? "#059669" : status==="Kurang" ? "#d97706" : "#94a3b8";
+              return `<tr style="background:${rowBg};border-bottom:1px solid #e5e7eb">
+                <td style="padding:9px 8px;text-align:center;color:#94a3b8;font-size:11px">${i+1}</td>
+                <td style="padding:9px 8px">
+                  <div style="font-weight:700;font-size:13px">${b.companyName}</div>
+                  <div style="font-size:10px;color:#94a3b8;margin-top:2px">${b.bookingId}</div>
                 </td>
-                <td style="padding:8px 6px;text-align:center">${rec.paymentDate || "—"}</td>
-                <td style="padding:8px 6px;text-align:center;color:${status==="Lunas"?"#059669":status==="Kurang"?"#d97706":"#6b7280"};font-weight:700">${status}</td>
-                <td style="padding:8px 6px;font-size:0.78rem;color:#6b7280">${pajakLabel}</td>
-                ${rec.notes ? `<td style="padding:8px 6px;font-size:0.78rem;color:#6b7280">${rec.notes}</td>` : "<td></td>"}
+                <td style="padding:9px 8px;font-size:12px;color:#475569">${booths}</td>
+                <td style="padding:9px 8px;text-align:right;font-size:12px">${rp(sewa)}</td>
+                <td style="padding:9px 8px;text-align:right;font-size:12px;color:${add>0?"#d97706":"#94a3b8"}">${add>0?rp(add):"—"}</td>
+                <td style="padding:9px 8px;text-align:right;font-weight:700">${rp(grand)}</td>
+                <td style="padding:9px 8px;text-align:right;font-size:12px;color:#059669">${trm>0?rp(trm):"—"}</td>
+                <td style="padding:9px 8px;text-align:right;font-weight:700;color:${selClr}">${sel===0?"✓ Lunas":rp(sel)}</td>
+                <td style="padding:9px 8px;text-align:center;font-size:11px;color:#64748b">${rec.paymentDate||"—"}</td>
+                <td style="padding:9px 8px;text-align:center;font-weight:700;color:${stsClr}">${status}</td>
+                <td style="padding:9px 8px;font-size:11px;color:#64748b">${pajakLabel}</td>
+                <td style="padding:9px 8px;font-size:11px;color:#94a3b8">${rec.notes||"—"}</td>
               </tr>`;
             }).join("");
-            const html = `<!DOCTYPE html><html><head><title>Laporan Keuangan GR2026</title>
-            <style>body{font-family:Arial,sans-serif;font-size:13px;color:#111;padding:24px}
-            h1{font-size:20px;margin-bottom:4px}h2{font-size:14px;color:#555;font-weight:400;margin:0 0 20px}
-            table{width:100%;border-collapse:collapse}th{background:#0a1628;color:#fff;padding:8px 6px;text-align:left;font-size:12px}
-            .summary{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
-            .sum-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;min-width:140px}
-            .sum-label{font-size:11px;color:#6b7280;margin-bottom:4px}
-            .sum-val{font-size:16px;font-weight:700}
-            @media print{body{padding:0}}</style></head><body>
-            <h1>Laporan Keuangan — Grand Recruitment 2026</h1>
-            <h2>Dicetak: ${new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</h2>
-            <div class="summary">
-              <div class="sum-card"><div class="sum-label">Total Tagihan Sewa</div><div class="sum-val">Rp ${totalSewa.toLocaleString("id-ID")}</div></div>
-              <div class="sum-card"><div class="sum-label">Total Biaya Additional</div><div class="sum-val">Rp ${totalAdditional.toLocaleString("id-ID")}</div></div>
-              <div class="sum-card"><div class="sum-label">Grand Total Tagihan</div><div class="sum-val" style="color:#0a1628">Rp ${totalGrand.toLocaleString("id-ID")}</div></div>
-              <div class="sum-card"><div class="sum-label">Total Diterima</div><div class="sum-val" style="color:#059669">Rp ${totalDiterima.toLocaleString("id-ID")}</div></div>
-              <div class="sum-card"><div class="sum-label">Selisih</div><div class="sum-val" style="color:${totalSelisih>0?"#dc2626":totalSelisih<0?"#059669":"#374151"}">
-                ${totalSelisih===0?"✓ Lunas":totalSelisih>0?"-Rp "+totalSelisih.toLocaleString("id-ID"):"+Rp "+Math.abs(totalSelisih).toLocaleString("id-ID")}</div></div>
-              <div class="sum-card"><div class="sum-label">Jumlah Employer</div><div class="sum-val">${bookings.length}</div></div>
-            </div>
-            <table><thead><tr>
-              <th>#</th><th>Perusahaan</th><th>Booth</th><th>Tagihan Sewa</th><th>Additional</th>
-              <th>Grand Total</th><th>Jml Diterima</th><th>Selisih</th><th>Tgl Bayar</th><th>Status</th><th>Pajak</th><th>Catatan</th>
-            </tr></thead><tbody>${rows}</tbody></table>
-            <p style="margin-top:32px;font-size:11px;color:#9ca3af">Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · www.grandrecruitment.id</p>
-            </body></html>`;
+
+            const totalRow = `
+              <tr style="background:#0a1628;border-top:2px solid #D4A017">
+                <td colspan="3" style="padding:11px 8px;color:#D4A017;font-weight:800;font-size:13px">TOTAL (${rowData.length} Employer)</td>
+                <td style="padding:11px 8px;text-align:right;color:#fff;font-weight:700">${rp(sumSewa)}</td>
+                <td style="padding:11px 8px;text-align:right;color:#f97316;font-weight:700">${sumAdd>0?rp(sumAdd):"—"}</td>
+                <td style="padding:11px 8px;text-align:right;color:#D4A017;font-weight:800;font-size:14px">${rp(sumGrand)}</td>
+                <td style="padding:11px 8px;text-align:right;color:#4ade80;font-weight:700">${rp(sumDiterima)}</td>
+                <td style="padding:11px 8px;text-align:right;font-weight:800;color:${sumSelisih>0?"#f87171":sumSelisih<0?"#4ade80":"#4ade80"}">${sumSelisih===0?"✓ Lunas":rp(sumSelisih)}</td>
+                <td colspan="3" style="padding:11px 8px;color:#64748b;font-size:11px">${sumPajak>0?"Total pajak: "+rp(sumPajak):""}</td>
+                <td></td>
+              </tr>`;
+
+            const lunas  = rowData.filter(r => r.status === "Lunas").length;
+            const kurang = rowData.filter(r => r.status === "Kurang").length;
+            const belum  = rowData.filter(r => r.status === "Belum").length;
+
+            const html = `<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8">
+<title>Laporan Keuangan GR2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1e293b; background: #fff; padding: 28px 32px; }
+  .header { border-bottom: 3px solid #0a1628; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .header-left h1 { font-size: 22px; font-weight: 800; color: #0a1628; letter-spacing: -0.3px; }
+  .header-left h2 { font-size: 13px; color: #64748b; font-weight: 400; margin-top: 4px; }
+  .header-right { text-align: right; font-size: 11px; color: #94a3b8; line-height: 1.6; }
+  .summary-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 24px; }
+  .sum-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #f8fafc; }
+  .sum-card.accent { background: #0a1628; border-color: #0a1628; }
+  .sum-card.green  { background: #f0fdf4; border-color: #86efac; }
+  .sum-card.red    { background: #fef2f2; border-color: #fca5a5; }
+  .sum-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; font-weight: 600; }
+  .sum-card.accent .sum-label { color: #94a3b8; }
+  .sum-val  { font-size: 15px; font-weight: 800; color: #0a1628; }
+  .sum-card.accent .sum-val { color: #D4A017; }
+  .sum-card.green  .sum-val { color: #16a34a; }
+  .sum-card.red    .sum-val { color: #dc2626; }
+  .status-bar { display: flex; gap: 12px; margin-bottom: 16px; font-size: 12px; }
+  .status-pill { padding: 4px 12px; border-radius: 20px; font-weight: 700; }
+  .pill-lunas  { background: #dcfce7; color: #16a34a; }
+  .pill-kurang { background: #fef9c3; color: #b45309; }
+  .pill-belum  { background: #f1f5f9; color: #64748b; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 24px; }
+  thead th { background: #0a1628; color: #fff; padding: 10px 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  thead th.right { text-align: right; }
+  thead th.center { text-align: center; }
+  tbody tr:hover { background: #f0f9ff; }
+  tfoot td { border-top: 2px solid #D4A017; }
+  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
+  @media print {
+    body { padding: 16px 20px; font-size: 11px; }
+    .header { padding-bottom: 10px; margin-bottom: 14px; }
+    .summary-grid { margin-bottom: 16px; gap: 8px; }
+    .sum-val { font-size: 13px; }
+    thead th { font-size: 10px; padding: 7px 6px; }
+    table { font-size: 11px; }
+    @page { margin: 1.5cm; size: A4 landscape; }
+  }
+</style>
+</head><body>
+<div class="header">
+  <div class="header-left">
+    <h1>Laporan Keuangan — Grand Recruitment 2026</h1>
+    <h2>Politeknik Pariwisata NHI Bandung · www.grandrecruitment.id</h2>
+  </div>
+  <div class="header-right">
+    Dicetak: ${new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}<br>
+    Total Employer Confirmed: ${rowData.length}
+  </div>
+</div>
+
+<div class="summary-grid">
+  <div class="sum-card"><div class="sum-label">Tagihan Sewa</div><div class="sum-val">Rp ${Math.round(sumSewa).toLocaleString("id-ID")}</div></div>
+  <div class="sum-card"><div class="sum-label">Biaya Additional</div><div class="sum-val">Rp ${Math.round(sumAdd).toLocaleString("id-ID")}</div></div>
+  <div class="sum-card accent"><div class="sum-label">Grand Total Tagihan</div><div class="sum-val">Rp ${Math.round(sumGrand).toLocaleString("id-ID")}</div></div>
+  <div class="sum-card green"><div class="sum-label">Total Diterima</div><div class="sum-val">Rp ${Math.round(sumDiterima).toLocaleString("id-ID")}</div></div>
+  <div class="sum-card ${sumSelisih>0?"red":"green"}"><div class="sum-label">Selisih</div><div class="sum-val">${sumSelisih===0?"✓ Lunas":(sumSelisih>0?"-":"+")+"Rp "+Math.round(Math.abs(sumSelisih)).toLocaleString("id-ID")}</div></div>
+  <div class="sum-card"><div class="sum-label">Total Pajak</div><div class="sum-val">${sumPajak>0?"Rp "+Math.round(sumPajak).toLocaleString("id-ID"):"—"}</div></div>
+</div>
+
+<div class="status-bar">
+  <span>Status pembayaran:</span>
+  <span class="status-pill pill-lunas">✅ Lunas: ${lunas}</span>
+  <span class="status-pill pill-kurang">⚠ Kurang: ${kurang}</span>
+  <span class="status-pill pill-belum">— Belum: ${belum}</span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th class="center" style="width:32px">#</th>
+      <th>Perusahaan</th>
+      <th>Booth</th>
+      <th class="right">Tagihan Sewa</th>
+      <th class="right">Additional</th>
+      <th class="right">Grand Total</th>
+      <th class="right">Jml Diterima</th>
+      <th class="right">Selisih</th>
+      <th class="center">Tgl Bayar</th>
+      <th class="center">Status</th>
+      <th>Pajak</th>
+      <th>Catatan</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+  <tfoot>${totalRow}</tfoot>
+</table>
+
+<div class="footer">
+  <span>Grand Recruitment 2026 · IKA NHI Bandung · Politeknik Pariwisata NHI Bandung</span>
+  <span>Dokumen ini digenerate otomatis dari sistem www.grandrecruitment.id</span>
+</div>
+</body></html>`;
             const w = window.open("", "_blank");
-            if (w) { w.document.write(html); w.document.close(); w.print(); }
+            if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
           };
 
           return (
