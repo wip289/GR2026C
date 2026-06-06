@@ -386,9 +386,18 @@ export default function SuperAdmin() {
   const [activeSection, setActiveSection] = useState("event");
   const [saving, setSaving] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
+  const [editingFin,  setEditingFin]  = useState<string | null>(null);
+  const [finForm,     setFinForm]     = useState({ additionalPrice: "", additionalNote: "", amountReceived: "", paymentDate: "", notes: "" });
+  const [finUploading, setFinUploading] = useState(false);
 
   // Load config from DB
-  const { data: dbConfig } = trpc.event.getEventConfig.useQuery(undefined, { enabled: authed });
+  const { data: dbConfig, refetch: refetchCfg } = trpc.event.getEventConfig.useQuery(undefined, { enabled: authed });
+  const { data: allBookingsRaw } = trpc.event.getAllEmployerBookings.useQuery(undefined, { enabled: authed });
+  const saveFinMutation = trpc.event.saveEventConfig.useMutation({
+    onSuccess: () => { toast.success("Data keuangan disimpan!"); refetchCfg(); },
+    onError:   () => toast.error("Gagal menyimpan data keuangan"),
+  });
+
   const saveConfigMutation = trpc.event.saveEventConfig.useMutation({
     onSuccess: () => {
       toast.success("Konfigurasi disimpan!", { description: "Tersimpan di database — aktif di semua device." });
@@ -458,7 +467,37 @@ export default function SuperAdmin() {
     { id: "contact", label: "📞 Kontak",            color: "#f97316" },
     { id: "dates",   label: "🗓️ Jadwal Registrasi", color: "#ec4899" },
     { id: "data",    label: "🗄️ Kelola Data",       color: "#ef4444" },
+    { id: "keuangan", label: "💰 Keuangan",          color: "#22c55e" },
   ];
+
+  // ── Supabase upload bukti bayar keuangan ───────────────────
+  const uploadBuktiFin = async (file: File, bookingId: string): Promise<string | null> => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const sb = createClient(
+        (import.meta as any).env.VITE_SUPABASE_URL,
+        (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+      );
+      const ext  = file.name.split(".").pop() || "jpg";
+      const path = `employer/${bookingId}/finance/bukti-${Date.now()}.${ext}`;
+      const { error } = await sb.storage.from("gr2026c").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { toast.error("Gagal upload: " + error.message); return null; }
+      return sb.storage.from("gr2026c").getPublicUrl(path).data.publicUrl;
+    } catch (e) { toast.error("Upload error"); return null; }
+  };
+
+  // ── Save financial record ────────────────────────────────────
+  const saveFinRecord = async (bookingId: string, extra: Record<string, string> = {}) => {
+    const cfg = dbConfig as any || {};
+    const existing: Record<string, any> = (() => { try { return JSON.parse(cfg.financialRecords || "{}"); } catch { return {}; } })();
+    const updated = { ...existing, [bookingId]: { ...(existing[bookingId] || {}), ...finForm, ...extra } };
+    await saveFinMutation.mutateAsync({ financialRecords: JSON.stringify(updated) });
+  };
+
+  const fmtRp = (n: number | string) => {
+    const num = typeof n === "string" ? parseFloat(n.replace(/[^0-9.]/g, "")) : n;
+    return isNaN(num) ? "Rp 0" : "Rp " + Math.round(num).toLocaleString("id-ID");
+  };
 
   const fmt = (n: string) => {
     const num = parseInt(n.replace(/\D/g, ""));
@@ -1055,6 +1094,234 @@ export default function SuperAdmin() {
             {saving ? "⏳ Menyimpan..." : "💾 Simpan Semua Perubahan"}
           </button>
         </div>
+
+        {activeSection === "keuangan" && (() => {
+          const bookings = ((allBookingsRaw || []) as any[]).filter(b => b.status === "confirmed");
+          const cfg = dbConfig as any || {};
+          const finRec: Record<string, any> = (() => { try { return JSON.parse(cfg.financialRecords || "{}"); } catch { return {}; } })();
+
+          const totalSewa       = bookings.reduce((s, b) => s + parseFloat(b.totalAmount || 0), 0);
+          const totalAdditional = bookings.reduce((s, b) => s + parseFloat(finRec[b.bookingId]?.additionalPrice || 0), 0);
+          const totalGrand      = totalSewa + totalAdditional;
+          const totalDiterima   = bookings.reduce((s, b) => s + parseFloat(finRec[b.bookingId]?.amountReceived || 0), 0);
+          const totalSelisih    = totalGrand - totalDiterima;
+
+          const editBkg = editingFin ? bookings.find(b => b.bookingId === editingFin) : null;
+
+          const printReport = () => {
+            const rows = bookings.map((b, i) => {
+              const rec    = finRec[b.bookingId] || {};
+              const sewa   = parseFloat(b.totalAmount || 0);
+              const add    = parseFloat(rec.additionalPrice || 0);
+              const grand  = sewa + add;
+              const trm    = parseFloat(rec.amountReceived || 0);
+              const sel    = grand - trm;
+              const status = trm === 0 ? "Belum" : trm >= grand ? "Lunas" : "Kurang";
+              const booths = (() => { try { const bs = typeof b.selectedBooths==="string" ? JSON.parse(b.selectedBooths) : (b.selectedBooths||[]); return bs.join(", "); } catch { return "-"; } })();
+              return `<tr style="border-bottom:1px solid #e5e7eb">
+                <td style="padding:8px 6px;text-align:center">${i+1}</td>
+                <td style="padding:8px 6px;font-weight:600">${b.companyName}</td>
+                <td style="padding:8px 6px">${booths}</td>
+                <td style="padding:8px 6px;text-align:right">Rp ${sewa.toLocaleString("id-ID")}</td>
+                <td style="padding:8px 6px;text-align:right">${add > 0 ? "Rp " + add.toLocaleString("id-ID") : "—"}</td>
+                <td style="padding:8px 6px;text-align:right;font-weight:700">Rp ${grand.toLocaleString("id-ID")}</td>
+                <td style="padding:8px 6px;text-align:right">${trm > 0 ? "Rp " + trm.toLocaleString("id-ID") : "—"}</td>
+                <td style="padding:8px 6px;text-align:right;color:${sel > 0 ? "#dc2626" : sel < 0 ? "#059669" : "#374151"};font-weight:600">
+                  ${sel === 0 ? "✓" : sel > 0 ? "-Rp " + sel.toLocaleString("id-ID") : "+Rp " + Math.abs(sel).toLocaleString("id-ID")}
+                </td>
+                <td style="padding:8px 6px;text-align:center">${rec.paymentDate || "—"}</td>
+                <td style="padding:8px 6px;text-align:center;color:${status==="Lunas"?"#059669":status==="Kurang"?"#d97706":"#6b7280"};font-weight:700">${status}</td>
+                ${rec.notes ? `<td style="padding:8px 6px;font-size:0.78rem;color:#6b7280">${rec.notes}</td>` : "<td></td>"}
+              </tr>`;
+            }).join("");
+            const html = `<!DOCTYPE html><html><head><title>Laporan Keuangan GR2026</title>
+            <style>body{font-family:Arial,sans-serif;font-size:13px;color:#111;padding:24px}
+            h1{font-size:20px;margin-bottom:4px}h2{font-size:14px;color:#555;font-weight:400;margin:0 0 20px}
+            table{width:100%;border-collapse:collapse}th{background:#0a1628;color:#fff;padding:8px 6px;text-align:left;font-size:12px}
+            .summary{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+            .sum-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;min-width:140px}
+            .sum-label{font-size:11px;color:#6b7280;margin-bottom:4px}
+            .sum-val{font-size:16px;font-weight:700}
+            @media print{body{padding:0}}</style></head><body>
+            <h1>Laporan Keuangan — Grand Recruitment 2026</h1>
+            <h2>Dicetak: ${new Date().toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</h2>
+            <div class="summary">
+              <div class="sum-card"><div class="sum-label">Total Tagihan Sewa</div><div class="sum-val">Rp ${totalSewa.toLocaleString("id-ID")}</div></div>
+              <div class="sum-card"><div class="sum-label">Total Biaya Additional</div><div class="sum-val">Rp ${totalAdditional.toLocaleString("id-ID")}</div></div>
+              <div class="sum-card"><div class="sum-label">Grand Total Tagihan</div><div class="sum-val" style="color:#0a1628">Rp ${totalGrand.toLocaleString("id-ID")}</div></div>
+              <div class="sum-card"><div class="sum-label">Total Diterima</div><div class="sum-val" style="color:#059669">Rp ${totalDiterima.toLocaleString("id-ID")}</div></div>
+              <div class="sum-card"><div class="sum-label">Selisih</div><div class="sum-val" style="color:${totalSelisih>0?"#dc2626":totalSelisih<0?"#059669":"#374151"}">
+                ${totalSelisih===0?"✓ Lunas":totalSelisih>0?"-Rp "+totalSelisih.toLocaleString("id-ID"):"+Rp "+Math.abs(totalSelisih).toLocaleString("id-ID")}</div></div>
+              <div class="sum-card"><div class="sum-label">Jumlah Employer</div><div class="sum-val">${bookings.length}</div></div>
+            </div>
+            <table><thead><tr>
+              <th>#</th><th>Perusahaan</th><th>Booth</th><th>Tagihan Sewa</th><th>Additional</th>
+              <th>Grand Total</th><th>Jml Diterima</th><th>Selisih</th><th>Tgl Bayar</th><th>Status</th><th>Catatan</th>
+            </tr></thead><tbody>${rows}</tbody></table>
+            <p style="margin-top:32px;font-size:11px;color:#9ca3af">Grand Recruitment 2026 · Politeknik Pariwisata NHI Bandung · www.grandrecruitment.id</p>
+            </body></html>`;
+            const w = window.open("", "_blank");
+            if (w) { w.document.write(html); w.document.close(); w.print(); }
+          };
+
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: editingFin ? "1fr 380px" : "1fr", gap: "1.5rem", alignItems: "start" }}>
+              <div>
+                {/* Summary cards */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+                  {[
+                    { label: "Tagihan Sewa",    val: fmtRp(totalSewa),       color: "#818cf8" },
+                    { label: "Biaya Additional", val: fmtRp(totalAdditional), color: "#f97316" },
+                    { label: "Grand Tagihan",   val: fmtRp(totalGrand),      color: "#D4A017" },
+                    { label: "Total Diterima",  val: fmtRp(totalDiterima),   color: "#22c55e" },
+                    { label: "Selisih",          val: fmtRp(Math.abs(totalSelisih)) + (totalSelisih > 0 ? " ⚠" : totalSelisih < 0 ? " +" : " ✓"), color: totalSelisih > 0 ? "#ef4444" : totalSelisih < 0 ? "#22c55e" : "#14b8a6" },
+                  ].map(c => (
+                    <div key={c.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "1rem 1.25rem" }}>
+                      <div style={{ fontSize: "0.7rem", color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "0.35rem" }}>{c.label}</div>
+                      <div style={{ fontSize: "1rem", fontWeight: 800, color: c.color }}>{c.val}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Toolbar */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap" as const, gap: "0.5rem" }}>
+                  <div style={{ fontSize: "0.83rem", color: "#64748b" }}>{bookings.length} employer confirmed · klik baris untuk edit</div>
+                  <button onClick={printReport}
+                    style={{ background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 8, padding: "0.45rem 1.1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                    🖨️ Print / Export Laporan
+                  </button>
+                </div>
+
+                {/* Table */}
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
+                    <thead>
+                      <tr>
+                        {["No","Perusahaan","Booth","Tagihan Sewa","Biaya Additional","Grand Total","Jml Diterima","Selisih","Tgl Bayar","Status"].map(h => (
+                          <th key={h} style={{ ...s.th, whiteSpace: "nowrap" as const }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookings.length === 0 ? (
+                        <tr><td colSpan={10} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Belum ada employer confirmed.</td></tr>
+                      ) : bookings.map((b: any, i: number) => {
+                        const rec   = finRec[b.bookingId] || {};
+                        const sewa  = parseFloat(b.totalAmount || 0);
+                        const add   = parseFloat(rec.additionalPrice || 0);
+                        const grand = sewa + add;
+                        const trm   = parseFloat(rec.amountReceived || 0);
+                        const sel   = grand - trm;
+                        const status = trm === 0 ? "— Belum" : trm >= grand ? "✅ Lunas" : "⚠ Kurang";
+                        const booths = (() => { try { const bs = typeof b.selectedBooths==="string"?JSON.parse(b.selectedBooths):(b.selectedBooths||[]); return bs.join(", "); } catch { return "-"; } })();
+                        const isEditing = editingFin === b.bookingId;
+                        return (
+                          <tr key={b.bookingId} onClick={() => {
+                            if (isEditing) { setEditingFin(null); }
+                            else {
+                              setEditingFin(b.bookingId);
+                              setFinForm({ additionalPrice: rec.additionalPrice || "", additionalNote: rec.additionalNote || "", amountReceived: rec.amountReceived || "", paymentDate: rec.paymentDate || "", notes: rec.notes || "" });
+                            }
+                          }} style={{ cursor: "pointer", background: isEditing ? "rgba(212,160,23,0.06)" : "transparent", transition: "background 0.1s", borderLeft: isEditing ? "3px solid #D4A017" : "3px solid transparent" }}>
+                            <td style={{ ...s.td, textAlign: "center" as const, color: "#64748b" }}>{i+1}</td>
+                            <td style={s.td}><div style={{ fontWeight: 700 }}>{b.companyName}</div><div style={{ fontSize: "0.72rem", color: "#64748b" }}>{b.bookingId}</div></td>
+                            <td style={{ ...s.td, fontFamily: "monospace", fontSize: "0.78rem", color: "#D4A017" }}>{booths}</td>
+                            <td style={{ ...s.td, textAlign: "right" as const }}>{fmtRp(sewa)}</td>
+                            <td style={{ ...s.td, textAlign: "right" as const, color: add > 0 ? "#f97316" : "#64748b" }}>{add > 0 ? fmtRp(add) : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "right" as const, fontWeight: 700 }}>{fmtRp(grand)}</td>
+                            <td style={{ ...s.td, textAlign: "right" as const, color: "#22c55e" }}>{trm > 0 ? fmtRp(trm) : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "right" as const, color: sel > 0 ? "#ef4444" : sel < 0 ? "#22c55e" : "#14b8a6", fontWeight: 700 }}>
+                              {sel === 0 ? "✓" : sel > 0 ? "-"+fmtRp(sel) : "+"+fmtRp(Math.abs(sel))}
+                            </td>
+                            <td style={{ ...s.td, fontSize: "0.78rem", color: "#94a3b8" }}>{rec.paymentDate || "—"}</td>
+                            <td style={{ ...s.td, fontWeight: 700, color: trm===0?"#64748b":trm>=grand?"#22c55e":"#f97316", fontSize: "0.78rem", whiteSpace: "nowrap" as const }}>{status}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Edit Panel */}
+              {editingFin && editBkg && (
+                <div style={{ ...s.card, position: "sticky" as const, top: 76, alignSelf: "start" as const }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                    <div style={{ fontWeight: 700, color: "#D4A017", fontSize: "0.9rem" }}>✏️ Edit Data Keuangan</div>
+                    <button onClick={() => setEditingFin(null)} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: "1.2rem" }}>×</button>
+                  </div>
+                  <div style={{ fontWeight: 700, marginBottom: "0.25rem" }}>{editBkg.companyName}</div>
+                  <div style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "1.25rem", fontFamily: "monospace" }}>{editBkg.bookingId}</div>
+
+                  {/* Base price info */}
+                  <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 8, padding: "0.75rem", marginBottom: "1.25rem" }}>
+                    <div style={{ fontSize: "0.72rem", color: "#64748b", marginBottom: "0.25rem" }}>Tagihan Sewa (dari sistem)</div>
+                    <div style={{ fontWeight: 700, color: "#818cf8" }}>{fmtRp(parseFloat(editBkg.totalAmount || 0))}</div>
+                  </div>
+
+                  {[
+                    { label: "Biaya Additional (Rp)", key: "additionalPrice", type: "number", placeholder: "0", hint: "Biaya booth custom, dll" },
+                    { label: "Keterangan Additional", key: "additionalNote", type: "text", placeholder: "Contoh: Booth custom LED", hint: "" },
+                    { label: "Jumlah Diterima (Rp)", key: "amountReceived", type: "number", placeholder: "0", hint: "Sesuai yang benar-benar diterima" },
+                    { label: "Tanggal Pembayaran", key: "paymentDate", type: "date", placeholder: "", hint: "" },
+                    { label: "Catatan", key: "notes", type: "text", placeholder: "Catatan tambahan...", hint: "" },
+                  ].map(field => (
+                    <div key={field.key} style={{ marginBottom: "0.85rem" }}>
+                      <label style={{ fontSize: "0.75rem", color: "#94a3b8", display: "block", marginBottom: "0.3rem" }}>{field.label}</label>
+                      <input
+                        type={field.type}
+                        value={(finForm as any)[field.key]}
+                        onChange={e => setFinForm(f => ({ ...f, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        style={{ width: "100%", boxSizing: "border-box" as const, background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.83rem", color: "#f1f5f9", outline: "none" }}
+                      />
+                      {field.hint && <div style={{ fontSize: "0.68rem", color: "#475569", marginTop: "0.2rem" }}>{field.hint}</div>}
+                    </div>
+                  ))}
+
+                  {/* Upload bukti bayar */}
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label style={{ fontSize: "0.75rem", color: "#94a3b8", display: "block", marginBottom: "0.3rem" }}>Upload Bukti Bayar</label>
+                    {(() => {
+                      const rec = finRec[editingFin] || {};
+                      return rec.buktiPaymentUrl ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
+                          <a href={rec.buktiPaymentUrl} target="_blank" rel="noreferrer" style={{ fontSize: "0.78rem", color: "#7dd3fc", textDecoration: "none" }}>📎 Lihat bukti saat ini</a>
+                        </div>
+                      ) : null;
+                    })()}
+                    <input type="file" accept="image/*,.pdf" disabled={finUploading}
+                      onChange={async e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        setFinUploading(true);
+                        toast.loading("Mengupload bukti bayar...", { id: "fin-upload" });
+                        const url = await uploadBuktiFin(file, editingFin!);
+                        toast.dismiss("fin-upload");
+                        if (url) {
+                          const cfg = dbConfig as any || {};
+                          const existing: Record<string, any> = (() => { try { return JSON.parse(cfg.financialRecords || "{}"); } catch { return {}; } })();
+                          const updated = { ...existing, [editingFin!]: { ...(existing[editingFin!] || {}), ...finForm, buktiPaymentUrl: url } };
+                          await saveFinMutation.mutateAsync({ financialRecords: JSON.stringify(updated) });
+                          toast.success("Bukti bayar berhasil diupload!");
+                        }
+                        setFinUploading(false);
+                        e.target.value = "";
+                      }}
+                      style={{ width: "100%", boxSizing: "border-box" as const, background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.45rem", fontSize: "0.78rem", color: "#94a3b8", cursor: "pointer" }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={async () => { await saveFinRecord(editingFin!); }}
+                    disabled={saveFinMutation.isPending}
+                    style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#b8860b)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer" }}>
+                    {saveFinMutation.isPending ? "⏳ Menyimpan..." : "💾 Simpan Data Keuangan"}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Config preview */}
         <details style={{ marginTop: "2rem" }}>
