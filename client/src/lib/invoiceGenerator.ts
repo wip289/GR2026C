@@ -789,8 +789,6 @@ export function generateIdCardHTML(data: {
 </html>`;
 }
 
-}
-
 export interface IdCardData {
   registrationId: string;
   namaLengkap: string;
