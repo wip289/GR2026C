@@ -599,7 +599,7 @@ export function generateIdCardHTML(data: {
   status?: string;
   fotoUrl?: string;
 }): string {
-  const absenUrl  = encodeURIComponent(`https://grandrecruitment.id/absen?id=${data.registrationId}`);
+  const absenUrl  = encodeURIComponent(`https://www.grandrecruitment.id/absen?id=${data.registrationId}`);
   const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${absenUrl}&margin=6`;
 
   const statusLabel: Record<string, string> = {
