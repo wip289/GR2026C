@@ -894,9 +894,12 @@ export default function BossPanel() {
 
         {/* ── JOBSEEKER ── */}
         {activeTab === "jobseeker" && (() => {
-          const jsFiltered = jobseekers.filter((js: any) =>
-            !jsSearch.trim() || js.namaLengkap?.toLowerCase().includes(jsSearch.trim().toLowerCase())
-          );
+          const hadirList = jobseekers.filter((js: any) => !!js.checkedInAt);
+          const jsFiltered = jobseekers.filter((js: any) => {
+            const matchSearch = !jsSearch.trim() || js.namaLengkap?.toLowerCase().includes(jsSearch.trim().toLowerCase());
+            const matchHadir  = !jsHadirOnly || !!js.checkedInAt;
+            return matchSearch && matchHadir;
+          });
           const jsTotalPages = Math.max(1, Math.ceil(jsFiltered.length / JS_PAGE_SIZE));
           const jsSafePage   = Math.min(jsPage, jsTotalPages);
           const jsPaginated  = jsFiltered.slice((jsSafePage - 1) * JS_PAGE_SIZE, jsSafePage * JS_PAGE_SIZE);
@@ -918,8 +921,12 @@ export default function BossPanel() {
                     ✕ Reset
                   </button>
                 )}
+                <button onClick={() => { setJsHadirOnly((h: boolean) => !h); setJsPage(1); }}
+                  style={{ padding: "0.4rem 0.85rem", background: jsHadirOnly ? "#22c55e" : "rgba(34,197,94,0.1)", border: `1px solid ${jsHadirOnly ? "#22c55e" : "rgba(34,197,94,0.3)"}`, color: jsHadirOnly ? "#fff" : "#22c55e", borderRadius: 7, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as const }}>
+                  ✅ {jsHadirOnly ? `Hadir (${hadirList.length})` : `Hadir: ${hadirList.length}`}
+                </button>
                 <span style={{ fontSize: "0.78rem", color: "#64748b", whiteSpace: "nowrap" as const }}>
-                  {jsSearch ? `${jsFiltered.length} hasil` : `${jobseekers.length} total`}
+                  {jsHadirOnly ? `${jsFiltered.length} hadir` : jsSearch ? `${jsFiltered.length} hasil` : `${jobseekers.length} total`}
                 </span>
                 <button
                   onClick={() => exportJobseekersCSV(jobseekers)}
@@ -932,7 +939,7 @@ export default function BossPanel() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      {["Nama", "ID", "Status", "Institusi", "Dokumen", "Consent"].map(h => (
+                      {["Nama", "ID", "Institusi", "Dokumen", "✅ Hadir", "Waktu Masuk"].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
@@ -940,34 +947,35 @@ export default function BossPanel() {
                   <tbody>
                     {jsPaginated.length === 0 ? (
                       <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: "2rem" }}>
-                        {jsSearch ? `Tidak ada jobseeker dengan nama "${jsSearch}".` : "Belum ada jobseeker."}
+                        {jsHadirOnly ? "Belum ada jobseeker yang hadir." : jsSearch ? `Tidak ada jobseeker dengan nama "${jsSearch}".` : "Belum ada jobseeker."}
                       </td></tr>
                     ) : jsPaginated.map((js: any) => {
-                      const docsOk = js.fotoUrl && js.cvUrl && js.ktmUrl;
+                      const docsOk  = js.fotoUrl && js.cvUrl && js.ktmUrl;
+                      const hadir   = !!js.checkedInAt;
+                      const waktu   = js.checkedInAt ? new Date(js.checkedInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) : null;
+                      const tanggal = js.checkedInAt ? new Date(js.checkedInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" }) : null;
                       return (
                         <tr key={js.registrationId} onClick={() => setSelectedJobseeker(js.registrationId === selectedJobseeker ? null : js.registrationId)}
-                          style={{ cursor: "pointer", background: selectedJobseeker === js.registrationId ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
+                          style={{ cursor: "pointer", background: hadir ? "rgba(34,197,94,0.04)" : selectedJobseeker === js.registrationId ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
                           <td style={s.td}>
                             <div style={{ fontWeight: 700 }}>{js.namaLengkap}</div>
                             <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{js.whatsapp}</div>
                           </td>
                           <td style={{ ...s.td, fontFamily: "monospace", fontSize: "0.78rem", color: "#D4A017" }}>{js.registrationId}</td>
-                          <td style={s.td}>
-                            <span style={s.badge(js.status === "alumni_nhi" ? "#14b8a6" : js.status === "mahasiswa" ? "#818cf8" : js.status === "fresh_graduate" ? "#10b981" : "#94a3b8")}>
-                              {js.status === "alumni_nhi" ? "Alumni NHI" : js.status === "mahasiswa" ? "Mahasiswa" : js.status === "fresh_graduate" ? "Fresh Grad" : "Umum"}
-                            </span>
-                          </td>
                           <td style={{ ...s.td, fontSize: "0.8rem", color: "#94a3b8", maxWidth: 160 }}>{js.institusi}</td>
                           <td style={s.td}>
                             <span style={s.badge(docsOk ? "#14b8a6" : "#f97316")}>
                               {docsOk ? "✓ Lengkap" : "⚠ Kurang"}
                             </span>
                           </td>
-                          <td style={s.td}>
-                            <div style={{ fontSize: "0.78rem" }}>
-                              <span style={{ color: js.consent1 ? "#14b8a6" : "#ef4444" }}>{js.consent1 ? "✓" : "✗"} L1 </span>
-                              <span style={{ color: js.consent2 ? "#818cf8" : "#64748b" }}>{js.consent2 ? "✓" : "—"} L2</span>
-                            </div>
+                          <td style={{ ...s.td, textAlign: "center" as const }}>
+                            {hadir
+                              ? <span style={{ fontSize: "1.1rem" }}>✅</span>
+                              : <span style={{ fontSize: "0.75rem", color: "#64748b" }}>—</span>
+                            }
+                          </td>
+                          <td style={{ ...s.td, fontSize: "0.78rem", color: hadir ? "#22c55e" : "#64748b", whiteSpace: "nowrap" as const }}>
+                            {waktu ? <><strong>{waktu}</strong><br/><span style={{ fontSize: "0.7rem", opacity: 0.7 }}>{tanggal}</span></> : "—"}
                           </td>
                         </tr>
                       );
