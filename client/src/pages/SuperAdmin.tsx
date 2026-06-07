@@ -1316,13 +1316,7 @@ export default function SuperAdmin() {
 
             const totalRow = ["","TOTAL","","",rp(sumSewa),rp(sumAdd),rp(sumGrand),rp(sumDiterima),rp(sumSelisih),"","",rp(sumPajak),"",""].map(esc).join(",");
 
-            const csv = [
-              headers.map(esc).join(","),
-              ...dataRows,
-              "",
-              totalRow,
-            ].join("
-");
+            const csv = [headers.map(esc).join(","), ...dataRows, "", totalRow].join(String.fromCharCode(10));
 
             const bom  = "﻿"; // UTF-8 BOM agar Excel baca karakter Indonesia dengan benar
             const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
