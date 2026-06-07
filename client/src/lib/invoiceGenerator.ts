@@ -599,235 +599,196 @@ export function generateIdCardHTML(data: {
   status?: string;
   fotoUrl?: string;
 }): string {
-  const absenUrl = encodeURIComponent(`https://grandrecruitment.id/absen?id=${data.registrationId}`);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${absenUrl}&margin=4`;
+  const absenUrl  = encodeURIComponent(`https://grandrecruitment.id/absen?id=${data.registrationId}`);
+  const qrUrl     = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${absenUrl}&margin=6`;
 
   const statusLabel: Record<string, string> = {
     mahasiswa: "Mahasiswa", fresh_graduate: "Fresh Graduate",
     alumni_nhi: "Alumni NHI Bandung", umum: "Pencari Kerja",
+    belum_bekerja: "Belum Bekerja", pernah_bekerja: "Pernah Bekerja", sedang_bekerja: "Sedang Bekerja",
   };
 
   const fotoSection = data.fotoUrl
     ? `<img src="${data.fotoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;display:block;" />`
-    : `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2mm;">
-        <div style="width:14mm;height:14mm;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:14px;">👤</div>
-        <div style="font-size:4px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.5;">Tempel<br/>foto<br/>3×4 cm</div>
-      </div>`;
+    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;background:#1A7A6E;">👤</div>`;
 
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
-<title>ID Card GR2026 — ${data.registrationId}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>ID Card — ${data.namaLengkap}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background: #cbd5e1;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    min-height: 100vh;
+  html, body {
+    height: 100%;
     font-family: 'Arial', sans-serif;
-    padding: 2rem;
+    background: #0a1628;
+    color: #fff;
+    overflow-x: hidden;
   }
-  @page { size: 54mm 90mm portrait; margin: 0; }
-  @media print {
-    html, body {
-      width: 54mm !important; height: 90mm !important;
-      margin: 0 !important; padding: 0 !important;
-      background: white !important;
-      overflow: hidden !important;
-      display: block !important;
-    }
-    .no-print { display: none !important; }
-    .card {
-      width: 54mm !important; height: 90mm !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      page-break-after: avoid;
-    }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  }
-
-  /* ── CARD 54x90mm portrait ── */
-  .card {
-    width: 54mm;
-    height: 90mm;
-    background: white;
-    border-radius: 3mm;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  }
-
-  /* Header bar */
-  .header-bar {
-    background: linear-gradient(135deg, #0a1628, #0d4f47);
-    padding: 3mm 3mm 2mm 3mm;
+  .screen {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1mm;
-    flex-shrink: 0;
-    max-height: 14mm;
-    overflow: hidden;
-  }
-  .logo-img, .header-bar img {
-    height: 8mm; width: auto; object-fit: contain;
-  }
-  .logo-row { display: flex; align-items: center; gap: 1.5mm; }
-  .logo-dot {
-    width: 6mm; height: 6mm;
-    border-radius: 50%;
-    background: #D4A017;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 5px; font-weight: 900; color: #0a1628;
-  }
-  .logo-words .l1 { font-size: 5.5px; font-weight: 900; color: #D4A017; text-transform: uppercase; letter-spacing: 0.3px; }
-  .logo-words .l2 { font-size: 3.5px; color: rgba(255,255,255,0.6); text-transform: uppercase; }
-  .badge-js {
-    background: #0d9488;
-    color: white; font-size: 4.5px; font-weight: 700;
-    padding: 0.8mm 2mm; border-radius: 1mm;
-    text-transform: uppercase; letter-spacing: 0.5px;
+    justify-content: flex-start;
+    padding: 0;
   }
 
-  /* Foto area */
-  .foto-area {
+  /* Header */
+  .header {
     width: 100%;
-    height: 28mm;
-    background: #0a1628;
-    overflow: hidden;
-    flex-shrink: 0;
+    background: linear-gradient(135deg, #0a1628, #0d4f47);
+    padding: 1.25rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .header-title {
+    font-size: 1.05rem; font-weight: 900;
+    color: #D4A017; letter-spacing: 0.04em; text-align: center;
+  }
+  .header-sub {
+    font-size: 0.72rem; color: rgba(255,255,255,0.55);
+    text-align: center; letter-spacing: 0.03em;
+  }
+  .badge {
+    background: #0d9488; color: #fff;
+    font-size: 0.68rem; font-weight: 700;
+    padding: 0.25rem 0.85rem; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-top: 0.2rem;
   }
 
-  /* Info top — hanya nama & info lines */
-  .info-top {
-    flex: 1;
-    padding: 2mm 3mm 1mm 3mm;
+  /* Foto */
+  .foto-wrap {
+    width: 130px; height: 130px;
+    border-radius: 50%;
     overflow: hidden;
-    background: white;
+    border: 4px solid #D4A017;
+    margin: 1.5rem auto 1rem;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  /* Info */
+  .info-section {
+    width: 100%; max-width: 420px;
+    padding: 0 1.5rem;
+    text-align: center;
+    flex: 1;
   }
   .name {
-    font-size: 12px; font-weight: 900;
-    color: #0a1628; line-height: 1.2;
-    margin-bottom: 1mm;
-    word-break: break-word;
-    text-align: center;
+    font-size: 1.5rem; font-weight: 900;
+    color: #fff; line-height: 1.2;
+    margin-bottom: 0.75rem;
   }
   .info-line {
-    font-size: 7.5px; color: #4b5563;
-    line-height: 1.8;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 0.88rem; color: rgba(255,255,255,0.7);
+    line-height: 2; display: flex;
+    align-items: center; justify-content: center; gap: 0.4rem;
   }
 
-  /* Bottom-strip — di luar info-top, selalu tampil */
-  .bottom-strip {
-    flex-shrink: 0;
-    background: #f8fafc;
-    border-top: 0.5px solid #e2e8f0;
-    padding: 2mm 2mm 1.5mm 2mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1mm;
+  /* Divider */
+  .divider {
+    width: calc(100% - 3rem); max-width: 360px;
+    height: 1px; background: rgba(255,255,255,0.1);
+    margin: 1.25rem auto;
   }
-  .reg-pill {
+
+  /* Registration ID */
+  .reg-id {
     font-family: monospace;
-    font-size: 6px; font-weight: 700;
-    color: #0d9488;
-    background: rgba(13,148,136,0.08);
-    border: 0.5px solid rgba(13,148,136,0.3);
-    padding: 1mm 2mm; border-radius: 1mm;
-    letter-spacing: 0.3px;
-  }
-  .qr-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1mm;
-  }
-  .qr-img { width: 18mm; height: 18mm; display: block; }
-  .qr-label {
-    font-size: 3.5px; color: #94a3b8;
-    text-align: center; line-height: 1.4;
-    text-transform: uppercase; letter-spacing: 0.3px;
-  }
-  .event-info {
-    font-size: 4px; color: #94a3b8;
-    text-align: center; line-height: 1.6;
+    font-size: 0.75rem; font-weight: 700;
+    color: #0d9488; letter-spacing: 0.05em;
+    background: rgba(13,148,136,0.12);
+    border: 1px solid rgba(13,148,136,0.3);
+    padding: 0.4rem 1rem; border-radius: 6px;
+    margin-bottom: 1.25rem;
+    display: inline-block;
+    word-break: break-all; text-align: center;
   }
 
-  /* Print UI */
-  .preview-label { font-size: 13px; color: #555; margin-bottom: 16px; text-align: center; font-weight: 600; }
-  .btn-group { display: flex; gap: 12px; margin-top: 20px; }
-  .btn { padding: 10px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
-  .btn-print { background: #0d9488; color: white; box-shadow: 0 4px 12px rgba(13,148,136,0.3); }
-  .btn-close  { background: #f1f5f9; color: #334155; }
-  .hint { margin-top: 12px; font-size: 11px; color: #888; text-align: center; max-width: 360px; line-height: 1.7; }
+  /* QR */
+  .qr-section {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+  .qr-img {
+    width: min(55vw, 200px);
+    height: min(55vw, 200px);
+    display: block;
+    border-radius: 8px;
+    background: #fff;
+    padding: 6px;
+  }
+  .qr-label {
+    font-size: 0.72rem; color: rgba(255,255,255,0.45);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .event-date {
+    font-size: 0.78rem; color: rgba(255,255,255,0.4);
+    text-align: center; margin-bottom: 2rem;
+  }
+
+  /* Close button */
+  .btn-close {
+    display: block; width: calc(100% - 3rem); max-width: 360px;
+    margin: 0 auto 2rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6);
+    border-radius: 10px; padding: 0.75rem;
+    font-size: 0.88rem; cursor: pointer;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
-
-<div class="preview-label no-print">Preview ID Card GR2026 &nbsp;·&nbsp; Ukuran cetak: 5.4 × 9 cm</div>
-
-<div class="card">
+<div class="screen">
 
   <!-- Header -->
-  <div class="header-bar">
-    <img src="/logo-gr2026.png" alt="Grand Recruitment 2026"
-      style="height:9mm;width:auto;object-fit:contain;max-width:48mm;"
-      onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"/>
-    <div id="logo-fallback" style="display:none;align-items:center;gap:1.5mm;">
-      <div class="logo-dot">GR</div>
-      <div class="logo-words">
-        <div class="l1">Grand Recruitment 2026</div>
-        <div class="l2">Politeknik Pariwisata NHI Bandung</div>
-      </div>
-    </div>
-    <div class="badge-js">Jobseeker</div>
+  <div class="header">
+    <div class="header-title">GRAND RECRUITMENT 2026</div>
+    <div class="header-sub">Politeknik Pariwisata NHI Bandung</div>
+    <div class="badge">Jobseeker</div>
   </div>
 
   <!-- Foto -->
-  <div class="foto-area">${fotoSection}</div>
+  <div class="foto-wrap">${fotoSection}</div>
 
-  <!-- Info top: nama & detail saja -->
-  <div class="info-top">
+  <!-- Info -->
+  <div class="info-section">
     <div class="name">${data.namaLengkap}</div>
     ${data.institusi   ? `<div class="info-line">🎓 ${data.institusi}</div>` : ''}
     ${data.jurusan     ? `<div class="info-line">📚 ${data.jurusan}</div>` : ''}
-    ${data.bidangMinat ? `<div class="info-line">💼 ${data.bidangMinat}</div>` : ''}
     ${data.status      ? `<div class="info-line">👤 ${statusLabel[data.status] || data.status}</div>` : ''}
   </div>
 
-  <!-- Bottom-strip: selalu di bawah, tidak terpotong -->
-  <div class="bottom-strip">
-    <div class="reg-pill">${data.registrationId}</div>
-    <div class="qr-wrap">
-      <img class="qr-img" src="${qrUrl}" alt="QR Code"
-        onerror="this.outerHTML='<div style=\'width:18mm;height:18mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
-      <div class="qr-label">Scan untuk absen</div>
-    </div>
-    <div class="event-info">8–9 Juni 2026 · Dome NHI Bandung</div>
+  <div class="divider"></div>
+
+  <!-- Registration ID -->
+  <div class="reg-id">${data.registrationId}</div>
+
+  <!-- QR Code -->
+  <div class="qr-section">
+    <img class="qr-img" src="${qrUrl}" alt="QR Absen"
+      onerror="this.style.background='#1e293b';this.style.display='flex';"/>
+    <div class="qr-label">📷 Tunjukkan ke panitia untuk absen</div>
   </div>
 
-</div>
+  <div class="event-date">8 – 9 Juni 2026  ·  Gedung Dome NHI Bandung</div>
 
-<div class="btn-group no-print">
-  <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
-  <button class="btn btn-close"  onclick="window.close()">✕ Tutup</button>
-</div>
-<p class="hint no-print">
-  💡 Klik Print → <strong>Save as PDF</strong> · Di dialog print: paper size pilih <strong>Custom: 54×90mm</strong> (atau cetak PDF ke kertas kartu 54×90mm dengan pilihan <strong>Actual Size</strong>)
-</p>
+  <button class="btn-close" onclick="window.close()">✕ Tutup</button>
 
-<script>
-  window.addEventListener("load", function() {
-    setTimeout(function() { window.print(); }, 900);
-  });
-</script>
+</div>
 </body>
 </html>`;
+}
+
 }
 
 export interface IdCardData {
@@ -844,7 +805,7 @@ export function openIdCardForPrint(data: IdCardData): void {
   const html = generateIdCardHTML(data);
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank", "width=420,height=660");
+  const win = window.open(url, "_blank", "width=420,height=860");
   if (win) {
     win.addEventListener("load", () => setTimeout(() => URL.revokeObjectURL(url), 15000));
   } else {
