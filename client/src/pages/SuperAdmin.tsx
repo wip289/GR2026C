@@ -199,6 +199,9 @@ function DataManagement() {
 
   const bookings   = (bookingsQuery.data   || []) as any[];
   const jsList     = (jobseekersQuery.data  || []) as any[];
+  const [jsSearchSA, setJsSearchSA] = useState("");
+  const [jsPageSA,   setJsPageSA]   = useState(1);
+  const JS_SA_PAGE = 25;
 
   const statusColor: Record<string, string> = { pending:"#f97316", confirmed:"#14b8a6", rejected:"#ef4444" };
   const statusLabel: Record<string, string> = { pending:"Menunggu", confirmed:"Confirmed", rejected:"Ditolak" };
@@ -314,15 +317,38 @@ function DataManagement() {
             </button>
           </div>
 
-          {jobseekersQuery.isLoading ? (
-            <div style={{ textAlign:"center", color:"#475569", padding:"2rem" }}>Memuat data...</div>
-          ) : jsList.length === 0 ? (
-            <div style={{ textAlign:"center", padding:"3rem", background:"rgba(255,255,255,0.02)", borderRadius:12, color:"#475569" }}>
-              Belum ada jobseeker terdaftar
-            </div>
-          ) : (
-            <div style={{ display:"grid", gap:"0.6rem" }}>
-              {jsList.map((j: any) => {
+          {/* Search + pagination */}
+          {(() => {
+            const jsFiltered = jsList.filter((j: any) =>
+              !jsSearchSA.trim() || j.namaLengkap?.toLowerCase().includes(jsSearchSA.trim().toLowerCase()) || j.registrationId?.toLowerCase().includes(jsSearchSA.trim().toLowerCase())
+            );
+            const totalPages = Math.max(1, Math.ceil(jsFiltered.length / JS_SA_PAGE));
+            const safePage   = Math.min(jsPageSA, totalPages);
+            const paginated  = jsFiltered.slice((safePage - 1) * JS_SA_PAGE, safePage * JS_SA_PAGE);
+
+            return (
+              <>
+                {/* Search bar */}
+                <div style={{ display:"flex", gap:"0.6rem", alignItems:"center", marginBottom:"1rem", flexWrap:"wrap" as const }}>
+                  <input value={jsSearchSA} onChange={e => { setJsSearchSA(e.target.value); setJsPageSA(1); }}
+                    placeholder="🔍 Cari nama atau Registration ID..."
+                    style={{ flex:1, minWidth:200, background:"#0f172a", border:"1px solid rgba(255,255,255,0.12)", borderRadius:8, padding:"0.45rem 0.85rem", fontSize:"0.83rem", color:"#f1f5f9", outline:"none" }}
+                  />
+                  {jsSearchSA && <button onClick={() => { setJsSearchSA(""); setJsPageSA(1); }} style={{ background:"none", border:"1px solid rgba(248,113,113,0.35)", color:"#f87171", borderRadius:7, padding:"0.4rem 0.75rem", fontSize:"0.78rem", cursor:"pointer" }}>✕ Reset</button>}
+                  <span style={{ fontSize:"0.78rem", color:"#64748b", whiteSpace:"nowrap" as const }}>
+                    {jsSearchSA ? `${jsFiltered.length} hasil` : `${jsList.length} total`}
+                  </span>
+                </div>
+
+                {jobseekersQuery.isLoading ? (
+                  <div style={{ textAlign:"center", color:"#475569", padding:"2rem" }}>Memuat data...</div>
+                ) : paginated.length === 0 ? (
+                  <div style={{ textAlign:"center", padding:"3rem", background:"rgba(255,255,255,0.02)", borderRadius:12, color:"#475569" }}>
+                    {jsSearchSA ? `Tidak ada hasil untuk "${jsSearchSA}"` : "Belum ada jobseeker terdaftar"}
+                  </div>
+                ) : (
+                  <div style={{ display:"grid", gap:"0.6rem" }}>
+                    {paginated.map((j: any) => {
                 const minatLabel: Record<string,string> = { dalam_negeri:"🇮🇩 Dalam Negeri", luar_negeri:"✈️ Luar Negeri", keduanya:"🌏 Keduanya" };
                 const statusLabel: Record<string,string> = { belum_bekerja:"🔍 Belum Bekerja", sedang_bekerja:"💼 Sedang Bekerja", pernah_bekerja:"📋 Pernah Bekerja" };
                 const sumberLabel: Record<string,string> = { instagram:"📸 Instagram", tiktok:"🎵 TikTok", teman:"👥 Teman/Keluarga", kampus:"🏫 Kampus", poster:"🪧 Poster", website:"🌐 Website", lainnya:"💬 Lainnya" };
@@ -372,8 +398,27 @@ function DataManagement() {
                   </div>
                 );
               })}
-            </div>
-          )}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:"1rem", flexWrap:"wrap" as const, gap:"0.5rem" }}>
+                    <span style={{ fontSize:"0.78rem", color:"#64748b" }}>
+                      Menampilkan {(safePage-1)*JS_SA_PAGE+1}–{Math.min(safePage*JS_SA_PAGE, jsFiltered.length)} dari {jsFiltered.length}
+                    </span>
+                    <div style={{ display:"flex", gap:"0.4rem", alignItems:"center" }}>
+                      <button onClick={() => setJsPageSA(1)} disabled={safePage===1} style={{ padding:"0.3rem 0.6rem", background:safePage===1?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", color:safePage===1?"#475569":"#f1f5f9", borderRadius:6, cursor:safePage===1?"default":"pointer", fontSize:"0.8rem" }}>«</button>
+                      <button onClick={() => setJsPageSA(p => Math.max(1,p-1))} disabled={safePage===1} style={{ padding:"0.3rem 0.7rem", background:safePage===1?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", color:safePage===1?"#475569":"#f1f5f9", borderRadius:6, cursor:safePage===1?"default":"pointer", fontSize:"0.8rem" }}>‹ Prev</button>
+                      <span style={{ fontSize:"0.8rem", color:"#D4A017", fontWeight:700, padding:"0 0.5rem" }}>{safePage} / {totalPages}</span>
+                      <button onClick={() => setJsPageSA(p => Math.min(totalPages,p+1))} disabled={safePage===totalPages} style={{ padding:"0.3rem 0.7rem", background:safePage===totalPages?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", color:safePage===totalPages?"#475569":"#f1f5f9", borderRadius:6, cursor:safePage===totalPages?"default":"pointer", fontSize:"0.8rem" }}>Next ›</button>
+                      <button onClick={() => setJsPageSA(totalPages)} disabled={safePage===totalPages} style={{ padding:"0.3rem 0.6rem", background:safePage===totalPages?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", color:safePage===totalPages?"#475569":"#f1f5f9", borderRadius:6, cursor:safePage===totalPages?"default":"pointer", fontSize:"0.8rem" }}>»</button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
