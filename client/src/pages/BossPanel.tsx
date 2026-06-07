@@ -206,7 +206,11 @@ export default function BossPanel() {
   // ── Real data from DB ──
   const { data: employerData, refetch: refetchEmployers } = trpc.event.getAllEmployerBookings.useQuery();
   const { data: jobseekerData }  = trpc.event.getAllJobseekers.useQuery();
-  const { data: attendanceData } = trpc.event.getAttendanceStats.useQuery(undefined, { refetchInterval: 15000 });
+  const { data: attendanceData, refetch: refetchAttendance } = trpc.event.getAttendanceStats.useQuery(undefined, { refetchInterval: 15000 });
+  const resetAttendanceMutation = trpc.event.resetAttendance.useMutation({
+    onSuccess: () => { toast.success("Semua data kehadiran berhasil direset!"); refetchAttendance(); },
+    onError:   () => toast.error("Gagal reset kehadiran"),
+  });
   const { data: interviewRaw, refetch: refetchInterview } = trpc.event.getAllInterviewBookings.useQuery();
   const updateStatusMutation = trpc.event.updateEmployerBookingStatus.useMutation({
     onSuccess: () => refetchEmployers(),
@@ -341,7 +345,9 @@ export default function BossPanel() {
                 { label: "Revenue Pending", val: fmt(pendingRevenue), color: "#f97316", icon: "⏳" },
                 { label: "Total Employer", val: employers.length, color: "#D4A017", icon: "🏢" },
                 { label: "Jobseeker Terdaftar", val: jobseekers.length, color: "#818cf8", icon: "🎓" },
-                { label: "Hadir Hari Ini", val: attendanceData?.hadir ?? 0, color: "#22c55e", icon: "✅", sub: `${attendanceData?.total ? Math.round((attendanceData.hadir/attendanceData.total)*100) : 0}%` },
+                { label: "Hadir Hari 1 (Sen)", val: attendanceData?.day1 ?? 0, color: "#22c55e", icon: "✅" },
+                { label: "Hadir Hari 2 (Sel)", val: attendanceData?.day2 ?? 0, color: "#14b8a6", icon: "✅" },
+                { label: "Hadir Keduanya", val: attendanceData?.keduanya ?? 0, color: "#818cf8", icon: "🎯" },
                 { label: "Booth Terjual", val: totalBooths, color: "#10b981", icon: "📦" },
                 { label: "Slot Interview Terisi", val: bookedSlots, color: "#60a5fa", icon: "📅" },
               ].map(kpi => (
@@ -895,10 +901,10 @@ export default function BossPanel() {
 
         {/* ── JOBSEEKER ── */}
         {activeTab === "jobseeker" && (() => {
-          const hadirList = jobseekers.filter((js: any) => !!js.checkedInAt);
+          const hadirList = jobseekers.filter((js: any) => !!js.checkedInDay1At || !!js.checkedInDay2At);
           const jsFiltered = jobseekers.filter((js: any) => {
             const matchSearch = !jsSearch.trim() || js.namaLengkap?.toLowerCase().includes(jsSearch.trim().toLowerCase());
-            const matchHadir  = !jsHadirOnly || !!js.checkedInAt;
+            const matchHadir  = !jsHadirOnly || !!js.checkedInDay1At || !!js.checkedInDay2At;
             return matchSearch && matchHadir;
           });
           const jsTotalPages = Math.max(1, Math.ceil(jsFiltered.length / JS_PAGE_SIZE));
@@ -934,6 +940,16 @@ export default function BossPanel() {
                   style={{ padding: "0.4rem 1rem", background: "#16a34a", color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, whiteSpace: "nowrap" as const }}>
                   ⬇ Export Excel
                 </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm("⚠️ Reset semua data kehadiran?\n\nSemua catatan hadir Hari 1 dan Hari 2 akan dihapus.\n\nTindakan ini TIDAK BISA dibatalkan. Lanjutkan?")) {
+                      resetAttendanceMutation.mutate();
+                    }
+                  }}
+                  disabled={resetAttendanceMutation.isPending}
+                  style={{ padding: "0.4rem 1rem", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", borderRadius: 6, cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, whiteSpace: "nowrap" as const }}>
+                  🔄 Reset Kehadiran
+                </button>
               </div>
 
               <div style={{ overflowX: "auto" }}>
@@ -952,9 +968,9 @@ export default function BossPanel() {
                       </td></tr>
                     ) : jsPaginated.map((js: any) => {
                       const docsOk  = js.fotoUrl && js.cvUrl && js.ktmUrl;
-                      const hadir   = !!js.checkedInAt;
-                      const waktu   = js.checkedInAt ? new Date(js.checkedInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) : null;
-                      const tanggal = js.checkedInAt ? new Date(js.checkedInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" }) : null;
+                      const hadir    = !!js.checkedInDay1At || !!js.checkedInDay2At;
+                      const day1ts   = js.checkedInDay1At ? new Date(js.checkedInDay1At).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) : null;
+                      const day2ts   = js.checkedInDay2At ? new Date(js.checkedInDay2At).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) : null;
                       return (
                         <tr key={js.registrationId} onClick={() => setSelectedJobseeker(js.registrationId === selectedJobseeker ? null : js.registrationId)}
                           style={{ cursor: "pointer", background: hadir ? "rgba(34,197,94,0.04)" : selectedJobseeker === js.registrationId ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.15s" }}>
@@ -971,12 +987,14 @@ export default function BossPanel() {
                           </td>
                           <td style={{ ...s.td, textAlign: "center" as const }}>
                             {hadir
-                              ? <span style={{ fontSize: "1.1rem" }}>✅</span>
+                              ? <span style={{ fontSize: "1rem" }}>{js.checkedInDay1At && js.checkedInDay2At ? "✅✅" : "✅"}</span>
                               : <span style={{ fontSize: "0.75rem", color: "#64748b" }}>—</span>
                             }
                           </td>
-                          <td style={{ ...s.td, fontSize: "0.78rem", color: hadir ? "#22c55e" : "#64748b", whiteSpace: "nowrap" as const }}>
-                            {waktu ? <><strong>{waktu}</strong><br/><span style={{ fontSize: "0.7rem", opacity: 0.7 }}>{tanggal}</span></> : "—"}
+                          <td style={{ ...s.td, fontSize: "0.72rem", whiteSpace: "nowrap" as const }}>
+                            {day1ts && <div style={{ color: "#22c55e" }}>H1 {day1ts}</div>}
+                            {day2ts && <div style={{ color: "#14b8a6" }}>H2 {day2ts}</div>}
+                            {!day1ts && !day2ts && <span style={{ color: "#64748b" }}>—</span>}
                           </td>
                         </tr>
                       );

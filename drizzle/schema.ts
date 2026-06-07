@@ -277,7 +277,9 @@ export const jobseekers = mysqlTable("jobseekers", {
   // Status verifikasi
   verified: boolean("verified").default(false),
   verifiedAt: timestamp("verifiedAt"),
-  checkedInAt: timestamp("checkedInAt"),
+  checkedInAt:    timestamp("checkedInAt"),
+  checkedInDay1At: timestamp("checkedInDay1At"),
+  checkedInDay2At: timestamp("checkedInDay2At"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

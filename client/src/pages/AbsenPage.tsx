@@ -105,7 +105,7 @@ export default function AbsenPage() {
     );
   }
 
-  const { jobseeker, alreadyCheckedIn, checkedInAt } = result;
+  const { jobseeker, alreadyCheckedIn, checkedInAt, day } = result;
 
   return (
     <div style={s.page}>
@@ -124,9 +124,12 @@ export default function AbsenPage() {
         <div style={s.regId}>{jobseeker.registrationId}</div>
 
         {/* Status */}
+        <div style={{ fontSize: "0.75rem", color: "#1A7A6E", fontWeight: 700, marginBottom: "0.5rem", background: "rgba(26,122,110,0.08)", borderRadius: 6, padding: "0.25rem 0.75rem", display: "inline-block" }}>
+          Hari {day} · {day === 1 ? "Senin, 8 Juni 2026" : "Selasa, 9 Juni 2026"}
+        </div>
         {alreadyCheckedIn ? (
           <>
-            <div style={s.badgeSudah}>⚠️ Sudah Absen</div>
+            <div style={s.badgeSudah}>⚠️ Sudah Absen Hari {day}</div>
             <div style={s.time}>
               Tercatat hadir pada:<br />
               <strong>{formatTime(checkedInAt)}</strong>
@@ -134,7 +137,7 @@ export default function AbsenPage() {
           </>
         ) : (
           <>
-            <div style={s.badgeLunas}>✅ Absen Berhasil!</div>
+            <div style={s.badgeLunas}>✅ Absen Hari {day} Berhasil!</div>
             <div style={s.time}>
               Waktu masuk:<br />
               <strong>{formatTime(checkedInAt)}</strong>

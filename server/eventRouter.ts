@@ -480,12 +480,14 @@ export const eventRouter = router({
       const [js] = await db.select().from(jobseekers).where(eq(jobseekers.registrationId, input.registrationId));
       if (!js) throw new TRPCError({ code: "NOT_FOUND", message: "Jobseeker tidak ditemukan" });
       return {
-        registrationId: js.registrationId,
-        namaLengkap:    js.namaLengkap,
-        institusi:      js.institusi || "",
-        jurusan:        js.jurusan   || "",
-        fotoUrl:        js.fotoUrl   || "",
-        checkedInAt:    js.checkedInAt ?? null,
+        registrationId:  js.registrationId,
+        namaLengkap:     js.namaLengkap,
+        institusi:       js.institusi || "",
+        jurusan:         js.jurusan   || "",
+        fotoUrl:         js.fotoUrl   || "",
+        checkedInAt:     js.checkedInAt     ?? null,
+        checkedInDay1At: js.checkedInDay1At ?? null,
+        checkedInDay2At: js.checkedInDay2At ?? null,
       };
     }),
 
@@ -495,28 +497,44 @@ export const eventRouter = router({
       const db = await getDb();
       const [js] = await db.select().from(jobseekers).where(eq(jobseekers.registrationId, input.registrationId));
       if (!js) throw new TRPCError({ code: "NOT_FOUND", message: "Jobseeker tidak ditemukan" });
-      if (js.checkedInAt) {
-        return {
-          alreadyCheckedIn: true,
-          checkedInAt: js.checkedInAt,
-          jobseeker: { registrationId: js.registrationId, namaLengkap: js.namaLengkap, institusi: js.institusi || "", fotoUrl: js.fotoUrl || "" },
-        };
-      }
+
+      // Tentukan hari berdasarkan tanggal Jakarta
       const now = new Date();
-      await db.update(jobseekers).set({ checkedInAt: now }).where(eq(jobseekers.registrationId, input.registrationId));
-      return {
-        alreadyCheckedIn: false,
-        checkedInAt: now,
-        jobseeker: { registrationId: js.registrationId, namaLengkap: js.namaLengkap, institusi: js.institusi || "", fotoUrl: js.fotoUrl || "" },
-      };
+      const jakartaDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+      const m = jakartaDate.getMonth() + 1;
+      const d = jakartaDate.getDate();
+      const isDay1 = m === 6 && d === 8;
+      const isDay2 = m === 6 && d === 9;
+      const dayNum = isDay1 ? 1 : isDay2 ? 2 : 1; // default day1 untuk testing
+
+      const jsData = { registrationId: js.registrationId, namaLengkap: js.namaLengkap, institusi: js.institusi || "", fotoUrl: js.fotoUrl || "" };
+
+      if (dayNum === 1) {
+        if (js.checkedInDay1At) return { alreadyCheckedIn: true, day: 1, checkedInAt: js.checkedInDay1At, jobseeker: jsData };
+        await db.update(jobseekers).set({ checkedInDay1At: now }).where(eq(jobseekers.registrationId, input.registrationId));
+        return { alreadyCheckedIn: false, day: 1, checkedInAt: now, jobseeker: jsData };
+      } else {
+        if (js.checkedInDay2At) return { alreadyCheckedIn: true, day: 2, checkedInAt: js.checkedInDay2At, jobseeker: jsData };
+        await db.update(jobseekers).set({ checkedInDay2At: now }).where(eq(jobseekers.registrationId, input.registrationId));
+        return { alreadyCheckedIn: false, day: 2, checkedInAt: now, jobseeker: jsData };
+      }
     }),
 
   getAttendanceStats: publicProcedure
     .query(async () => {
+      const db  = await getDb();
+      const all = await db.select().from(jobseekers);
+      const day1    = all.filter(j => j.checkedInDay1At).length;
+      const day2    = all.filter(j => j.checkedInDay2At).length;
+      const keduanya = all.filter(j => j.checkedInDay1At && j.checkedInDay2At).length;
+      return { total: all.length, day1, day2, keduanya };
+    }),
+
+  resetAttendance: publicProcedure
+    .mutation(async () => {
       const db = await getDb();
-      const all  = await db.select().from(jobseekers);
-      const hadir = all.filter(j => j.checkedInAt).length;
-      return { total: all.length, hadir };
+      await db.update(jobseekers).set({ checkedInDay1At: null, checkedInDay2At: null });
+      return { success: true };
     }),
 
   // ── Interview Booking endpoints ────────────────────────
