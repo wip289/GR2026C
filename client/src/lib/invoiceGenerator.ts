@@ -695,19 +695,16 @@ export function generateIdCardHTML(data: {
   /* Foto area */
   .foto-area {
     width: 100%;
-    height: 32mm;
+    height: 28mm;
     background: #0a1628;
     overflow: hidden;
     flex-shrink: 0;
   }
 
-  /* Info area */
-  .info-area {
+  /* Info top — hanya nama & info lines */
+  .info-top {
     flex: 1;
-    padding: 2mm;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    padding: 2mm 3mm 1mm 3mm;
     overflow: hidden;
     background: white;
   }
@@ -724,12 +721,12 @@ export function generateIdCardHTML(data: {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* Bottom */
+  /* Bottom-strip — di luar info-top, selalu tampil */
   .bottom-strip {
     flex-shrink: 0;
     background: #f8fafc;
     border-top: 0.5px solid #e2e8f0;
-    padding: 1.5mm 2mm;
+    padding: 2mm 2mm 1.5mm 2mm;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -750,7 +747,7 @@ export function generateIdCardHTML(data: {
     align-items: center;
     gap: 1mm;
   }
-  .qr-img { width: 20mm; height: 20mm; display: block; }
+  .qr-img { width: 18mm; height: 18mm; display: block; }
   .qr-label {
     font-size: 3.5px; color: #94a3b8;
     text-align: center; line-height: 1.4;
@@ -794,25 +791,24 @@ export function generateIdCardHTML(data: {
   <!-- Foto -->
   <div class="foto-area">${fotoSection}</div>
 
-  <!-- Info -->
-  <div class="info-area">
-    <div>
-      <div class="name">${data.namaLengkap}</div>
-      ${data.institusi   ? `<div class="info-line">🎓 ${data.institusi}</div>` : ''}
-      ${data.jurusan     ? `<div class="info-line">📚 ${data.jurusan}</div>` : ''}
-      ${data.bidangMinat ? `<div class="info-line">💼 ${data.bidangMinat}</div>` : ''}
-      ${data.status      ? `<div class="info-line">👤 ${statusLabel[data.status] || data.status}</div>` : ''}
-    </div>
+  <!-- Info top: nama & detail saja -->
+  <div class="info-top">
+    <div class="name">${data.namaLengkap}</div>
+    ${data.institusi   ? `<div class="info-line">🎓 ${data.institusi}</div>` : ''}
+    ${data.jurusan     ? `<div class="info-line">📚 ${data.jurusan}</div>` : ''}
+    ${data.bidangMinat ? `<div class="info-line">💼 ${data.bidangMinat}</div>` : ''}
+    ${data.status      ? `<div class="info-line">👤 ${statusLabel[data.status] || data.status}</div>` : ''}
+  </div>
 
-    <div class="bottom-strip">
-      <div class="reg-pill">${data.registrationId}</div>
-      <div class="qr-wrap">
-        <img class="qr-img" src="${qrUrl}" alt="QR Code"
-          onerror="this.outerHTML='<div style=\'width:20mm;height:20mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
-        <div class="qr-label">Scan untuk absen</div>
-      </div>
-      <div class="event-info">8–9 Juni 2026 · Dome NHI Bandung</div>
+  <!-- Bottom-strip: selalu di bawah, tidak terpotong -->
+  <div class="bottom-strip">
+    <div class="reg-pill">${data.registrationId}</div>
+    <div class="qr-wrap">
+      <img class="qr-img" src="${qrUrl}" alt="QR Code"
+        onerror="this.outerHTML='<div style=\'width:18mm;height:18mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
+      <div class="qr-label">Scan untuk absen</div>
     </div>
+    <div class="event-info">8–9 Juni 2026 · Dome NHI Bandung</div>
   </div>
 
 </div>
