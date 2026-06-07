@@ -190,8 +190,9 @@ export default function BossPanel() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [selectedEmployer, setSelectedEmployer] = useState<string | null>(null);
   const [selectedJobseeker, setSelectedJobseeker] = useState<string | null>(null);
-  const [jsSearch, setJsSearch] = useState("");
-  const [jsPage,   setJsPage]   = useState(1);
+  const [jsSearch,    setJsSearch]    = useState("");
+  const [jsHadirOnly, setJsHadirOnly] = useState(false);
+  const [jsPage,      setJsPage]      = useState(1);
   const JS_PAGE_SIZE = 50;
   const [selectedDay, setSelectedDay] = useState(0);
   const [discountInput, setDiscountInput] = useState<Record<string, string>>({});
