@@ -600,7 +600,7 @@ export function generateIdCardHTML(data: {
   fotoUrl?: string;
 }): string {
   const absenUrl = encodeURIComponent(`https://grandrecruitment.id/absen?id=${data.registrationId}`);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${absenUrl}&margin=4`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${absenUrl}&margin=4`;
 
   const statusLabel: Record<string, string> = {
     mahasiswa: "Mahasiswa", fresh_graduate: "Fresh Graduate",
@@ -631,8 +631,20 @@ export function generateIdCardHTML(data: {
   }
   @page { size: 54mm 90mm portrait; margin: 0; }
   @media print {
-    body { background: white; padding: 0; margin: 0; display: block; }
+    html, body {
+      width: 54mm !important; height: 90mm !important;
+      margin: 0 !important; padding: 0 !important;
+      background: white !important;
+      overflow: hidden !important;
+      display: block !important;
+    }
     .no-print { display: none !important; }
+    .card {
+      width: 54mm !important; height: 90mm !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      page-break-after: avoid;
+    }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   }
 
@@ -657,7 +669,7 @@ export function generateIdCardHTML(data: {
     align-items: center;
     gap: 1mm;
     flex-shrink: 0;
-    max-height: 18mm;
+    max-height: 14mm;
     overflow: hidden;
   }
   .logo-img, .header-bar img {
@@ -683,7 +695,7 @@ export function generateIdCardHTML(data: {
   /* Foto area */
   .foto-area {
     width: 100%;
-    height: 38mm;
+    height: 32mm;
     background: #0a1628;
     overflow: hidden;
     flex-shrink: 0;
@@ -692,16 +704,17 @@ export function generateIdCardHTML(data: {
   /* Info area */
   .info-area {
     flex: 1;
-    padding: 3mm;
+    padding: 2mm;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: hidden;
     background: white;
   }
   .name {
-    font-size: 13px; font-weight: 900;
+    font-size: 12px; font-weight: 900;
     color: #0a1628; line-height: 1.2;
-    margin-bottom: 2mm;
+    margin-bottom: 1mm;
     word-break: break-word;
     text-align: center;
   }
@@ -713,13 +726,14 @@ export function generateIdCardHTML(data: {
 
   /* Bottom */
   .bottom-strip {
+    flex-shrink: 0;
     background: #f8fafc;
     border-top: 0.5px solid #e2e8f0;
-    padding: 2mm 3mm;
+    padding: 1.5mm 2mm;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5mm;
+    gap: 1mm;
   }
   .reg-pill {
     font-family: monospace;
@@ -736,7 +750,7 @@ export function generateIdCardHTML(data: {
     align-items: center;
     gap: 1mm;
   }
-  .qr-img { width: 14mm; height: 14mm; display: block; }
+  .qr-img { width: 20mm; height: 20mm; display: block; }
   .qr-label {
     font-size: 3.5px; color: #94a3b8;
     text-align: center; line-height: 1.4;
@@ -794,7 +808,7 @@ export function generateIdCardHTML(data: {
       <div class="reg-pill">${data.registrationId}</div>
       <div class="qr-wrap">
         <img class="qr-img" src="${qrUrl}" alt="QR Code"
-          onerror="this.outerHTML='<div style=\'width:14mm;height:14mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
+          onerror="this.outerHTML='<div style=\'width:20mm;height:20mm;background:#f1f5f9;border:1px dashed #cbd5e1;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:8px;color:#94a3b8\'>QR</div>'"/>
         <div class="qr-label">Scan untuk absen</div>
       </div>
       <div class="event-info">8–9 Juni 2026 · Dome NHI Bandung</div>
@@ -808,7 +822,7 @@ export function generateIdCardHTML(data: {
   <button class="btn btn-close"  onclick="window.close()">✕ Tutup</button>
 </div>
 <p class="hint no-print">
-  💡 Saat print pilih <strong>Save as PDF</strong> · Cetak di kertas foto atau karton 260gsm · Laminasi agar tahan lama
+  💡 Klik Print → <strong>Save as PDF</strong> · Di dialog print: paper size pilih <strong>Custom: 54×90mm</strong> (atau cetak PDF ke kertas kartu 54×90mm dengan pilihan <strong>Actual Size</strong>)
 </p>
 
 <script>
