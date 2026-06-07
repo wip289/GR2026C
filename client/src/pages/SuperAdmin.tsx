@@ -1288,6 +1288,52 @@ export default function SuperAdmin() {
             if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
           };
 
+          const exportCSV = () => {
+            const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+            const rp  = (n: number) => Math.round(n);
+
+            const headers = ["No","Perusahaan","Booking ID","Booth","Tagihan Sewa","Biaya Additional","Grand Total","Jml Diterima","Selisih","Tgl Bayar","Status","Pajak (Rp)","Jenis Pajak","Catatan"];
+
+            let sumSewa = 0, sumAdd = 0, sumGrand = 0, sumDiterima = 0, sumSelisih = 0, sumPajak = 0;
+
+            const dataRows = bookings.map((b: any, i: number) => {
+              const rec       = finRec[b.bookingId] || {};
+              const sewa      = getBoothPrice(b);
+              const add       = parseFloat(rec.additionalPrice || 0);
+              const grand     = sewa + add;
+              const pajakAmt  = parseFloat(rec.pajakAmount || 0);
+              const isPPh     = rec.pajakType === "pph";
+              const isPPN     = rec.pajakType === "ppn";
+              const threshold = isPPh ? grand - pajakAmt : isPPN ? grand + pajakAmt : grand;
+              const trm       = parseFloat(rec.amountReceived || 0);
+              const sel       = threshold - trm;
+              const status    = trm === 0 ? "Belum" : trm >= threshold ? "Lunas" : "Kurang";
+              const booths    = (() => { try { const bs = typeof b.selectedBooths==="string"?JSON.parse(b.selectedBooths):(b.selectedBooths||[]); return Array.isArray(bs)?bs.map((x:any)=>x.id||x).join(" "):"-"; } catch { return "-"; } })();
+              sumSewa += sewa; sumAdd += add; sumGrand += grand;
+              sumDiterima += trm; sumSelisih += sel; sumPajak += pajakAmt;
+              return [i+1, b.companyName, b.bookingId, booths, rp(sewa), rp(add), rp(grand), rp(trm), rp(sel), rec.paymentDate||"", status, rp(pajakAmt), rec.pajakType?.toUpperCase()||"", rec.notes||""].map(esc).join(",");
+            });
+
+            const totalRow = ["","TOTAL","","",rp(sumSewa),rp(sumAdd),rp(sumGrand),rp(sumDiterima),rp(sumSelisih),"","",rp(sumPajak),"",""].map(esc).join(",");
+
+            const csv = [
+              headers.map(esc).join(","),
+              ...dataRows,
+              "",
+              totalRow,
+            ].join("
+");
+
+            const bom  = "﻿"; // UTF-8 BOM agar Excel baca karakter Indonesia dengan benar
+            const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = `Laporan_Keuangan_GR2026_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          };
+
           return (
             <div style={{ display: "grid", gridTemplateColumns: editingFin ? "1fr 380px" : "1fr", gap: "1.5rem", alignItems: "start" }}>
               <div>
@@ -1310,10 +1356,16 @@ export default function SuperAdmin() {
                 {/* Toolbar */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap" as const, gap: "0.5rem" }}>
                   <div style={{ fontSize: "0.83rem", color: "#64748b" }}>{bookings.length} employer confirmed · klik baris untuk edit</div>
-                  <button onClick={printReport}
-                    style={{ background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 8, padding: "0.45rem 1.1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
-                    🖨️ Print / Export Laporan
-                  </button>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={exportCSV}
+                      style={{ background: "linear-gradient(135deg,#16a34a,#15803d)", border: "none", color: "#fff", borderRadius: 8, padding: "0.45rem 1.1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                      📊 Export CSV
+                    </button>
+                    <button onClick={printReport}
+                      style={{ background: "linear-gradient(135deg,#0d9488,#14b8a6)", border: "none", color: "#fff", borderRadius: 8, padding: "0.45rem 1.1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                      🖨️ Print / PDF
+                    </button>
+                  </div>
                 </div>
 
                 {/* Table */}
