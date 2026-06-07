@@ -492,21 +492,23 @@ export const eventRouter = router({
     }),
 
   checkInJobseeker: publicProcedure
-    .input(z.object({ registrationId: z.string() }))
+    .input(z.object({ registrationId: z.string(), day: z.number().optional() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
       const [js] = await db.select().from(jobseekers).where(eq(jobseekers.registrationId, input.registrationId));
       if (!js) throw new TRPCError({ code: "NOT_FOUND", message: "Jobseeker tidak ditemukan" });
 
-      // Tentukan hari berdasarkan tanggal Jakarta
-      const now = new Date();
-      const jakartaDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-      const m = jakartaDate.getMonth() + 1;
-      const d = jakartaDate.getDate();
-      const isDay1 = m === 6 && d === 8;
-      const isDay2 = m === 6 && d === 9;
-      const dayNum = isDay1 ? 1 : isDay2 ? 2 : 1; // default day1 untuk testing
+      // Gunakan day dari input jika ada, jika tidak auto-detect dari tanggal Jakarta
+      let dayNum: number;
+      if (input.day === 1 || input.day === 2) {
+        dayNum = input.day;
+      } else {
+        const now2 = new Date();
+        const jkt = new Date(now2.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+        dayNum = (jkt.getMonth() + 1 === 6 && jkt.getDate() === 9) ? 2 : 1;
+      }
 
+      const now = new Date();
       const jsData = { registrationId: js.registrationId, namaLengkap: js.namaLengkap, institusi: js.institusi || "", fotoUrl: js.fotoUrl || "" };
 
       if (dayNum === 1) {

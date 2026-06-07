@@ -56,16 +56,44 @@ export default function CheckIn() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // tRPC queries
-  const { data: jobseekersRaw } = trpc.event.getAllJobseekers.useQuery();
+  const { data: jobseekersRaw, refetch: refetchJS } = trpc.event.getAllJobseekers.useQuery();
   const { data: employersRaw } = trpc.event.getAllEmployerBookings.useQuery();
+  const { data: attendanceData, refetch: refetchStats } = trpc.event.getAttendanceStats.useQuery(undefined, { refetchInterval: 10000 });
   const jobseekers = (jobseekersRaw || []) as any[];
-  const employers = (employersRaw || []) as any[];
+  const employers  = (employersRaw  || []) as any[];
 
-  // Count check-ins
-  const jsStore = getCheckinStorage("jobseeker");
+  const checkInMutation = trpc.event.checkInJobseeker.useMutation({
+    onSuccess: (data) => {
+      refetchJS();
+      refetchStats();
+      if (data.alreadyCheckedIn) {
+        const timeStr = new Date(data.checkedInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+        setAlreadyIn(timeStr);
+        return;
+      }
+      const timeStr = new Date(data.checkedInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+      const record: CheckInRecord = {
+        id: data.jobseeker.registrationId,
+        name: data.jobseeker.namaLengkap,
+        type: "jobseeker",
+        time: timeStr,
+        day: activeDay,
+        detail: data.jobseeker.institusi || "",
+      };
+      setRecentCheckins(prev => [record, ...prev.slice(0, 19)]);
+      toast.success("✅ Check-in berhasil!", { description: `${data.jobseeker.namaLengkap} · Hari ${activeDay} · ${timeStr}` });
+      setFound(null);
+      setInputId("");
+      setAlreadyIn(null);
+      inputRef.current?.focus();
+    },
+    onError: (e) => toast.error("Gagal check-in: " + e.message),
+  });
+
+  // Stats — jobseeker dari DB, employer dari localStorage
   const ebStore = getCheckinStorage("employer");
-  const jsDay1 = Object.values(jsStore).filter(v => v.day1).length;
-  const jsDay2 = Object.values(jsStore).filter(v => v.day2).length;
+  const jsDay1 = attendanceData?.day1 ?? 0;
+  const jsDay2 = attendanceData?.day2 ?? 0;
   const ebDay1 = Object.values(ebStore).filter(v => v.day1).length;
   const ebDay2 = Object.values(ebStore).filter(v => v.day2).length;
 
@@ -87,11 +115,12 @@ export default function CheckIn() {
       );
       if (!js) { setNotFound(true); return; }
 
-      // Check if already checked in today
-      const store = getCheckinStorage("jobseeker");
-      const existing = store[js.registrationId]?.[`day${activeDay}`];
-      if (existing) { setAlreadyIn(existing); setFound(js); return; }
-
+      // Check DB field langsung
+      const checkedAt = activeDay === 1 ? js.checkedInDay1At : js.checkedInDay2At;
+      if (checkedAt) {
+        const timeStr = new Date(checkedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+        setAlreadyIn(timeStr);
+      }
       setFound(js);
     } else {
       const eb = employers.find((e: any) =>
@@ -110,26 +139,19 @@ export default function CheckIn() {
 
   const handleConfirmCheckIn = () => {
     if (!found) return;
-    const id = checkInType === "jobseeker" ? found.registrationId : found.bookingId;
-    const time = saveCheckin(checkInType, id, activeDay);
-
-    const record: CheckInRecord = {
-      id,
-      name: checkInType === "jobseeker" ? found.namaLengkap : found.companyName,
-      type: checkInType,
-      time,
-      day: activeDay,
-      detail: checkInType === "jobseeker"
-        ? (found.institusi || found.status || "")
-        : (found.booths ? JSON.parse(typeof found.booths === "string" ? found.booths : "[]").map((b: any) => b.label).join(", ") : ""),
-    };
-
-    setRecentCheckins(prev => [record, ...prev.slice(0, 19)]);
-    toast.success(`✅ Check-in berhasil!`, { description: `${record.name} · Hari ${activeDay} · ${time}` });
-    setFound(null);
-    setInputId("");
-    setAlreadyIn(null);
-    inputRef.current?.focus();
+    if (checkInType === "jobseeker") {
+      // Pakai DB mutation
+      checkInMutation.mutate({ registrationId: found.registrationId, day: activeDay });
+    } else {
+      // Employer tetap pakai localStorage
+      const id = found.bookingId;
+      const time = saveCheckin("employer", id, activeDay);
+      const booths = (() => { try { return JSON.parse(typeof found.booths === "string" ? found.booths : "[]").map((b: any) => b.label).join(", "); } catch { return ""; } })();
+      const record: CheckInRecord = { id, name: found.companyName, type: "employer", time, day: activeDay, detail: booths };
+      setRecentCheckins(prev => [record, ...prev.slice(0, 19)]);
+      toast.success("✅ Check-in berhasil!", { description: `${found.companyName} · Hari ${activeDay} · ${time}` });
+      setFound(null); setInputId(""); setAlreadyIn(null); inputRef.current?.focus();
+    }
   };
 
   const handleCancel = () => {
