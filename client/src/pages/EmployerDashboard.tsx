@@ -1347,7 +1347,7 @@ export default function EmployerDashboard() {
           const downloadCSV = () => {
             const toDownload = filtered.filter((j: any) => selectedKandidats.has(j.registrationId));
             if (toDownload.length === 0) return;
-            const headers = ["Nama Lengkap","Institusi","Jurusan","Tahun Lulus","Status Kerja","Minat Kerja","Kota","URL Foto","URL CV"];
+            const headers = ["Nama Lengkap","Institusi","Jurusan","Tahun Lulus","Status Kerja","Minat Kerja","Kota","WhatsApp","URL Foto","URL CV"];
             const rows = toDownload.map((j: any) => [
               j.namaLengkap || "",
               j.institusi || "",
@@ -1381,7 +1381,7 @@ export default function EmployerDashboard() {
                 </div>
 
                 <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.65rem 1rem", marginBottom: "1.25rem", fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
-                  ℹ️ Data ditampilkan sesuai UU PDP. Informasi kontak (email, WhatsApp, NIK) tidak tersedia — hubungi kandidat langsung di booth saat event.
+                  ℹ️ Data ditampilkan sesuai UU PDP. NIK dan email tidak ditampilkan. Hubungi kandidat langsung di booth atau via WhatsApp yang tertera.
                 </div>
 
                 {kandidatQuery.isLoading && <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>⏳ Memuat kandidat...</p>}
@@ -1450,12 +1450,13 @@ export default function EmployerDashboard() {
                             <th style={th}>Status Kerja</th>
                             <th style={th}>Minat</th>
                             <th style={th}>Kota</th>
+                            <th style={th}>WhatsApp</th>
                             <th style={{ ...th, textAlign: "center" }}>CV</th>
                           </tr>
                         </thead>
                         <tbody>
                           {paginated.length === 0 ? (
-                            <tr><td colSpan={10} style={{ ...td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Tidak ada kandidat yang sesuai filter.</td></tr>
+                            <tr><td colSpan={11} style={{ ...td, textAlign: "center", color: "#64748b", padding: "2rem" }}>Tidak ada kandidat yang sesuai filter.</td></tr>
                           ) : paginated.map((js: any) => (
                             <tr key={js.registrationId}
                               style={{ background: selectedKandidats.has(js.registrationId) ? "rgba(212,160,23,0.05)" : "transparent", transition: "background 0.1s" }}
@@ -1486,6 +1487,15 @@ export default function EmployerDashboard() {
                                 </span>
                               </td>
                               <td style={{ ...td, color: "#64748b", fontSize: "0.78rem" }}>{js.kota || "—"}</td>
+                              <td style={{ ...td, fontSize: "0.78rem" }}>
+                                {js.whatsapp
+                                  ? <a href={`https://wa.me/${js.whatsapp.replace(/[^0-9]/g,"")}`} target="_blank" rel="noreferrer"
+                                      style={{ color: "#22c55e", textDecoration: "none", fontWeight: 600 }}>
+                                      📱 {js.whatsapp}
+                                    </a>
+                                  : <span style={{ color: "#334155" }}>—</span>
+                                }
+                              </td>
                               <td style={{ ...td, textAlign: "center" }}>
                                 {js.cvUrl
                                   ? <a href={js.cvUrl} target="_blank" rel="noreferrer" style={{ color: "#D4A017", fontSize: "1rem", textDecoration: "none" }} title="Lihat CV">📄</a>
