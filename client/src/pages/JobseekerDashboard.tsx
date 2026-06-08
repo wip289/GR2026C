@@ -9,7 +9,13 @@ import { supabase, BUCKET } from "@/lib/supabase";
 async function uploadFile(file: File, type: "foto" | "cv" | "ktm" | "sertifikat", registrationId: string): Promise<string | null> {
   try {
     const ext  = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `jobseeker/${registrationId}/${type}.${ext}`;
+    // Sanitasi path: ganti karakter non-ASCII agar Supabase tidak reject
+    const CHAR_MAP: Record<string, string> = {
+      'İ':'I','ı':'i','Ğ':'G','ğ':'g','Ş':'S','ş':'s',
+      'Ü':'U','ü':'u','Ö':'O','ö':'o','Ç':'C','ç':'c',
+    };
+    const safeId = registrationId.split('').map(c => CHAR_MAP[c] ?? c).join('').replace(/[^a-zA-Z0-9\-_.]/g, '_');
+    const path = `jobseeker/${safeId}/${type}.${ext}`;
 
     const { error } = await supabase.storage
       .from(BUCKET)
