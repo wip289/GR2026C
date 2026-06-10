@@ -43,3 +43,24 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// ─── PANITIA AUTH (token via header x-panitia-token) ────────────
+// Dipakai endpoint Boss Panel / SuperAdmin. Token didapat dari
+// verifyPanitiaPassword. Lihat server/panitiaAuth.ts.
+import { verifyToken } from "../panitiaAuth";
+
+const requirePanitiaToken = t.middleware(async opts => {
+  const { ctx, next } = opts;
+  const raw = ctx.req.headers["x-panitia-token"];
+  const token = Array.isArray(raw) ? raw[0] : raw;
+  const role = await verifyToken(token);
+  if (!role) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Sesi panitia tidak valid atau sudah kedaluwarsa. Silakan login ulang.",
+    });
+  }
+  return next({ ctx: { ...ctx, panitiaRole: role } });
+});
+
+export const panitiaProcedure = t.procedure.use(requirePanitiaToken);

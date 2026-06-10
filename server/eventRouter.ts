@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { getDb } from "./db";
-import { jobseekers, sponsors, employerProspects, employerBookings } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { jobseekers, sponsors, employerProspects, employerBookings, virtualPhaseEmployerConfig, virtualPhasePositions, virtualPhaseApplications } from "../drizzle/schema";
+import { eq, and, inArray, desc, gte, lte, sql } from "drizzle-orm";
+import { protectedProcedure, publicProcedure, panitiaProcedure, router } from "./_core/trpc";
+import { verifyPassword, issueToken, setPassword } from "./panitiaAuth";
 import { TRPCError } from "@trpc/server";
 import {
   createEvent,
@@ -818,12 +819,16 @@ export const eventRouter = router({
   // ── Superadmin Config ────────────────────────────────────────
   getEventConfig: publicProcedure
     .query(async () => {
-      return await getEventConfig();
+      const cfg = await getEventConfig();
+      return Object.fromEntries(Object.entries(cfg).filter(([k]) => !k.startsWith("secret_")));
     }),
 
   saveEventConfig: publicProcedure
     .input(z.record(z.string(), z.string()))
     .mutation(async ({ input }) => {
+      if (Object.keys(input).some(k => k.startsWith("secret_"))) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Key secret_* tidak bisa diubah lewat endpoint ini." });
+      }
       await setEventConfig(input);
       return { success: true };
     }),
@@ -1173,4 +1178,413 @@ export const eventRouter = router({
         return (vac as any[]).length > 0;
       });
     }),
+
+  // ─── PANITIA AUTH ────────────────────────────────────────────
+  // Login panitia/admin: cek password di server, kasih token 12 jam.
+  // Token dipakai via header x-panitia-token (lihat panitiaProcedure).
+
+  verifyPanitiaPassword: publicProcedure
+    .input(z.object({
+      role: z.enum(["panitia", "admin"]),
+      password: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const ok = await verifyPassword(input.role, input.password);
+      if (!ok) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Password salah." });
+      }
+      const token = await issueToken(input.role);
+      return { token, role: input.role };
+    }),
+
+  // Ganti password — hanya admin (SuperAdmin) yang boleh.
+  setPanitiaPassword: panitiaProcedure
+    .input(z.object({
+      role: z.enum(["panitia", "admin"]),
+      newPassword: z.string().min(8, "Password minimal 8 karakter"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if ((ctx as any).panitiaRole !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Hanya SuperAdmin yang bisa mengganti password." });
+      }
+      await setPassword(input.role, input.newPassword);
+      return { success: true };
+    }),
+
+  // ─── VIRTUAL PHASE ───────────────────────────────────────────
+
+  // Status periode virtual phase (publik — untuk banner countdown)
+  getVirtualPhaseStatus: publicProcedure.query(async () => {
+    const cfg = await getEventConfig();
+    const now = new Date();
+    const end = cfg.virtualPhaseEnd ? new Date(cfg.virtualPhaseEnd + "T23:59:59+07:00") : null;
+    const expired = end ? now.getTime() > end.getTime() : false;
+    return {
+      isActive: cfg.virtualPhaseActive === "true" && !expired,
+      startDate: cfg.virtualPhaseStart ?? null,
+      endDate: cfg.virtualPhaseEnd ?? null,
+      daysLeft: end ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86400000)) : null,
+    };
+  }),
+
+  // Gallery publik: employer participating + posisi aktif + counter pelamar
+  getVirtualGallery: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+    const configs = await db.select().from(virtualPhaseEmployerConfig)
+      .where(eq(virtualPhaseEmployerConfig.isParticipating, true));
+    const bookingIds = configs.map(c => c.employerBookingId);
+    if (bookingIds.length === 0) return [];
+
+    const employers = await db.select().from(employerBookings)
+      .where(inArray(employerBookings.bookingId, bookingIds));
+
+    const positions = await db.select().from(virtualPhasePositions)
+      .where(and(
+        inArray(virtualPhasePositions.employerBookingId, bookingIds),
+        eq(virtualPhasePositions.isActive, true),
+      ));
+
+    const appCounts = await db.select({
+      positionId: virtualPhaseApplications.positionId,
+      count: sql<number>`count(*)`.as("count"),
+    }).from(virtualPhaseApplications).groupBy(virtualPhaseApplications.positionId);
+    const countMap = Object.fromEntries(appCounts.map(a => [a.positionId, Number(a.count)]));
+
+    return employers.map(emp => {
+      const cfg = configs.find(c => c.employerBookingId === emp.bookingId)!;
+      return {
+        bookingId: emp.bookingId,
+        companyName: emp.companyName,
+        industry: emp.industry,
+        city: emp.city,
+        logoUrl: emp.logoUrl,
+        mechanism: cfg.mechanism,
+        externalUrl: cfg.externalUrl,
+        virtualPicName: cfg.virtualPicName,
+        virtualPicWhatsapp: cfg.virtualPicWhatsapp,
+        positions: positions
+          .filter(p => p.employerBookingId === emp.bookingId)
+          .map(p => ({
+            id: p.id,
+            positionName: p.positionName,
+            headcount: p.headcount,
+            location: p.location,
+            requirements: p.requirements,
+            applicantCount: countMap[p.id] ?? 0,
+          })),
+      };
+    });
+  }),
+
+  // Jobseeker apply — identitas diverifikasi via registrationId + email (pola login existing)
+  createVirtualApplication: publicProcedure
+    .input(z.object({
+      registrationId: z.string(),
+      email: z.string().email(),
+      positionId: z.number(),
+      employerBookingId: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      // 1. Verifikasi identitas jobseeker (server-side, sama dengan login)
+      const js = await getJobseekerByIdAndEmail(input.registrationId, input.email);
+      if (!js) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid. Silakan login ulang." });
+
+      // 2. Tier check dari DB, bukan dari frontend
+      if (!js.fotoUrl || !js.cvUrl) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Upload CV terlebih dahulu untuk melamar." });
+      }
+
+      // 3. Cek periode masih aktif (toggle + end date)
+      const cfg = await getEventConfig();
+      const end = cfg.virtualPhaseEnd ? new Date(cfg.virtualPhaseEnd + "T23:59:59+07:00") : null;
+      const expired = end ? Date.now() > end.getTime() : false;
+      if (cfg.virtualPhaseActive !== "true" || expired) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Periode pendaftaran sudah berakhir." });
+      }
+
+      // 4. Posisi harus ada & aktif
+      const [position] = await db.select().from(virtualPhasePositions)
+        .where(and(
+          eq(virtualPhasePositions.id, input.positionId),
+          eq(virtualPhasePositions.isActive, true),
+        )).limit(1);
+      if (!position) throw new TRPCError({ code: "NOT_FOUND", message: "Posisi tidak ditemukan." });
+
+      // 5. Mekanisme employer
+      const [empCfg] = await db.select().from(virtualPhaseEmployerConfig)
+        .where(eq(virtualPhaseEmployerConfig.employerBookingId, input.employerBookingId)).limit(1);
+
+      // 6. Insert — unique constraint (jobseekerId, positionId) cegah double apply
+      try {
+        await db.insert(virtualPhaseApplications).values({
+          jobseekerId: js.id,
+          jobseekerRegId: js.registrationId,
+          employerBookingId: input.employerBookingId,
+          positionId: input.positionId,
+          positionName: position.positionName,
+          mechanism: empCfg?.mechanism ?? "A",
+          status: "new",
+        });
+      } catch (e: any) {
+        if (e?.code === "ER_DUP_ENTRY" || e?.cause?.code === "ER_DUP_ENTRY") {
+          throw new TRPCError({ code: "CONFLICT", message: "Kamu sudah melamar posisi ini." });
+        }
+        throw e;
+      }
+
+      return {
+        mechanism: empCfg?.mechanism ?? "A",
+        externalUrl: empCfg?.externalUrl ?? null,
+        virtualPicName: empCfg?.virtualPicName ?? null,
+        virtualPicWhatsapp: empCfg?.virtualPicWhatsapp ?? null,
+        positionName: position.positionName,
+      };
+    }),
+
+  // Lamaran milik jobseeker (untuk dashboard jobseeker)
+  getMyVirtualApplications: publicProcedure
+    .input(z.object({ registrationId: z.string(), email: z.string().email() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const js = await getJobseekerByIdAndEmail(input.registrationId, input.email);
+      if (!js) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid." });
+      return db.select({
+        id: virtualPhaseApplications.id,
+        positionName: virtualPhaseApplications.positionName,
+        employerBookingId: virtualPhaseApplications.employerBookingId,
+        mechanism: virtualPhaseApplications.mechanism,
+        status: virtualPhaseApplications.status,
+        createdAt: virtualPhaseApplications.createdAt,
+      }).from(virtualPhaseApplications)
+        .where(eq(virtualPhaseApplications.jobseekerId, js.id))
+        .orderBy(desc(virtualPhaseApplications.createdAt));
+    }),
+
+  // Lamaran masuk per employer — identitas diverifikasi via bookingId + email
+  getVirtualApplicationsByEmployer: publicProcedure
+    .input(z.object({ bookingId: z.string(), email: z.string().email() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const emp = await getEmployerBookingByIdAndEmail(input.bookingId, input.email);
+      if (!emp) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid." });
+      return db.select({
+        id: virtualPhaseApplications.id,
+        positionId: virtualPhaseApplications.positionId,
+        positionName: virtualPhaseApplications.positionName,
+        status: virtualPhaseApplications.status,
+        createdAt: virtualPhaseApplications.createdAt,
+        namaLengkap: jobseekers.namaLengkap,
+        institusi: jobseekers.institusi,
+        jurusan: jobseekers.jurusan,
+        tahunLulus: jobseekers.tahunLulus,
+        kota: jobseekers.kota,
+        whatsapp: jobseekers.whatsapp,
+        fotoUrl: jobseekers.fotoUrl,
+        cvUrl: jobseekers.cvUrl,
+        minatKerja: jobseekers.minatKerja,
+        bidangMinat: jobseekers.bidangMinat,
+      }).from(virtualPhaseApplications)
+        .innerJoin(jobseekers, eq(virtualPhaseApplications.jobseekerId, jobseekers.id))
+        .where(eq(virtualPhaseApplications.employerBookingId, emp.bookingId))
+        .orderBy(desc(virtualPhaseApplications.createdAt));
+    }),
+
+  // Employer update status lamaran (new/viewed/contacted/not_relevant)
+  updateVirtualApplicationStatus: publicProcedure
+    .input(z.object({
+      bookingId: z.string(),
+      email: z.string().email(),
+      applicationId: z.number(),
+      status: z.enum(["new", "viewed", "contacted", "not_relevant"]),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const emp = await getEmployerBookingByIdAndEmail(input.bookingId, input.email);
+      if (!emp) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid." });
+      await db.update(virtualPhaseApplications)
+        .set({ status: input.status })
+        .where(and(
+          eq(virtualPhaseApplications.id, input.applicationId),
+          eq(virtualPhaseApplications.employerBookingId, emp.bookingId),
+        ));
+      return { success: true };
+    }),
+
+  // ── Panitia: kontrol global virtual phase (BUTUH TOKEN) ──────
+  setVirtualPhaseConfig: panitiaProcedure
+    .input(z.object({
+      isActive: z.boolean(),
+      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const data: Record<string, string> = { virtualPhaseActive: String(input.isActive) };
+      if (input.startDate) data.virtualPhaseStart = input.startDate;
+      if (input.endDate) data.virtualPhaseEnd = input.endDate;
+      await setEventConfig(data);
+      return { success: true };
+    }),
+
+  // Panitia: config per employer (ikut/tidak, mekanisme, PIC)
+  setEmployerVirtualConfig: panitiaProcedure
+    .input(z.object({
+      employerBookingId: z.string(),
+      isParticipating: z.boolean(),
+      mechanism: z.enum(["A", "B", "C"]).optional(),
+      externalUrl: z.string().optional(),
+      virtualPicName: z.string().optional(),
+      virtualPicEmail: z.string().optional(),
+      virtualPicWhatsapp: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      await db.insert(virtualPhaseEmployerConfig)
+        .values({
+          employerBookingId: input.employerBookingId,
+          isParticipating: input.isParticipating,
+          mechanism: input.mechanism,
+          externalUrl: input.externalUrl,
+          virtualPicName: input.virtualPicName,
+          virtualPicEmail: input.virtualPicEmail,
+          virtualPicWhatsapp: input.virtualPicWhatsapp,
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            isParticipating: input.isParticipating,
+            mechanism: input.mechanism,
+            externalUrl: input.externalUrl,
+            virtualPicName: input.virtualPicName,
+            virtualPicEmail: input.virtualPicEmail,
+            virtualPicWhatsapp: input.virtualPicWhatsapp,
+          },
+        });
+      return { success: true };
+    }),
+
+  // Panitia: replace semua posisi employer (soft-delete lama, insert baru)
+  upsertVirtualPositions: panitiaProcedure
+    .input(z.object({
+      employerBookingId: z.string(),
+      positions: z.array(z.object({
+        positionName: z.string().min(1),
+        headcount: z.number().min(1),
+        location: z.string().min(1),
+        requirements: z.string().optional(),
+      })),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      await db.update(virtualPhasePositions)
+        .set({ isActive: false })
+        .where(eq(virtualPhasePositions.employerBookingId, input.employerBookingId));
+      if (input.positions.length > 0) {
+        await db.insert(virtualPhasePositions).values(
+          input.positions.map(p => ({
+            employerBookingId: input.employerBookingId,
+            positionName: p.positionName,
+            headcount: p.headcount,
+            location: p.location,
+            requirements: p.requirements ?? null,
+            isActive: true,
+          })),
+        );
+      }
+      return { success: true };
+    }),
+
+  // Panitia: overview semua employer + status virtual phase
+  getAllEmployerVirtualConfigs: panitiaProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+    const employers = await db.select({
+      bookingId: employerBookings.bookingId,
+      companyName: employerBookings.companyName,
+      logoUrl: employerBookings.logoUrl,
+    }).from(employerBookings).where(eq(employerBookings.status, "confirmed"));
+
+    const configs = await db.select().from(virtualPhaseEmployerConfig);
+    const positions = await db.select().from(virtualPhasePositions)
+      .where(eq(virtualPhasePositions.isActive, true));
+    const appStats = await db.select({
+      employerBookingId: virtualPhaseApplications.employerBookingId,
+      count: sql<number>`count(*)`.as("count"),
+      newCount: sql<number>`SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END)`.as("newCount"),
+    }).from(virtualPhaseApplications).groupBy(virtualPhaseApplications.employerBookingId);
+
+    return employers.map(emp => {
+      const cfg = configs.find(c => c.employerBookingId === emp.bookingId);
+      const stats = appStats.find(a => a.employerBookingId === emp.bookingId);
+      return {
+        bookingId: emp.bookingId,
+        companyName: emp.companyName,
+        logoUrl: emp.logoUrl,
+        isParticipating: cfg?.isParticipating ?? false,
+        mechanism: cfg?.mechanism ?? null,
+        virtualPicName: cfg?.virtualPicName ?? null,
+        virtualPicEmail: cfg?.virtualPicEmail ?? null,
+        virtualPicWhatsapp: cfg?.virtualPicWhatsapp ?? null,
+        externalUrl: cfg?.externalUrl ?? null,
+        positionCount: positions.filter(p => p.employerBookingId === emp.bookingId).length,
+        totalApplicants: Number(stats?.count ?? 0),
+        newApplicants: Number(stats?.newCount ?? 0),
+      };
+    });
+  }),
+
+  // Panitia: daily report (manual trigger). Resend belum dipasang — log dulu.
+  triggerDailyReport: panitiaProcedure
+    .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const targetDate = input.date ?? new Date(Date.now() + 7 * 3600000).toISOString().split("T")[0]; // WIB
+      const startOfDay = new Date(targetDate + "T00:00:00+07:00");
+      const endOfDay = new Date(targetDate + "T23:59:59+07:00");
+
+      const todayApps = await db.select({
+        employerBookingId: virtualPhaseApplications.employerBookingId,
+        positionName: virtualPhaseApplications.positionName,
+        namaLengkap: jobseekers.namaLengkap,
+        institusi: jobseekers.institusi,
+      }).from(virtualPhaseApplications)
+        .innerJoin(jobseekers, eq(virtualPhaseApplications.jobseekerId, jobseekers.id))
+        .where(and(
+          gte(virtualPhaseApplications.createdAt, startOfDay),
+          lte(virtualPhaseApplications.createdAt, endOfDay),
+        ));
+      if (todayApps.length === 0) return { sent: 0, totalApps: 0, message: "Tidak ada lamaran di tanggal ini." };
+
+      const grouped: Record<string, typeof todayApps> = {};
+      for (const a of todayApps) (grouped[a.employerBookingId] ??= []).push(a);
+
+      const configs = await db.select().from(virtualPhaseEmployerConfig)
+        .where(and(
+          inArray(virtualPhaseEmployerConfig.employerBookingId, Object.keys(grouped)),
+          eq(virtualPhaseEmployerConfig.mechanism, "A"),
+          eq(virtualPhaseEmployerConfig.isParticipating, true),
+        ));
+
+      let sentCount = 0;
+      for (const cfg of configs) {
+        if (!cfg.virtualPicEmail) continue;
+        const apps = grouped[cfg.employerBookingId] ?? [];
+        if (apps.length === 0) continue;
+        // TODO Fase 7: ganti console.log dengan Resend API call
+        console.log(`[Daily Report ${targetDate}] -> ${cfg.virtualPicEmail}: ${apps.length} lamaran`);
+        sentCount++;
+      }
+      return { sent: sentCount, totalApps: todayApps.length };
+    }),
+
 });

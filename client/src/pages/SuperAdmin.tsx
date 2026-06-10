@@ -129,16 +129,12 @@ const s = {
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [, navigate] = useLocation();
   const [pw, setPw] = useState("");
-  const ADMIN_PW = "GR2026@Admin"; // Change this in production
+  const verifyPwMutation = trpc.event.verifyPanitiaPassword.useMutation({
+    onSuccess: d => { sessionStorage.setItem("panitia_token", d.token); sessionStorage.setItem("sa_auth", "1"); onLogin(); },
+    onError: () => toast.error("Password salah"),
+  });
 
-  const handleLogin = () => {
-    if (pw === ADMIN_PW) {
-      sessionStorage.setItem("sa_auth", "1");
-      onLogin();
-    } else {
-      toast.error("Password salah");
-    }
-  };
+  const handleLogin = () => { if (pw.trim()) verifyPwMutation.mutate({ role: "admin", password: pw }); };
 
   return (
     <div style={{ ...s.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -170,7 +166,13 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
 // ── Data Management Component ────────────────────────────────
 function DataManagement() {
-  const [tab, setTab] = useState<"employer" | "jobseeker">("employer");
+  const [tab, setTab] = useState<"employer" | "jobseeker" | "security">("employer");
+  const [newPwPanitia, setNewPwPanitia] = useState("");
+  const [newPwAdmin, setNewPwAdmin]     = useState("");
+  const setPwMutation = trpc.event.setPanitiaPassword.useMutation({
+    onSuccess: () => { toast.success("Password berhasil diganti"); setNewPwPanitia(""); setNewPwAdmin(""); },
+    onError: e => toast.error("Gagal: " + e.message),
+  });
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
 
   const bookingsQuery   = trpc.event.getAllEmployerBookings.useQuery();
@@ -243,7 +245,48 @@ function DataManagement() {
           style={{ padding:"0.5rem 1.25rem", borderRadius:8, border:`1px solid ${tab==="jobseeker"?"#D4A017":"rgba(255,255,255,0.1)"}`, background:tab==="jobseeker"?"rgba(212,160,23,0.12)":"transparent", color:tab==="jobseeker"?"#D4A017":"#64748b", fontWeight:600, fontSize:"0.85rem", cursor:"pointer" }}>
           🎓 Jobseeker ({jsList.length})
         </button>
+        <button onClick={() => setTab("security")}
+          style={{ padding:"0.5rem 1.25rem", borderRadius:8, border:`1px solid ${tab==="security"?"#ef4444":"rgba(255,255,255,0.1)"}`, background:tab==="security"?"rgba(239,68,68,0.12)":"transparent", color:tab==="security"?"#ef4444":"#64748b", fontWeight:600, fontSize:"0.85rem", cursor:"pointer" }}>
+          🔐 Keamanan
+        </button>
       </div>
+
+      {/* ── KEAMANAN: GANTI PASSWORD ── */}
+      {tab === "security" && (
+        <div>
+          <div style={{ fontSize:"0.95rem", fontWeight:700, color:"#f1f5f9", marginBottom:"0.25rem" }}>Ganti Password Akses</div>
+          <div style={{ fontSize:"0.78rem", color:"#475569", marginBottom:"1.25rem" }}>
+            Password disimpan terenkripsi di database dan dicek di server. Setelah diganti, password lama langsung tidak berlaku.
+            Panitia yang sedang login tetap aktif sampai sesinya habis (maks. 12 jam).
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(min(100%,300px),1fr))", gap:"1rem" }}>
+            <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(212,160,23,0.25)", borderRadius:16, padding:"1.5rem" }}>
+              <div style={{ fontWeight:700, color:"#D4A017", fontSize:"0.9rem", marginBottom:"0.25rem" }}>Password Panitia</div>
+              <div style={{ fontSize:"0.75rem", color:"#64748b", marginBottom:"0.85rem" }}>Untuk akses Boss Panel (/boss). Ganti setiap pergantian tim panitia.</div>
+              <input type="password" value={newPwPanitia} onChange={e => setNewPwPanitia(e.target.value)}
+                placeholder="Password baru (min. 8 karakter)"
+                style={{ width:"100%", background:"#0d1f35", border:"1px solid rgba(255,255,255,0.15)", color:"#f1f5f9", borderRadius:8, padding:"0.6rem 0.9rem", fontSize:"0.85rem", boxSizing:"border-box" as const, marginBottom:"0.75rem" }} />
+              <button disabled={newPwPanitia.length < 8 || setPwMutation.isPending}
+                onClick={() => { if (window.confirm("Ganti password panitia? Password lama langsung tidak berlaku.")) setPwMutation.mutate({ role: "panitia", newPassword: newPwPanitia }); }}
+                style={{ width:"100%", background: newPwPanitia.length >= 8 ? "linear-gradient(135deg,#D4A017,#B8860B)" : "rgba(255,255,255,0.06)", border:"none", color: newPwPanitia.length >= 8 ? "#fff" : "#475569", borderRadius:8, padding:"0.6rem", fontSize:"0.85rem", fontWeight:700, cursor: newPwPanitia.length >= 8 ? "pointer" : "not-allowed" }}>
+                Ganti Password Panitia
+              </button>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(239,68,68,0.25)", borderRadius:16, padding:"1.5rem" }}>
+              <div style={{ fontWeight:700, color:"#ef4444", fontSize:"0.9rem", marginBottom:"0.25rem" }}>Password SuperAdmin</div>
+              <div style={{ fontSize:"0.75rem", color:"#64748b", marginBottom:"0.85rem" }}>Untuk akses halaman ini (/superadmin). Jangan dibagikan ke panitia.</div>
+              <input type="password" value={newPwAdmin} onChange={e => setNewPwAdmin(e.target.value)}
+                placeholder="Password baru (min. 8 karakter)"
+                style={{ width:"100%", background:"#0d1f35", border:"1px solid rgba(255,255,255,0.15)", color:"#f1f5f9", borderRadius:8, padding:"0.6rem 0.9rem", fontSize:"0.85rem", boxSizing:"border-box" as const, marginBottom:"0.75rem" }} />
+              <button disabled={newPwAdmin.length < 8 || setPwMutation.isPending}
+                onClick={() => { if (window.confirm("Ganti password SuperAdmin? Pastikan kamu mencatat password barunya — tidak ada fitur lupa password.")) setPwMutation.mutate({ role: "admin", newPassword: newPwAdmin }); }}
+                style={{ width:"100%", background: newPwAdmin.length >= 8 ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "rgba(255,255,255,0.06)", border:"none", color: newPwAdmin.length >= 8 ? "#fff" : "#475569", borderRadius:8, padding:"0.6rem", fontSize:"0.85rem", fontWeight:700, cursor: newPwAdmin.length >= 8 ? "pointer" : "not-allowed" }}>
+                Ganti Password SuperAdmin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── EMPLOYER BOOKINGS ── */}
       {tab === "employer" && (

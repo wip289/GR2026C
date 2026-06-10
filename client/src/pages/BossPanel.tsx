@@ -199,9 +199,14 @@ export default function BossPanel() {
   const [discountNoteInput, setDiscountNoteInput] = useState<Record<string, string>>({});
 
   // ── Password gate ─────────────────────────────────────────────
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem("panitia_auth") === "1");
+  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem("panitia_token"));
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
+  const verifyPwMutation = trpc.event.verifyPanitiaPassword.useMutation({
+    onSuccess: d => { sessionStorage.setItem("panitia_token", d.token); sessionStorage.setItem("panitia_auth", "1"); setAuthed(true); },
+    onError: () => setPwError(true),
+  });
+  const submitPw = () => { if (pwInput.trim()) verifyPwMutation.mutate({ role: "panitia", password: pwInput }); };
 
   // ── Real data from DB ──
   const { data: employerData, refetch: refetchEmployers } = trpc.event.getAllEmployerBookings.useQuery();
@@ -242,12 +247,12 @@ export default function BossPanel() {
             placeholder="Password panitia"
             value={pwInput}
             onChange={e => { setPwInput(e.target.value); setPwError(false); }}
-            onKeyDown={e => { if (e.key === "Enter") { if (pwInput === "GR2026@Panitia") { sessionStorage.setItem("panitia_auth", "1"); setAuthed(true); } else { setPwError(true); } } }}
+            onKeyDown={e => { if (e.key === "Enter") { submitPw(); } }}
             style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: `1px solid ${pwError ? "#f43f5e" : "rgba(255,255,255,0.12)"}`, borderRadius: 8, padding: "0.65rem 0.9rem", fontSize: "0.9rem", color: "#f1f5f9", outline: "none", boxSizing: "border-box" as const, marginBottom: "0.5rem" }}
           />
           {pwError && <div style={{ color: "#f43f5e", fontSize: "0.8rem", marginBottom: "0.75rem" }}>Password salah. Coba lagi.</div>}
           <button
-            onClick={() => { if (pwInput === "GR2026@Panitia") { sessionStorage.setItem("panitia_auth", "1"); setAuthed(true); } else { setPwError(true); } }}
+            onClick={() => { submitPw(); }}
             style={{ width: "100%", background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 8, padding: "0.65rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", marginTop: pwError ? 0 : "0.5rem" }}
           >
             Masuk
