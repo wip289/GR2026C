@@ -8,7 +8,9 @@ import {
   decimal,
   json,
   boolean,
-  date
+  date,
+  datetime,
+  uniqueIndex
 } from "drizzle-orm/mysql-core";
 
 /**
@@ -229,6 +231,7 @@ export const employerBookings = mysqlTable("employerBookings", {
   rescheduleCount: int("rescheduleCount").default(0),
   exhibitorOrder: text("exhibitorOrder"), // JSON string pesanan fasilitas tambahan
   staffMembers: json("staffMembers"), // [{nama, posisi}] — daftar staff ID Card
+  recruitmentPositions: json("recruitmentPositions"), // kolom legacy di DB (kosong, tidak dipakai kode) — dideklarasikan agar drizzle tidak menawarkan DROP
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -277,9 +280,11 @@ export const jobseekers = mysqlTable("jobseekers", {
   // Status verifikasi
   verified: boolean("verified").default(false),
   verifiedAt: timestamp("verifiedAt"),
-  checkedInAt:    timestamp("checkedInAt"),
-  checkedInDay1At: timestamp("checkedInDay1At"),
-  checkedInDay2At: timestamp("checkedInDay2At"),
+  checkedInAt:    datetime("checkedInAt"),
+  checkedInDay1At: datetime("checkedInDay1At"),
+  checkedInDay2At: datetime("checkedInDay2At"),
+  // Virtual Phase — sumber registrasi: 'event' (default) | 'virtual_phase'
+  registrationSource: varchar("registrationSource", { length: 50 }).default("event"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -348,3 +353,53 @@ export const employerProspects = mysqlTable("employerProspects", {
   createdAt:    timestamp("createdAt").defaultNow().notNull(),
   updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+// ─── VIRTUAL PHASE ───────────────────────────────────────────────
+
+export const virtualPhaseEmployerConfig = mysqlTable("virtualPhaseEmployerConfig", {
+  id:                 int("id").autoincrement().primaryKey(),
+  employerBookingId:  varchar("employerBookingId", { length: 50 }).notNull().unique(),
+  isParticipating:    boolean("isParticipating").default(true).notNull(),
+  mechanism:          varchar("mechanism", { length: 1 }),         // 'A' | 'B' | 'C'
+  externalUrl:        varchar("externalUrl", { length: 500 }),
+  virtualPicName:     varchar("virtualPicName", { length: 255 }),
+  virtualPicEmail:    varchar("virtualPicEmail", { length: 320 }),
+  virtualPicWhatsapp: varchar("virtualPicWhatsapp", { length: 20 }),
+  createdAt:          timestamp("createdAt").defaultNow(),
+  updatedAt:          timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type VirtualPhaseEmployerConfig = typeof virtualPhaseEmployerConfig.$inferSelect;
+
+export const virtualPhasePositions = mysqlTable("virtualPhasePositions", {
+  id:                int("id").autoincrement().primaryKey(),
+  employerBookingId: varchar("employerBookingId", { length: 50 }).notNull(),
+  positionName:      varchar("positionName", { length: 255 }).notNull(),
+  headcount:         int("headcount").notNull().default(1),
+  location:          varchar("location", { length: 255 }).notNull(),
+  requirements:      text("requirements"),
+  isActive:          boolean("isActive").default(true).notNull(),
+  createdAt:         timestamp("createdAt").defaultNow(),
+  updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type VirtualPhasePosition = typeof virtualPhasePositions.$inferSelect;
+
+export const virtualPhaseApplications = mysqlTable("virtualPhaseApplications", {
+  id:                int("id").autoincrement().primaryKey(),
+  jobseekerId:       int("jobseekerId").notNull(),
+  jobseekerRegId:    varchar("jobseekerRegId", { length: 50 }),
+  employerBookingId: varchar("employerBookingId", { length: 50 }).notNull(),
+  positionId:        int("positionId").notNull(),
+  positionName:      varchar("positionName", { length: 255 }),
+  mechanism:         varchar("mechanism", { length: 1 }),
+  status:            varchar("status", { length: 20 }).default("new"),
+  // status: 'new' | 'viewed' | 'contacted' | 'not_relevant'
+  createdAt:         timestamp("createdAt").defaultNow(),
+  updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow(),
+}, (t) => ({
+  // Cegah double apply: 1 jobseeker hanya bisa apply 1x per posisi
+  uqJsPos: uniqueIndex("uq_js_pos").on(t.jobseekerId, t.positionId),
+}));
+
+export type VirtualPhaseApplication = typeof virtualPhaseApplications.$inferSelect;
