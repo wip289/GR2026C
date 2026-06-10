@@ -127,6 +127,15 @@ export const eventRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        // ── Registration gate: tolak jika sudah lewat tanggal tutup (SuperAdmin config) ──
+        const gateCfg = await getEventConfig() as any;
+        if (gateCfg?.employerRegCloseDate) {
+          const closeAt = new Date(`${gateCfg.employerRegCloseDate}T23:59:59+07:00`);
+          if (new Date() > closeAt) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "REG_CLOSED" });
+          }
+        }
+
         // ── Validasi duplikat email ──
         const existingByEmail = await getEmployerBookingByIdAndEmail("", input.pic1Email);
         const allBookings = await getAllEmployerBookings();
@@ -376,6 +385,15 @@ export const eventRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        // ── Registration gate: tolak jika sudah lewat tanggal tutup (SuperAdmin config) ──
+        const gateCfg = await getEventConfig() as any;
+        if (gateCfg?.jobseekerRegCloseDate) {
+          const closeAt = new Date(`${gateCfg.jobseekerRegCloseDate}T23:59:59+07:00`);
+          if (new Date() > closeAt) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "REG_CLOSED" });
+          }
+        }
+
         // Ambil eventId aktif dari config jika tidak dikirim dari form
         let resolvedEventId = input.eventId || null;
         if (!resolvedEventId) {

@@ -332,6 +332,18 @@ export default function EmployerDashboard() {
           <p style={{ color: "#64748b", fontSize: "0.9rem" }}>Grand Recruitment 2026 · June 8–9 · Dome NHI Bandung</p>
         </div>
 
+        {/* Post-event banner: Virtual Phase */}
+        <div style={{ background: "rgba(26,122,110,0.12)", border: "1px solid rgba(26,122,110,0.45)", borderRadius: 12, padding: "1rem 1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ fontWeight: 700, color: "#5eead4", fontSize: "0.95rem", marginBottom: "0.3rem" }}>
+            🎉 Grand Recruitment 2026 telah selesai — terima kasih atas partisipasi Anda!
+          </div>
+          <p style={{ color: "#94a3b8", fontSize: "0.84rem", lineHeight: 1.7, margin: 0 }}>
+            Tim kami akan <strong style={{ color: "#cbd5e1" }}>segera menghubungi Anda</strong> mengenai{" "}
+            <strong style={{ color: "#5eead4" }}>Virtual Phase</strong> — program lanjutan job fair online GR2026
+            agar perusahaan Anda tetap mendapat kandidat. Dashboard Anda tetap dapat diakses seperti biasa.
+          </p>
+        </div>
+
         {/* Status bar */}
         <div style={{ background: `${statusColor}15`, border: `1px solid ${statusColor}40`, borderRadius: 12, padding: "1rem 1.5rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>

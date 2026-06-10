@@ -71,6 +71,12 @@ export default function JobseekerRegister() {
   const [, navigate] = useLocation();
   const fotoInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Registration gate: cek tanggal tutup dari SuperAdmin config ──
+  const cfgQuery = trpc.event.getEventConfig.useQuery();
+  const gateCfg = (cfgQuery.data as any) || {};
+  const regClosed = !!gateCfg.jobseekerRegCloseDate &&
+    new Date() > new Date(`${gateCfg.jobseekerRegCloseDate}T23:59:59`);
+
   // Form state
   const [nama,        setNama]        = useState("");
   const [email,       setEmail]       = useState("");
@@ -187,6 +193,35 @@ export default function JobseekerRegister() {
   };
 
   const sumberHasIG = SUMBER_OPTIONS.find(s => s.val === sumber)?.hasIG;
+
+  // ── REGISTRATION CLOSED ────────────────────────────────────────
+  if (regClosed && !submitted) {
+    return (
+      <div style={{ ...css.page, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.25rem" }}>
+        <div style={{ maxWidth: 460, width: "100%", textAlign: "center" }}>
+          <img src="/logo-gr2026.png" alt="GR2026" style={{ height: 44, marginBottom: "1.5rem" }}/>
+          <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>📢</div>
+          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, margin: "0 0 0.75rem" }}>Pendaftaran Sementara Ditutup</h1>
+          <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: 1.8, marginBottom: "1.25rem" }}>
+            Event <strong style={{ color: "#f1f5f9" }}>Grand Recruitment 2026</strong> (8–9 Juni) telah selesai.
+            Terima kasih atas antusiasme kamu!
+          </p>
+          <div style={{ background: "rgba(212,160,23,0.08)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 14, padding: "1.25rem 1.4rem", textAlign: "left", marginBottom: "1.5rem" }}>
+            <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#D4A017", marginBottom: "0.4rem" }}>✨ KABAR BAIK</div>
+            <p style={{ color: "#cbd5e1", fontSize: "0.86rem", lineHeight: 1.75, margin: 0 }}>
+              Kami akan <strong>segera membuka kembali</strong> pendaftaran untuk{" "}
+              <strong style={{ color: "#D4A017" }}>GR2026 Virtual Phase</strong> — kesempatan melamar online
+              ke <strong>28 perusahaan hospitality</strong> peserta GR2026, dari mana saja tanpa perlu hadir ke venue.
+            </p>
+          </div>
+          <p style={{ color: "#64748b", fontSize: "0.8rem", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+            Pantau terus halaman ini dan media sosial kami. Sampai jumpa lagi! 👋
+          </p>
+          <button onClick={() => navigate("/")} style={css.btnPri}>← Kembali ke Beranda</button>
+        </div>
+      </div>
+    );
+  }
 
   // ── FOTO STEP ─────────────────────────────────────────────────
   if (submitted && showFotoStep) {

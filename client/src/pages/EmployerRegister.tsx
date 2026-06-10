@@ -266,6 +266,21 @@ export default function EmployerRegister() {
     refetchOnWindowFocus: false,
   });
 
+  // ── Event config: harga booth + tanggal tutup registrasi (SuperAdmin) ──
+  const cfgQuery = trpc.event.getEventConfig.useQuery();
+  const regCfg = (cfgQuery.data as any) || {};
+  const empRegClosed = !!regCfg.employerRegCloseDate &&
+    new Date() > new Date(`${regCfg.employerRegCloseDate}T23:59:59`);
+  // Harga dari config; fallback ke harga hardcode kalau config kosong/invalid
+  const priceFor = (b: { type: string; price: number }) => {
+    const raw = b.type === "main" ? regCfg.mainBoothPrice
+      : b.type === "standard" ? regCfg.stdBoothPrice
+      : b.type === "extra" ? regCfg.extraBoothPrice
+      : null;
+    const n = raw ? parseInt(String(raw), 10) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : b.price;
+  };
+
   // Compute booths already taken from DB
   const bookedBoothIds = new Set<string>();
   (bookingsQuery.data || []).forEach((b: any) => {
@@ -277,9 +292,10 @@ export default function EmployerRegister() {
     }
   });
 
-  // Merge static map with real DB status
+  // Merge static map with real DB status + harga dari SuperAdmin config
   const liveBooths = ALL_BOOTHS.map(b => ({
     ...b,
+    price: priceFor(b),
     status: bookedBoothIds.has(b.id) && b.type !== "area"
       ? ("booked" as const)
       : b.status,
@@ -526,6 +542,25 @@ export default function EmployerRegister() {
             style={{ ...css.btnOut, width: "100%", textAlign: "center" as const }}>
             Kembali ke Beranda
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── REGISTRATION CLOSED ────────────────────────────────────────
+  if (empRegClosed && !bookingData) {
+    return (
+      <div style={{ ...css.page, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.25rem" }}>
+        <div style={{ maxWidth: 460, width: "100%", textAlign: "center" }}>
+          <img src="/logo-gr2026.png" alt="GR2026" style={{ height: 44, marginBottom: "1.5rem" }}/>
+          <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>📢</div>
+          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, margin: "0 0 0.75rem" }}>Pendaftaran Employer Telah Ditutup</h1>
+          <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: 1.8, marginBottom: "1.5rem" }}>
+            Pendaftaran booth untuk <strong style={{ color: "#f1f5f9" }}>Grand Recruitment 2026</strong> sudah ditutup
+            dan event telah selesai dilaksanakan pada 8–9 Juni 2026.
+            Untuk informasi kerja sama atau partisipasi di event berikutnya, silakan hubungi panitia.
+          </p>
+          <button onClick={() => navigate("/")} style={css.btnPri}>← Kembali ke Beranda</button>
         </div>
       </div>
     );
