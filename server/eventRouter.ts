@@ -1356,6 +1356,7 @@ export const eventRouter = router({
       if (!js) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid." });
       return db.select({
         id: virtualPhaseApplications.id,
+        positionId: virtualPhaseApplications.positionId,
         positionName: virtualPhaseApplications.positionName,
         employerBookingId: virtualPhaseApplications.employerBookingId,
         mechanism: virtualPhaseApplications.mechanism,
