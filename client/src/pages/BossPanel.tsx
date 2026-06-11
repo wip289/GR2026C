@@ -6,11 +6,12 @@ import { openInvoiceForPrint, openKwitansiForPrint, getPaymentDeadline } from "@
 import { openCustomInvoice } from "@/lib/customInvoice";
 import type { CustomInvoiceData } from "@/lib/customInvoice";
 import { exportJobseekersCSV, exportEmployersCSV } from '@/lib/exportUtils';
+import VirtualPhaseTab from "@/components/VirtualPhaseTab";
 
 const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
-type TabId = "overview" | "employer" | "jobseeker" | "interview" | "invoice";
+type TabId = "overview" | "employer" | "jobseeker" | "interview" | "invoice" | "virtual";
 
 const s = {
   page:  { minHeight: "100vh", background: "#0a1628", fontFamily: "system-ui, sans-serif", color: "#f1f5f9" } as React.CSSProperties,
@@ -333,6 +334,7 @@ export default function BossPanel() {
             { id: "jobseeker" as TabId, label: `🎓 Jobseeker (${jobseekers.length})` },
             { id: "interview" as TabId, label: "📅 Interview Slots" },
             { id: "invoice" as TabId, label: "📝 Invoice Custom" },
+            { id: "virtual" as TabId, label: "🌐 Virtual Phase" },
           ]).map(tab => (
             <button key={tab.id} style={s.tab(activeTab === tab.id)} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
@@ -1205,6 +1207,8 @@ export default function BossPanel() {
         )}
 
         {/* ── TAB: INVOICE CUSTOM ── */}
+        {activeTab === "virtual" && <VirtualPhaseTab />}
+
         {activeTab === "invoice" && (
           <InvoiceCustomTab employers={employers} openCustomInvoice={openCustomInvoice} />
         )}

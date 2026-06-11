@@ -1502,6 +1502,25 @@ export const eventRouter = router({
       return { success: true };
     }),
 
+  // Panitia: ambil posisi aktif satu employer (untuk panel edit — wajib load dulu sebelum upsert)
+  getVirtualPositionsByEmployer: panitiaProcedure
+    .input(z.object({ employerBookingId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      return db.select({
+        id: virtualPhasePositions.id,
+        positionName: virtualPhasePositions.positionName,
+        headcount: virtualPhasePositions.headcount,
+        location: virtualPhasePositions.location,
+        requirements: virtualPhasePositions.requirements,
+      }).from(virtualPhasePositions)
+        .where(and(
+          eq(virtualPhasePositions.employerBookingId, input.employerBookingId),
+          eq(virtualPhasePositions.isActive, true),
+        ));
+    }),
+
   // Panitia: overview semua employer + status virtual phase
   getAllEmployerVirtualConfigs: panitiaProcedure.query(async () => {
     const db = await getDb();
