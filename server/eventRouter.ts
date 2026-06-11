@@ -1434,11 +1434,13 @@ export const eventRouter = router({
     }),
 
   // Panitia: config per employer (ikut/tidak, mekanisme, PIC)
+  // Kosong ("") berarti HAPUS nilai di DB, bukan "jangan diubah".
+  // Nomor WA dinormalisasi ke format internasional (08xx -> 628xx) agar link wa.me valid.
   setEmployerVirtualConfig: panitiaProcedure
     .input(z.object({
       employerBookingId: z.string(),
       isParticipating: z.boolean(),
-      mechanism: z.enum(["A", "B", "C"]).optional(),
+      mechanism: z.enum(["A", "B", "C"]).or(z.literal("")).optional(),
       externalUrl: z.string().optional(),
       virtualPicName: z.string().optional(),
       virtualPicEmail: z.string().optional(),
@@ -1447,26 +1449,24 @@ export const eventRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const clean = (v?: string) => { const t = (v ?? "").trim(); return t === "" ? null : t; };
+      const normalizeWa = (v?: string) => {
+        let t = (v ?? "").replace(/[^\d+]/g, "");
+        if (t.startsWith("+")) t = t.slice(1);
+        if (t.startsWith("0")) t = "62" + t.slice(1);
+        return t === "" ? null : t;
+      };
+      const vals = {
+        isParticipating: input.isParticipating,
+        mechanism: input.mechanism ? input.mechanism : null,
+        externalUrl: clean(input.externalUrl),
+        virtualPicName: clean(input.virtualPicName),
+        virtualPicEmail: clean(input.virtualPicEmail),
+        virtualPicWhatsapp: normalizeWa(input.virtualPicWhatsapp),
+      };
       await db.insert(virtualPhaseEmployerConfig)
-        .values({
-          employerBookingId: input.employerBookingId,
-          isParticipating: input.isParticipating,
-          mechanism: input.mechanism,
-          externalUrl: input.externalUrl,
-          virtualPicName: input.virtualPicName,
-          virtualPicEmail: input.virtualPicEmail,
-          virtualPicWhatsapp: input.virtualPicWhatsapp,
-        })
-        .onDuplicateKeyUpdate({
-          set: {
-            isParticipating: input.isParticipating,
-            mechanism: input.mechanism,
-            externalUrl: input.externalUrl,
-            virtualPicName: input.virtualPicName,
-            virtualPicEmail: input.virtualPicEmail,
-            virtualPicWhatsapp: input.virtualPicWhatsapp,
-          },
-        });
+        .values({ employerBookingId: input.employerBookingId, ...vals })
+        .onDuplicateKeyUpdate({ set: vals });
       return { success: true };
     }),
 

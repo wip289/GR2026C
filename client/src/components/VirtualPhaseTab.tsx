@@ -26,6 +26,24 @@ const MECH_COLOR: Record<string, string> = { A: "#34d399", B: "#60a5fa", C: "#fb
 type PositionForm = { positionName: string; headcount: number; location: string; requirements: string };
 const emptyPosition = (): PositionForm => ({ positionName: "", headcount: 1, location: "", requirements: "" });
 
+// Parser Tempel Massal — 1 baris = 1 posisi, kolom dipisah "|":
+// Nama Posisi | Jumlah | Lokasi | Syarat (opsional)
+function parseBulk(text: string): PositionForm[] {
+  return text
+    .split("\n")
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => {
+      const [name, count, loc, ...rest] = l.split("|").map(s => s.trim());
+      return {
+        positionName: name ?? "",
+        headcount: Math.max(1, parseInt(count ?? "1", 10) || 1),
+        location: loc ?? "",
+        requirements: rest.join(" | "),
+      };
+    });
+}
+
 export default function VirtualPhaseTab() {
   const utils = trpc.useUtils();
 
@@ -67,6 +85,8 @@ export default function VirtualPhaseTab() {
   const [fUrl, setFUrl] = useState("");
   const [fPositions, setFPositions] = useState<PositionForm[]>([]);
   const [positionsLoaded, setPositionsLoaded] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkText, setBulkText] = useState("");
 
   useEffect(() => {
     if (editing) {
@@ -78,6 +98,8 @@ export default function VirtualPhaseTab() {
       setFUrl(editing.externalUrl ?? "");
       setPositionsLoaded(false);
       setFPositions([]);
+      setShowBulk(false);
+      setBulkText("");
     }
   }, [editingId]);
 
@@ -111,14 +133,15 @@ export default function VirtualPhaseTab() {
 
     setSaving(true);
     try {
+      // Kirim apa adanya — kotak kosong = hapus nilai di server
       await setEmpConfigMutation.mutateAsync({
         employerBookingId: editingId,
         isParticipating: fIkut,
-        mechanism: fMech || undefined,
-        externalUrl: fUrl.trim() || undefined,
-        virtualPicName: fPicName.trim() || undefined,
-        virtualPicEmail: fPicEmail.trim() || undefined,
-        virtualPicWhatsapp: fPicWa.trim() || undefined,
+        mechanism: fMech,
+        externalUrl: fUrl.trim(),
+        virtualPicName: fPicName.trim(),
+        virtualPicEmail: fPicEmail.trim(),
+        virtualPicWhatsapp: fPicWa.trim(),
       });
       await upsertPositionsMutation.mutateAsync({
         employerBookingId: editingId,
@@ -138,6 +161,47 @@ export default function VirtualPhaseTab() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const deleteAllData = async () => {
+    if (!editingId || !editing) return;
+    if (!window.confirm(
+      `Hapus SEMUA data virtual ${editing.companyName}?\n\n` +
+      `Yang dihapus: status ikut, mekanisme, PIC, dan semua posisi.\n` +
+      (editing.totalApplicants > 0
+        ? `CATATAN: ${editing.totalApplicants} lamaran yang sudah masuk TETAP tersimpan sebagai arsip.`
+        : `Employer ini belum punya lamaran.`)
+    )) return;
+    setSaving(true);
+    try {
+      await setEmpConfigMutation.mutateAsync({
+        employerBookingId: editingId,
+        isParticipating: false,
+        mechanism: "",
+        externalUrl: "",
+        virtualPicName: "",
+        virtualPicEmail: "",
+        virtualPicWhatsapp: "",
+      });
+      await upsertPositionsMutation.mutateAsync({ employerBookingId: editingId, positions: [] });
+      toast.success(`Data virtual ${editing.companyName} dihapus`);
+      setEditingId(null);
+      refetchEmployers();
+      utils.event.getVirtualPositionsByEmployer.invalidate();
+    } catch (e: any) {
+      toast.error(e?.message || "Gagal menghapus");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyBulk = () => {
+    const parsed = parseBulk(bulkText);
+    if (parsed.length === 0) { toast.error("Tidak ada baris yang bisa dibaca"); return; }
+    setFPositions(arr => [...arr, ...parsed]);
+    setBulkText("");
+    setShowBulk(false);
+    toast.success(`${parsed.length} posisi dimasukkan ke form — cek lalu klik Simpan`);
   };
 
   // ── Section C: daily report ──
@@ -253,7 +317,7 @@ export default function VirtualPhaseTab() {
               </div>
               <div><label style={vs.label}>Nama PIC</label><input value={fPicName} onChange={e => setFPicName(e.target.value)} style={vs.input} placeholder="cth: Budi" /></div>
               <div><label style={vs.label}>Email PIC {fMech === "A" && <span style={{ color: "#f87171" }}>*wajib</span>}</label><input value={fPicEmail} onChange={e => setFPicEmail(e.target.value)} style={vs.input} placeholder="hr@perusahaan.com" /></div>
-              <div><label style={vs.label}>WhatsApp PIC {fMech === "B" && <span style={{ color: "#f87171" }}>*wajib</span>}</label><input value={fPicWa} onChange={e => setFPicWa(e.target.value)} style={vs.input} placeholder="628xxx" /></div>
+              <div><label style={vs.label}>WhatsApp PIC {fMech === "B" && <span style={{ color: "#f87171" }}>*wajib</span>}</label><input value={fPicWa} onChange={e => setFPicWa(e.target.value)} style={vs.input} placeholder="08xx / 628xx — otomatis dirapikan" /></div>
               {fMech === "C" && <div><label style={vs.label}>Link Eksternal <span style={{ color: "#f87171" }}>*wajib</span></label><input value={fUrl} onChange={e => setFUrl(e.target.value)} style={vs.input} placeholder="https://..." /></div>}
             </div>
 
@@ -272,13 +336,39 @@ export default function VirtualPhaseTab() {
                 <button onClick={() => setFPositions(arr => arr.filter((_, j) => j !== i))} style={vs.btn("danger")}>✕</button>
               </div>
             ))}
-            <button onClick={() => setFPositions(arr => [...arr, emptyPosition()])} style={{ ...vs.btn("ghost"), marginBottom: "1rem" }} disabled={!positionsLoaded}>+ Tambah Posisi</button>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+              <button onClick={() => setFPositions(arr => [...arr, emptyPosition()])} style={vs.btn("ghost")} disabled={!positionsLoaded}>+ Tambah Posisi</button>
+              <button onClick={() => setShowBulk(v => !v)} style={vs.btn("ghost")} disabled={!positionsLoaded}>📋 Tempel Massal</button>
+            </div>
 
-            <div style={{ display: "flex", gap: "0.6rem", justifyContent: "flex-end" }}>
-              <button onClick={() => setEditingId(null)} style={vs.btn("ghost")}>Batal</button>
-              <button onClick={saveEmployer} disabled={saving || !positionsLoaded} style={vs.btn("gold", saving || !positionsLoaded)}>
-                {saving ? "Menyimpan..." : "💾 Simpan"}
-              </button>
+            {showBulk && (
+              <div style={{ marginBottom: "1rem", border: "1px dashed rgba(255,255,255,0.2)", borderRadius: 10, padding: "0.85rem" }}>
+                <div style={{ fontSize: "0.75rem", color: "#64748b", marginBottom: "0.5rem" }}>
+                  Satu baris = satu posisi. Pisahkan dengan tanda <code style={{ color: "#D4A017" }}>|</code> : &nbsp;
+                  <span style={{ color: "#94a3b8" }}>Nama Posisi | Jumlah | Lokasi | Syarat (opsional)</span>
+                </div>
+                <textarea
+                  value={bulkText}
+                  onChange={e => setBulkText(e.target.value)}
+                  rows={6}
+                  style={{ ...vs.input, fontFamily: "monospace", fontSize: "0.8rem", resize: "vertical" as const }}
+                  placeholder={"Waiter | 5 | Bali | Min. SMK Perhotelan\nFront Desk Agent | 3 | Jakarta | Bisa bahasa Inggris\nChef de Partie | 2 | Lombok |"}
+                />
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                  <button onClick={applyBulk} style={vs.btn("gold")} disabled={!bulkText.trim()}>Masukkan ke Form</button>
+                  <button onClick={() => { setShowBulk(false); setBulkText(""); }} style={vs.btn("ghost")}>Batal</button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "0.6rem", justifyContent: "space-between", flexWrap: "wrap" }}>
+              <button onClick={deleteAllData} disabled={saving || !positionsLoaded} style={vs.btn("danger", saving || !positionsLoaded)}>🗑 Hapus Data Virtual</button>
+              <div style={{ display: "flex", gap: "0.6rem" }}>
+                <button onClick={() => setEditingId(null)} style={vs.btn("ghost")}>Batal</button>
+                <button onClick={saveEmployer} disabled={saving || !positionsLoaded} style={vs.btn("gold", saving || !positionsLoaded)}>
+                  {saving ? "Menyimpan..." : "💾 Simpan"}
+                </button>
+              </div>
             </div>
           </div>
         )}
