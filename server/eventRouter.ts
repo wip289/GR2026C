@@ -1419,6 +1419,22 @@ export const eventRouter = router({
       return { success: true };
     }),
 
+  // Employer: config virtual phase milik sendiri (penentu tab "Lamaran Masuk" muncul/tidak)
+  getMyVirtualConfig: publicProcedure
+    .input(z.object({ bookingId: z.string(), email: z.string().email() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const emp = await getEmployerBookingByIdAndEmail(input.bookingId, input.email);
+      if (!emp) throw new TRPCError({ code: "UNAUTHORIZED", message: "Identitas tidak valid." });
+      const [cfg] = await db.select().from(virtualPhaseEmployerConfig)
+        .where(eq(virtualPhaseEmployerConfig.employerBookingId, emp.bookingId)).limit(1);
+      return {
+        isParticipating: cfg?.isParticipating ?? false,
+        mechanism: cfg?.mechanism ?? null,
+      };
+    }),
+
   // ── Panitia: kontrol global virtual phase (BUTUH TOKEN) ──────
   setVirtualPhaseConfig: panitiaProcedure
     .input(z.object({

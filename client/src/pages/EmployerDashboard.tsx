@@ -26,12 +26,12 @@ const s = {
   tab:     (active: boolean) => ({ padding: "0.6rem 1.25rem", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600, background: active ? "#14b8a6" : "transparent", color: active ? "#fff" : "#64748b", transition: "all 0.2s" }) as React.CSSProperties,
 };
 
-type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen" | "kandidat" | "editprofil";
+type TabId = "status" | "booth" | "interview" | "idcard" | "rekrutmen" | "lamaran" | "kandidat" | "editprofil";
 
 export default function EmployerDashboard() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<TabId>("status");
-  const [booking, setBooking] = useState<typeof MOCK_BOOKINGS[string] | null>(null);
+  const [booking, setBooking] = useState<any | null>(null);
   const [bookingId, setBookingId] = useState("");
   const [mySlots, setMySlots] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
@@ -265,6 +265,28 @@ export default function EmployerDashboard() {
     { enabled: !!sessionData?.bookingId && activeTab === "kandidat", retry: false }
   );
 
+  // ── Lamaran Masuk (Virtual Phase) ─────────────────────────────
+  const [lmFilterPos,    setLmFilterPos]    = useState("");
+  const [lmFilterStatus, setLmFilterStatus] = useState("");
+  const [lmExpandedId,   setLmExpandedId]   = useState<number | null>(null);
+
+  const myVirtualCfgQuery = trpc.event.getMyVirtualConfig.useQuery(
+    { bookingId: sessionData?.bookingId || "", email: sessionData?.email || "" },
+    { enabled: !!sessionData, retry: false }
+  );
+  const isMechanismA = !!myVirtualCfgQuery.data?.isParticipating && myVirtualCfgQuery.data?.mechanism === "A";
+
+  const lamaranQuery = trpc.event.getVirtualApplicationsByEmployer.useQuery(
+    { bookingId: sessionData?.bookingId || "", email: sessionData?.email || "" },
+    { enabled: !!sessionData && isMechanismA, retry: false, refetchInterval: 60000 }
+  );
+  const updateAppStatusMutation = trpc.event.updateVirtualApplicationStatus.useMutation({
+    onSuccess: () => lamaranQuery.refetch(),
+    onError:   (e: any) => toast.error("Gagal update status: " + e.message),
+  });
+  const lamaranList: any[] = (lamaranQuery.data as any[]) || [];
+  const lamaranNewCount = lamaranList.filter(a => a.status === "new").length;
+
   if (!booking) return (
     <div style={{ ...s.page, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <p style={{ color: "#64748b" }}>Loading...</p>
@@ -370,6 +392,9 @@ export default function EmployerDashboard() {
             { id: "interview" as TabId, label: "📅 Interview Booth" },
             { id: "idcard" as TabId, label: "🪪 ID Card Staff" },
             { id: "rekrutmen" as TabId, label: "📄 Rekrutmen" },
+            ...(isMechanismA && booking.status === "confirmed"
+              ? [{ id: "lamaran" as TabId, label: lamaranNewCount > 0 ? `📨 Lamaran Masuk (${lamaranNewCount})` : "📨 Lamaran Masuk" }]
+              : []),
             { id: "kandidat" as TabId, label: (() => {
               const b = booking as any;
               const unlocked = b.status === "confirmed";
@@ -1286,6 +1311,178 @@ export default function EmployerDashboard() {
             </div>
           </div>
         )}
+        {/* ── TAB: LAMARAN MASUK (VIRTUAL PHASE — Opsi A) ── */}
+        {activeTab === "lamaran" && (() => {
+          const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+            new:          { label: "🔵 Baru",          color: "#60a5fa", bg: "rgba(96,165,250,0.12)"  },
+            viewed:       { label: "👁 Sudah Dilihat",  color: "#D4A017", bg: "rgba(212,160,23,0.12)"  },
+            contacted:    { label: "✅ Dihubungi",      color: "#10b981", bg: "rgba(16,185,129,0.12)"  },
+            not_relevant: { label: "➖ Tidak Relevan",  color: "#64748b", bg: "rgba(100,116,139,0.12)" },
+          };
+          const posOptions = Array.from(new Set(lamaranList.map((a: any) => a.positionName).filter(Boolean))).sort() as string[];
+          const filtered = lamaranList.filter((a: any) => {
+            if (lmFilterPos && a.positionName !== lmFilterPos) return false;
+            if (lmFilterStatus && a.status !== lmFilterStatus) return false;
+            return true;
+          });
+
+          const setStatus = (app: any, status: "viewed" | "contacted" | "not_relevant") => {
+            updateAppStatusMutation.mutate({
+              bookingId: sessionData?.bookingId || "",
+              email: sessionData?.email || "",
+              applicationId: app.id,
+              status,
+            });
+          };
+
+          const handleExpand = (app: any) => {
+            const next = lmExpandedId === app.id ? null : app.id;
+            setLmExpandedId(next);
+            // Auto: "Baru" → "Sudah Dilihat" saat detail dibuka
+            if (next !== null && app.status === "new") setStatus(app, "viewed");
+          };
+
+          const sel = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
+          const optStyle = { background: "#0f172a", color: "#f1f5f9" };
+
+          return (
+            <div>
+              <div style={s.card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div style={s.secHd}>📨 Lamaran Masuk — Virtual Phase</div>
+                  {lamaranList.length > 0 && (
+                    <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                      {filtered.length} dari {lamaranList.length} lamaran{lamaranNewCount > 0 ? ` · ${lamaranNewCount} baru` : ""}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ background: "rgba(20,184,166,0.06)", border: "1px solid rgba(20,184,166,0.15)", borderRadius: 8, padding: "0.65rem 1rem", marginBottom: "1.25rem", fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                  ℹ️ Kandidat di bawah ini menyatakan minat ke lowongan Anda melalui GR2026 Virtual Phase. Klik kartu untuk melihat detail — status otomatis berubah menjadi "Sudah Dilihat".
+                </div>
+
+                {/* Filter */}
+                {lamaranList.length > 0 && (
+                  <div style={{ display: "flex", gap: "0.65rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+                    <select value={lmFilterPos} onChange={e => setLmFilterPos(e.target.value)} style={sel}>
+                      <option value="" style={optStyle}>Semua Posisi</option>
+                      {posOptions.map(p => <option key={p} value={p} style={optStyle}>{p}</option>)}
+                    </select>
+                    <select value={lmFilterStatus} onChange={e => setLmFilterStatus(e.target.value)} style={sel}>
+                      <option value="" style={optStyle}>Semua Status</option>
+                      <option value="new" style={optStyle}>Baru</option>
+                      <option value="viewed" style={optStyle}>Sudah Dilihat</option>
+                      <option value="contacted" style={optStyle}>Dihubungi</option>
+                      <option value="not_relevant" style={optStyle}>Tidak Relevan</option>
+                    </select>
+                    {(lmFilterPos || lmFilterStatus) && (
+                      <button onClick={() => { setLmFilterPos(""); setLmFilterStatus(""); }}
+                        style={{ background: "none", border: "1px solid rgba(248,113,113,0.3)", color: "#f87171", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.78rem", cursor: "pointer" }}>
+                        ✕ Reset
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {lamaranQuery.isLoading && <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>⏳ Memuat lamaran...</p>}
+
+                {!lamaranQuery.isLoading && lamaranList.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#64748b" }}>
+                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📭</div>
+                    <p style={{ fontSize: "0.9rem", lineHeight: 1.7 }}>Belum ada lamaran masuk.<br/>Kandidat yang menyatakan minat ke lowongan Anda akan muncul di sini.</p>
+                  </div>
+                )}
+
+                {!lamaranQuery.isLoading && lamaranList.length > 0 && filtered.length === 0 && (
+                  <p style={{ color: "#64748b", textAlign: "center", padding: "2rem" }}>Tidak ada lamaran yang sesuai filter.</p>
+                )}
+
+                {/* Card list */}
+                {filtered.map((app: any) => {
+                  const meta = STATUS_META[app.status] || STATUS_META.new;
+                  const isOpen = lmExpandedId === app.id;
+                  const waClean = (app.whatsapp || "").replace(/[^0-9]/g, "");
+                  return (
+                    <div key={app.id}
+                      style={{ background: app.status === "new" ? "rgba(96,165,250,0.04)" : "rgba(255,255,255,0.02)", border: `1px solid ${isOpen ? "rgba(20,184,166,0.35)" : app.status === "new" ? "rgba(96,165,250,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, marginBottom: "0.75rem", overflow: "hidden", transition: "border 0.15s" }}>
+
+                      {/* Header kartu — klik untuk expand */}
+                      <div onClick={() => handleExpand(app)}
+                        style={{ display: "flex", alignItems: "center", gap: "0.9rem", padding: "0.9rem 1.1rem", cursor: "pointer" }}>
+                        {app.fotoUrl
+                          ? <img src={app.fotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                          : <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(212,160,23,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>👤</div>}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#f1f5f9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{app.namaLengkap}</div>
+                          <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "0.15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            Posisi: <span style={{ color: "#14b8a6", fontWeight: 600 }}>{app.positionName}</span>
+                            {app.institusi ? <span> · {app.institusi}</span> : null}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem", flexShrink: 0 }}>
+                          <span style={{ fontSize: "0.72rem", background: meta.bg, color: meta.color, borderRadius: 12, padding: "0.2rem 0.6rem", fontWeight: 700, whiteSpace: "nowrap" }}>{meta.label}</span>
+                          <span style={{ fontSize: "0.7rem", color: "#475569" }}>
+                            {app.createdAt ? new Date(app.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : ""}
+                          </span>
+                        </div>
+                        <span style={{ color: "#475569", fontSize: "0.8rem", flexShrink: 0 }}>{isOpen ? "▲" : "▼"}</span>
+                      </div>
+
+                      {/* Detail expanded */}
+                      {isOpen && (
+                        <div style={{ padding: "0 1.1rem 1.1rem", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px,1fr))", gap: "0.85rem", padding: "1rem 0" }}>
+                            {[
+                              { label: "Institusi",   val: app.institusi  || "—" },
+                              { label: "Jurusan",     val: app.jurusan    || "—" },
+                              { label: "Tahun Lulus", val: app.tahunLulus || "—" },
+                              { label: "Kota",        val: app.kota       || "—" },
+                              { label: "Minat Kerja", val: (app.minatKerja || app.bidangMinat || "—").replace(/_/g, " ") },
+                            ].map(item => (
+                              <div key={item.label}>
+                                <div style={{ fontSize: "0.68rem", color: "#475569", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.2rem" }}>{item.label}</div>
+                                <div style={{ fontSize: "0.85rem", color: "#f1f5f9", fontWeight: 600 }}>{item.val}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                            {app.cvUrl ? (
+                              <a href={app.cvUrl} target="_blank" rel="noreferrer"
+                                style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none" }}>
+                                📄 Lihat CV
+                              </a>
+                            ) : (
+                              <span style={{ border: "1px solid rgba(255,255,255,0.08)", color: "#475569", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem" }}>CV tidak tersedia</span>
+                            )}
+                            {waClean && (
+                              <a href={`https://wa.me/${waClean}`} target="_blank" rel="noreferrer"
+                                style={{ background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.3)", color: "#25d366", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none" }}>
+                                💬 Hubungi via WA
+                              </a>
+                            )}
+                            {app.status !== "contacted" && (
+                              <button onClick={() => setStatus(app, "contacted")} disabled={updateAppStatusMutation.isPending}
+                                style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                                ✅ Tandai Dihubungi
+                              </button>
+                            )}
+                            {app.status !== "not_relevant" && (
+                              <button onClick={() => setStatus(app, "not_relevant")} disabled={updateAppStatusMutation.isPending}
+                                style={{ background: "none", border: "1px solid rgba(100,116,139,0.3)", color: "#64748b", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", cursor: "pointer" }}>
+                                ➖ Tidak Relevan
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {activeTab === "kandidat" && (() => {
           const b = booking as any;
           const isConfirmed = b.status === "confirmed";
