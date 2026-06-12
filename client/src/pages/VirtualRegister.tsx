@@ -7,7 +7,7 @@ import { supabase, BUCKET } from "@/lib/supabase";
 
 // ── Konstanta ─────────────────────────────────────────────────
 // URL template CV (file di Supabase assets). Kosongkan kalau belum ada → link otomatis disembunyikan.
-const CV_TEMPLATE_URL = "";
+const CV_TEMPLATE_URL = "https://ftsiyczjqjnlqsrslfwi.supabase.co/storage/v1/object/public/gr2026c/assets/Template_CV_GR2026.docx";
 
 const SUMBER_OPTIONS = [
   { val: "instagram",  label: "📸 Instagram",     hasIG: true  },
