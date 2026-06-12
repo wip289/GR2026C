@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getDb } from "./db";
 import { jobseekers, sponsors, employerProspects, employerBookings, virtualPhaseEmployerConfig, virtualPhasePositions, virtualPhaseApplications } from "../drizzle/schema";
-import { eq, and, inArray, desc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, inArray, desc, gte, lte, sql, ne } from "drizzle-orm";
 import { protectedProcedure, publicProcedure, panitiaProcedure, router } from "./_core/trpc";
 import { verifyPassword, issueToken, setPassword } from "./panitiaAuth";
 import { TRPCError } from "@trpc/server";
@@ -1393,7 +1393,10 @@ export const eventRouter = router({
         bidangMinat: jobseekers.bidangMinat,
       }).from(virtualPhaseApplications)
         .innerJoin(jobseekers, eq(virtualPhaseApplications.jobseekerId, jobseekers.id))
-        .where(eq(virtualPhaseApplications.employerBookingId, emp.bookingId))
+        .where(and(
+          eq(virtualPhaseApplications.employerBookingId, emp.bookingId),
+          ne(virtualPhaseApplications.status, "deleted"), // disembunyikan dari employer, tetap tercatat untuk panitia
+        ))
         .orderBy(desc(virtualPhaseApplications.createdAt));
     }),
 
@@ -1403,7 +1406,7 @@ export const eventRouter = router({
       bookingId: z.string(),
       email: z.string().email(),
       applicationId: z.number(),
-      status: z.enum(["new", "viewed", "contacted", "not_relevant"]),
+      status: z.enum(["new", "viewed", "contacted", "not_relevant", "deleted"]),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();

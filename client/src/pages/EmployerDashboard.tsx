@@ -269,6 +269,7 @@ export default function EmployerDashboard() {
   const [lmFilterPos,    setLmFilterPos]    = useState("");
   const [lmFilterStatus, setLmFilterStatus] = useState("");
   const [lmExpandedId,   setLmExpandedId]   = useState<number | null>(null);
+  const [lmSelectedIds,  setLmSelectedIds]  = useState<number[]>([]);
 
   const myVirtualCfgQuery = trpc.event.getMyVirtualConfig.useQuery(
     { bookingId: sessionData?.bookingId || "", email: sessionData?.email || "" },
@@ -1385,6 +1386,28 @@ export default function EmployerDashboard() {
             URL.revokeObjectURL(url);
           };
 
+          // ── Pilih & hapus (soft delete: hilang dari daftar employer, tetap tercatat di sistem) ──
+          const visibleIds: number[] = filtered.map((a: any) => a.id);
+          const allSelected = visibleIds.length > 0 && visibleIds.every(id => lmSelectedIds.includes(id));
+          const toggleSelectAll = () => setLmSelectedIds(allSelected ? [] : visibleIds);
+          const toggleSelect = (id: number) => setLmSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+          const deleteSelected = async () => {
+            if (lmSelectedIds.length === 0) return;
+            if (!window.confirm(`Hapus ${lmSelectedIds.length} lamaran dari daftar? Lamaran yang dihapus tidak bisa dikembalikan dari dashboard.`)) return;
+            try {
+              await Promise.all(lmSelectedIds.map(id => updateAppStatusMutation.mutateAsync({
+                bookingId: sessionData?.bookingId || "",
+                email: sessionData?.email || "",
+                applicationId: id,
+                status: "deleted",
+              })));
+              toast.success(`${lmSelectedIds.length} lamaran dihapus dari daftar`);
+            } catch { /* toast error sudah ditangani mutation */ }
+            setLmSelectedIds([]);
+            lamaranQuery.refetch();
+          };
+
           const sel = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
           const optStyle = { background: "#0f172a", color: "#f1f5f9" };
 
@@ -1430,6 +1453,17 @@ export default function EmployerDashboard() {
                         ✕ Reset
                       </button>
                     )}
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "#94a3b8", cursor: "pointer", marginLeft: "auto" }}>
+                      <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
+                        style={{ accentColor: "#14b8a6", width: 15, height: 15, cursor: "pointer" }} />
+                      Pilih Semua
+                    </label>
+                    {lmSelectedIds.length > 0 && (
+                      <button onClick={deleteSelected} disabled={updateAppStatusMutation.isPending}
+                        style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.35)", color: "#f87171", borderRadius: 8, padding: "0.5rem 0.85rem", fontSize: "0.78rem", fontWeight: 700, cursor: updateAppStatusMutation.isPending ? "wait" : "pointer" }}>
+                        🗑 Hapus Terpilih ({lmSelectedIds.length})
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -1458,6 +1492,11 @@ export default function EmployerDashboard() {
                       {/* Header kartu — klik untuk expand */}
                       <div onClick={() => handleExpand(app)}
                         style={{ display: "flex", alignItems: "center", gap: "0.9rem", padding: "0.9rem 1.1rem", cursor: "pointer" }}>
+                        <input type="checkbox"
+                          checked={lmSelectedIds.includes(app.id)}
+                          onChange={() => toggleSelect(app.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ accentColor: "#14b8a6", width: 16, height: 16, cursor: "pointer", flexShrink: 0 }} />
                         {app.fotoUrl
                           ? <img src={app.fotoUrl} alt="" style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                           : <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(212,160,23,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>👤</div>}
