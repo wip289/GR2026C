@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getDb } from "./db";
 import { jobseekers, sponsors, employerProspects, employerBookings, virtualPhaseEmployerConfig, virtualPhasePositions, virtualPhaseApplications } from "../drizzle/schema";
 import { eq, and, inArray, desc, gte, lte, sql, ne } from "drizzle-orm";
+import { Resend } from "resend";
 import { protectedProcedure, publicProcedure, panitiaProcedure, router } from "./_core/trpc";
 import { verifyPassword, issueToken, setPassword } from "./panitiaAuth";
 import { TRPCError } from "@trpc/server";
@@ -1615,15 +1616,94 @@ export const eventRouter = router({
         ));
 
       let sentCount = 0;
+      const errors: string[] = [];
+
+      // Nama perusahaan untuk subject & isi email
+      const emps = await db.select({ bookingId: employerBookings.bookingId, companyName: employerBookings.companyName })
+        .from(employerBookings)
+        .where(inArray(employerBookings.bookingId, Object.keys(grouped)));
+      const empNameMap: Record<string, string> = Object.fromEntries(emps.map(e => [e.bookingId, e.companyName]));
+
+      const apiKey = process.env.RESEND_API_KEY;
+      const resend = apiKey ? new Resend(apiKey) : null;
+      console.log(`[Daily Report ${targetDate}] mulai — lamaran hari ini: ${todayApps.length}, employer Opsi A cocok: ${configs.length}, API key terbaca: ${apiKey ? "YA" : "TIDAK"}`);
+      const esc = (s: any) => String(s ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]!));
+
       for (const cfg of configs) {
-        if (!cfg.virtualPicEmail) continue;
+        if (!cfg.virtualPicEmail) {
+          console.log(`[Daily Report] LEWAT — ${cfg.employerBookingId}: email PIC kosong di database`);
+          continue;
+        }
         const apps = grouped[cfg.employerBookingId] ?? [];
         if (apps.length === 0) continue;
-        // TODO Fase 7: ganti console.log dengan Resend API call
-        console.log(`[Daily Report ${targetDate}] -> ${cfg.virtualPicEmail}: ${apps.length} lamaran`);
-        sentCount++;
+        const companyName = empNameMap[cfg.employerBookingId] ?? cfg.employerBookingId;
+
+        if (!resend) {
+          // Mode latihan: RESEND_API_KEY belum terpasang di environment
+          console.log(`[Daily Report ${targetDate}] (TANPA API KEY) -> ${cfg.virtualPicEmail}: ${apps.length} lamaran`);
+          continue;
+        }
+
+        const tableRows = apps.map(a =>
+          `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee">${esc(a.namaLengkap)}</td>` +
+          `<td style="padding:6px 12px;border-bottom:1px solid #eee">${esc(a.institusi ?? "-")}</td>` +
+          `<td style="padding:6px 12px;border-bottom:1px solid #eee">${esc(a.positionName ?? "-")}</td></tr>`
+        ).join("");
+
+        const html = `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333">
+            <div style="background:#1A7A6E;padding:20px 24px">
+              <h2 style="color:#fff;margin:0;font-size:18px">GR2026 Virtual Phase</h2>
+              <p style="color:#9FE1CB;margin:4px 0 0;font-size:13px">Daily Report — ${targetDate}</p>
+            </div>
+            <div style="padding:24px">
+              <p>Halo ${esc(cfg.virtualPicName ?? "Tim HR")},</p>
+              <p>Hari ini ada <strong>${apps.length} kandidat baru</strong> yang tertarik dengan lowongan di <strong>${esc(companyName)}</strong>.</p>
+              <table style="width:100%;border-collapse:collapse;margin:16px 0">
+                <thead>
+                  <tr style="background:#f5f5f5">
+                    <th style="padding:8px 12px;text-align:left;font-size:13px">Nama</th>
+                    <th style="padding:8px 12px;text-align:left;font-size:13px">Institusi</th>
+                    <th style="padding:8px 12px;text-align:left;font-size:13px">Posisi</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+              <a href="https://www.grandrecruitment.id/employer/dashboard"
+                 style="display:inline-block;background:#1A7A6E;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;margin-top:8px">
+                Lihat Semua Lamaran →
+              </a>
+            </div>
+            <div style="padding:16px 24px;background:#f9f9f9;font-size:12px;color:#888;border-top:1px solid #eee">
+              GR2026 Virtual Phase · www.grandrecruitment.id · contact@grandrecruitment.id
+            </div>
+          </div>`;
+
+        try {
+          const { error } = await resend.emails.send({
+            from: "GR2026 Virtual Phase <noreply@send.grandrecruitment.id>",
+            to: cfg.virtualPicEmail,
+            subject: `[GR2026] ${apps.length} kandidat baru hari ini — ${companyName}`,
+            html,
+          });
+          if (error) {
+            console.error(`[Daily Report] GAGAL -> ${cfg.virtualPicEmail}:`, error);
+            errors.push(`${cfg.virtualPicEmail}: ${error.message}`);
+            continue;
+          }
+          console.log(`[Daily Report] TERKIRIM -> ${cfg.virtualPicEmail} (${apps.length} kandidat, ${companyName})`);
+          sentCount++;
+        } catch (e: any) {
+          console.error(`[Daily Report] ERROR -> ${cfg.virtualPicEmail}:`, e);
+          errors.push(`${cfg.virtualPicEmail}: ${e?.message ?? "unknown error"}`);
+        }
       }
-      return { sent: sentCount, totalApps: todayApps.length };
+      return {
+        sent: sentCount,
+        totalApps: todayApps.length,
+        ...(errors.length > 0 ? { errors } : {}),
+        ...(!apiKey ? { message: "RESEND_API_KEY belum terpasang — tidak ada email terkirim (cek log)." } : {}),
+      };
     }),
 
 
