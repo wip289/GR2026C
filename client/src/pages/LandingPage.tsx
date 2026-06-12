@@ -157,6 +157,10 @@ export default function LandingPage() {
   const eventDate = cfg.eventDateDisplay || t.badgeText;
   const eventVenue = cfg.venueName || "Dome NHI Bandung";
 
+  // Virtual Phase status — untuk banner di hero
+  const virtualStatusQuery = trpc.event.getVirtualPhaseStatus.useQuery(undefined, { retry: false, refetchOnWindowFocus: false });
+  const virtualActive = !!virtualStatusQuery.data?.isActive;
+
   // Fetch booth data for map section
   const allBookingsQuery  = trpc.event.getAllEmployerBookings.useQuery();
 
@@ -311,6 +315,24 @@ export default function LandingPage() {
             textAlign: "center" as const }}>
             📅 {eventDate}
           </div>
+
+          {/* ── Banner Virtual Phase ── */}
+          {virtualActive && (
+            <div onClick={() => navigate("/virtual")}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap",
+                background: "linear-gradient(135deg, rgba(20,184,166,0.15), rgba(212,160,23,0.1))",
+                border: "1px solid rgba(20,184,166,0.4)", borderRadius: 14, padding: "0.85rem 1.5rem",
+                margin: "0 auto 1.5rem", maxWidth: 640, cursor: "pointer" }}>
+              <span style={{ fontSize: "1.3rem" }}>🔍</span>
+              <span style={{ fontSize: "clamp(0.82rem, 2.2vw, 0.95rem)", color: "#f1f5f9", fontWeight: 700 }}>
+                Virtual Phase Dibuka — Lamar Online ke Perusahaan GR2026
+                {virtualStatusQuery.data?.daysLeft != null ? <span style={{ color: "#D4A017" }}> · {virtualStatusQuery.data.daysLeft} hari lagi</span> : null}
+              </span>
+              <span style={{ background: "#14b8a6", color: "#021412", borderRadius: 8, padding: "0.4rem 0.9rem", fontSize: "0.8rem", fontWeight: 800, whiteSpace: "nowrap" }}>
+                Lihat Lowongan →
+              </span>
+            </div>
+          )}
 
           {/* Banner GR2026 */}
           <img src="/logo-gr2026-banner.png" alt="Grand Recruitment 2026"

@@ -1342,6 +1342,49 @@ export default function EmployerDashboard() {
             if (next !== null && app.status === "new") setStatus(app, "viewed");
           };
 
+          const downloadCv = async (app: any) => {
+            try {
+              const res = await fetch(app.cvUrl);
+              if (!res.ok) throw new Error("fetch failed");
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const ext = ((app.cvUrl.split("?")[0].split(".").pop() || "pdf")).toLowerCase();
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `CV_${(app.namaLengkap || "kandidat").replace(/[^a-zA-Z0-9 \-_.]/g, "").trim().replace(/\s+/g, "_")}.${ext}`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            } catch {
+              // Fallback: buka di tab baru kalau download langsung gagal
+              window.open(app.cvUrl, "_blank");
+            }
+          };
+
+          const exportCsv = () => {
+            const statusLabel: Record<string, string> = { new: "Baru", viewed: "Sudah Dilihat", contacted: "Dihubungi", not_relevant: "Tidak Relevan" };
+            const rows: (string | number)[][] = [
+              ["Nama", "Institusi", "Jurusan", "Tahun Lulus", "Kota", "WhatsApp", "Posisi", "Status", "Tanggal Masuk", "Link CV"],
+              ...filtered.map((a: any) => [
+                a.namaLengkap ?? "", a.institusi ?? "", a.jurusan ?? "", a.tahunLulus ?? "", a.kota ?? "",
+                a.whatsapp ?? "", a.positionName ?? "", statusLabel[a.status] ?? a.status ?? "",
+                a.createdAt ? new Date(a.createdAt).toLocaleDateString("id-ID") : "", a.cvUrl ?? "",
+              ]),
+            ];
+            // BOM + delimiter titik-koma supaya langsung rapi dibuka di Excel (locale Indonesia)
+            const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Lamaran_${sessionData?.bookingId || "GR2026"}_${new Date().toISOString().split("T")[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          };
+
           const sel = { background: "#0f172a", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "0.5rem 0.75rem", fontSize: "0.82rem", color: "#f1f5f9", outline: "none" } as React.CSSProperties;
           const optStyle = { background: "#0f172a", color: "#f1f5f9" };
 
@@ -1351,9 +1394,15 @@ export default function EmployerDashboard() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
                   <div style={s.secHd}>📨 Lamaran Masuk — Virtual Phase</div>
                   {lamaranList.length > 0 && (
-                    <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                      {filtered.length} dari {lamaranList.length} lamaran{lamaranNewCount > 0 ? ` · ${lamaranNewCount} baru` : ""}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                        {filtered.length} dari {lamaranList.length} lamaran{lamaranNewCount > 0 ? ` · ${lamaranNewCount} baru` : ""}
+                      </span>
+                      <button onClick={exportCsv}
+                        style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.45rem 0.85rem", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+                        ⬇ Export CSV
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1447,10 +1496,10 @@ export default function EmployerDashboard() {
                           </div>
                           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
                             {app.cvUrl ? (
-                              <a href={app.cvUrl} target="_blank" rel="noreferrer"
-                                style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none" }}>
-                                📄 Lihat CV
-                              </a>
+                              <button onClick={() => downloadCv(app)}
+                                style={{ background: "rgba(212,160,23,0.1)", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
+                                ⬇ Download CV
+                              </button>
                             ) : (
                               <span style={{ border: "1px solid rgba(255,255,255,0.08)", color: "#475569", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem" }}>CV tidak tersedia</span>
                             )}

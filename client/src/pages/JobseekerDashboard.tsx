@@ -72,6 +72,13 @@ export default function JobseekerDashboard() {
     { enabled: !!sessionData?.registrationId && activeTab === "lowongan", retry: false }
   );
 
+  // ── Virtual Phase ──
+  const virtualStatusQuery = trpc.event.getVirtualPhaseStatus.useQuery(undefined, { retry: false, refetchOnWindowFocus: false });
+  const myVirtualAppsQuery = trpc.event.getMyVirtualApplications.useQuery(
+    sessionData ?? { registrationId: "", email: "" },
+    { enabled: !!sessionData && !!virtualStatusQuery.data?.isActive, retry: false, refetchOnWindowFocus: false }
+  );
+
   useEffect(() => {
     if (loginQuery.data) {
       setJobseeker(loginQuery.data);
@@ -270,6 +277,50 @@ export default function JobseekerDashboard() {
             </button>
           </div>
         </div>
+
+        {/* ── Banner Virtual Phase ── */}
+        {virtualStatusQuery.data?.isActive && (
+          <div style={{ background: "linear-gradient(135deg, rgba(20,184,166,0.12), rgba(212,160,23,0.08))", border: "1px solid rgba(20,184,166,0.35)", borderRadius: 12, padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
+              <div style={{ display: "flex", gap: "0.85rem", alignItems: "flex-start" }}>
+                <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🔍</span>
+                <div>
+                  <div style={{ fontWeight: 800, color: "#14b8a6", fontSize: "0.92rem", marginBottom: "0.25rem" }}>
+                    Virtual Phase Dibuka — Lamar Online ke Perusahaan GR2026
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                    Event fisik sudah selesai, tapi kamu tetap bisa kirim CV ke perusahaan peserta secara online
+                    {virtualStatusQuery.data?.daysLeft != null ? <> — tersisa <strong style={{ color: "#D4A017" }}>{virtualStatusQuery.data.daysLeft} hari</strong> lagi</> : null}.
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => navigate("/virtual")}
+                style={{ background: "#14b8a6", border: "none", color: "#021412", borderRadius: 8, padding: "0.6rem 1.2rem", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>
+                Cari Lowongan →
+              </button>
+            </div>
+            {(myVirtualAppsQuery.data?.length ?? 0) > 0 && (
+              <div style={{ marginTop: "0.9rem", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "0.75rem" }}>
+                <div style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: "0.5rem" }}>
+                  📨 Lamaran Saya ({myVirtualAppsQuery.data!.length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  {myVirtualAppsQuery.data!.map((app: any) => (
+                    <div key={app.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", gap: "0.5rem", flexWrap: "wrap" }}>
+                      <span style={{ color: "#f1f5f9" }}>
+                        {app.positionName}
+                        {app.companyName ? <span style={{ color: "#64748b" }}> · {app.companyName}</span> : null}
+                      </span>
+                      <span style={{ color: "#4ade80", fontSize: "0.76rem", fontWeight: 700, whiteSpace: "nowrap" }}>
+                        ✓ Terkirim{app.createdAt ? ` · ${new Date(app.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Banner Dokumen */}
         {(() => {

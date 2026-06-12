@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import ApplyConfirmDialog from "@/components/VirtualPhase/ApplyConfirmDialog";
 
 // ─── Session helper (sama dengan pola JobseekerLogin/Dashboard) ───
 type JsSession = { registrationId: string; email: string };
@@ -40,6 +41,7 @@ export default function VirtualGallery() {
   const [cityFilter, setCityFilter] = useState("");
   const [showLogin, setShowLogin] = useState(false);
   const [applyingId, setApplyingId] = useState<number | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ emp: any; pos: any } | null>(null);
 
   // ─── Data ───
   const statusQ = trpc.event.getVirtualPhaseStatus.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -150,6 +152,7 @@ export default function VirtualGallery() {
       toast.error(e?.message ?? "Gagal mengirim lamaran, coba lagi.");
     }
     setApplyingId(null);
+    setConfirmTarget(null);
   };
 
   // ─── Apply button per posisi ───
@@ -177,7 +180,7 @@ export default function VirtualGallery() {
     return (
       <button style={{ ...s.btnGold, opacity: applyingId === pos.id ? 0.6 : 1 }}
         disabled={applyingId === pos.id}
-        onClick={() => handleApply(emp, pos)}>
+        onClick={() => setConfirmTarget({ emp, pos })}>
         {applyingId === pos.id ? "Mengirim..." : "Kirim CV"}
       </button>
     );
@@ -203,6 +206,7 @@ export default function VirtualGallery() {
                 <span style={{ fontSize: "0.82rem", color: "#94a3b8", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   👋 {profile.namaLengkap}
                 </span>
+                <button style={{ ...s.btnGhost, padding: "0.4rem 0.8rem", fontSize: "0.78rem" }} onClick={() => navigate("/jobseeker/dashboard")}>Dashboard Saya</button>
                 <button style={{ ...s.btnGhost, padding: "0.4rem 0.8rem", fontSize: "0.78rem" }} onClick={handleLogout}>Keluar</button>
               </>
             ) : (
@@ -345,6 +349,17 @@ export default function VirtualGallery() {
           }}
         />
       )}
+
+      {/* ─── Konfirmasi kirim lamaran ─── */}
+      <ApplyConfirmDialog
+        open={!!confirmTarget}
+        positionName={confirmTarget?.pos?.positionName ?? ""}
+        companyName={confirmTarget?.emp?.companyName ?? ""}
+        mechanism={confirmTarget?.emp?.mechanism ?? null}
+        isPending={applyingId !== null}
+        onCancel={() => { if (applyingId === null) setConfirmTarget(null); }}
+        onConfirm={() => confirmTarget && handleApply(confirmTarget.emp, confirmTarget.pos)}
+      />
     </div>
   );
 }
