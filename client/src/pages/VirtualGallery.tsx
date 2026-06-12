@@ -321,7 +321,9 @@ export default function VirtualGallery() {
         <div style={{ textAlign: "center", marginTop: "2.5rem", padding: "1.2rem", background: "rgba(212,160,23,0.05)", border: "1px solid rgba(212,160,23,0.15)", borderRadius: 14 }}>
           <p style={{ fontSize: "0.85rem", color: "#94a3b8", lineHeight: 1.6 }}>
             <strong style={{ color: "#f1f5f9" }}>Sudah terdaftar di GR2026?</strong> Klik tombol <strong style={{ color: GOLD }}>Masuk</strong> dan langsung kirim CV.<br />
-            Belum punya akun? Pendaftaran baru <strong style={{ color: GOLD }}>segera dibuka</strong> di halaman ini.
+            {phaseActive
+              ? <>Belum punya akun? <button onClick={() => navigate("/virtual/register")} style={{ background: "none", border: "none", color: GOLD, cursor: "pointer", fontWeight: 700, fontSize: "0.85rem", textDecoration: "underline", padding: 0 }}>Daftar baru di sini →</button></>
+              : <>Belum punya akun? Pendaftaran baru <strong style={{ color: GOLD }}>segera dibuka</strong> di halaman ini.</>}
           </p>
         </div>
 
@@ -417,7 +419,8 @@ function LoginModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (s
         </button>
 
         <p style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "1rem", textAlign: "center", lineHeight: 1.5 }}>
-          Belum punya akun? Pendaftaran baru <strong style={{ color: GOLD }}>segera dibuka</strong>.
+          Belum punya akun?{" "}
+          <a href="/virtual/register" style={{ color: GOLD, fontWeight: 700, textDecoration: "underline" }}>Daftar baru di sini →</a>
         </p>
 
         <div style={{ textAlign: "center", marginTop: "0.5rem" }}>

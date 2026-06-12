@@ -1607,4 +1607,95 @@ export const eventRouter = router({
       return { sent: sentCount, totalApps: todayApps.length };
     }),
 
+
+  // ─── VIRTUAL PHASE: REGISTRASI JOBSEEKER BARU (Fase 5) ─────────
+  // Cek email terdaftar — ringan & aman: hanya jawab ada/tidak,
+  // TIDAK menarik data jobseeker ke browser (pengganti pola getAllJobseekers di form lama).
+  checkVirtualEmail: publicProcedure
+    .input(z.object({ email: z.string().email() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      const rows = await db.select({ id: jobseekers.id }).from(jobseekers)
+        .where(eq(jobseekers.email, input.email)).limit(1);
+      return { exists: rows.length > 0 };
+    }),
+
+  // Pintu pendaftaran TERPISAH dari createJobseeker (yang sudah digembok REG_CLOSED pasca-event).
+  // Gembok pintu ini: periode Virtual Phase (virtualPhaseActive + virtualPhaseEnd).
+  createVirtualJobseeker: publicProcedure
+    .input(z.object({
+      registrationId: z.string(),
+      namaLengkap: z.string().min(2),
+      email: z.string().email(),
+      whatsapp: z.string().optional(),
+      phone: z.string().optional(),
+      kota: z.string().optional(),
+      institusi: z.string().optional(),
+      jurusan: z.string().min(1),
+      tahunLulus: z.string().min(1),
+      minatKerja: z.enum(["dalam_negeri", "luar_negeri", "keduanya"]),
+      statusKerja: z.enum(["belum_bekerja", "sedang_bekerja", "pernah_bekerja"]),
+      sumberInfo: z.string().optional(),
+      igUsername: z.string().optional(),
+      consent1: z.literal(true), // wajib true — consent baru virtual phase
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Gate: hanya saat virtual phase aktif & belum lewat tanggal tutup
+        const cfg = await getEventConfig() as any;
+        const now = new Date();
+        const end = cfg?.virtualPhaseEnd ? new Date(cfg.virtualPhaseEnd + "T23:59:59+07:00") : null;
+        const expired = end ? now.getTime() > end.getTime() : false;
+        if (cfg?.virtualPhaseActive !== "true" || expired) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "VP_CLOSED" });
+        }
+
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const dupEmail = await db.select({ id: jobseekers.id }).from(jobseekers)
+          .where(eq(jobseekers.email, input.email)).limit(1);
+        if (dupEmail.length > 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "Email kamu sudah terdaftar di GR2026. Silakan langsung Masuk di halaman lowongan — tidak perlu daftar ulang." });
+        }
+        if (input.whatsapp) {
+          const dupWa = await db.select({ id: jobseekers.id }).from(jobseekers)
+            .where(eq(jobseekers.whatsapp, input.whatsapp)).limit(1);
+          if (dupWa.length > 0) {
+            throw new TRPCError({ code: "CONFLICT", message: "Nomor WhatsApp kamu sudah terdaftar di GR2026. Silakan langsung Masuk di halaman lowongan." });
+          }
+        }
+
+        await createJobseeker({
+          registrationId: input.registrationId,
+          eventId: cfg?.eventId || cfg?.id || null,
+          namaLengkap: input.namaLengkap,
+          nik: "",
+          whatsapp: input.whatsapp || "",
+          email: input.email,
+          kota: input.kota || null,
+          status: input.statusKerja,
+          institusi: input.institusi || null,
+          jurusan: input.jurusan,
+          tahunLulus: input.tahunLulus,
+          phone: input.phone || null,
+          minatKerja: input.minatKerja,
+          statusKerja: input.statusKerja,
+          sumberInfo: input.sumberInfo || null,
+          igUsername: input.igUsername || null,
+          consent1: true,
+          consent2: false,
+          consent1At: new Date(),
+          consent2At: null,
+          registrationSource: "virtual_phase",
+        });
+        return { success: true };
+      } catch (error: any) {
+        if (error instanceof TRPCError) throw error;
+        console.error("[createVirtualJobseeker] DETAIL:", error?.message, error?.code);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Gagal menyimpan: ${error?.message || error}` });
+      }
+    }),
+
 });

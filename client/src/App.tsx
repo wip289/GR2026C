@@ -42,6 +42,7 @@ import SponsorManagement from "./pages/SponsorManagement";
 import PostEvent from "./pages/PostEvent";
 import BoothMapReport from "./pages/BoothMapReport";
 import VirtualGallery from "./pages/VirtualGallery";
+import VirtualRegister from "./pages/VirtualRegister";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path={"/jobseeker/login"} component={JobseekerLogin} />
       <Route path={"/jobseeker/dashboard"} component={JobseekerDashboard} />
       <Route path={"/virtual"} component={VirtualGallery} />
+      <Route path={"/virtual/register"} component={VirtualRegister} />
       <Route path={"/boss"} component={BossPanel} />
       <Route path={"/boss/denah"} component={BoothMapReport} />
       <Route path={"/panitia"} component={PanitiaManagement} />
