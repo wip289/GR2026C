@@ -1602,6 +1602,7 @@ export const eventRouter = router({
         .where(and(
           gte(virtualPhaseApplications.createdAt, startOfDay),
           lte(virtualPhaseApplications.createdAt, endOfDay),
+          ne(virtualPhaseApplications.status, "deleted"),
         ));
       if (todayApps.length === 0) return { sent: 0, totalApps: 0, message: "Tidak ada lamaran di tanggal ini." };
 
