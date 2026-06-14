@@ -167,6 +167,13 @@ export default function VirtualGallery() {
         </button>
       );
     }
+    if (emp.isAcceptingApplications === false) {
+      return (
+        <button style={{ ...s.btnDisabled, color: "#f87171", borderColor: "rgba(248,113,113,0.3)" }} disabled>
+          Tidak Menerima Lamaran
+        </button>
+      );
+    }
     if (!session || !profile) {
       return <button style={s.btnGhost} onClick={() => setShowLogin(true)}>Masuk untuk Kirim CV</button>;
     }
@@ -287,6 +294,11 @@ export default function VirtualGallery() {
                       <div style={{ fontSize: "0.76rem", color: GOLD, marginTop: 2 }}>
                         {(emp.positions ?? []).length} posisi dibuka
                       </div>
+                      {emp.isAcceptingApplications === false && (
+                        <div style={{ fontSize: "0.72rem", color: "#f87171", marginTop: 4, padding: "3px 8px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, display: "inline-block" }}>
+                          🔴 Lowongan Ditutup Sementara, silahkan cek kembali nanti
+                        </div>
+                      )}
                     </div>
                     <span style={{ color: "#64748b", fontSize: "0.85rem" }}>{isOpen ? "▲" : "▼"}</span>
                   </div>

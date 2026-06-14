@@ -78,6 +78,7 @@ export default function VirtualPhaseTab() {
   );
 
   const [fIkut, setFIkut] = useState(true);
+  const [fTerima, setFTerima] = useState(true);
   const [fMech, setFMech] = useState<"A" | "B" | "C" | "">("");
   const [fPicName, setFPicName] = useState("");
   const [fPicEmail, setFPicEmail] = useState("");
@@ -91,6 +92,7 @@ export default function VirtualPhaseTab() {
   useEffect(() => {
     if (editing) {
       setFIkut(editing.isParticipating);
+      setFTerima(editing.isAcceptingApplications ?? true);
       setFMech((editing.mechanism as any) ?? "");
       setFPicName(editing.virtualPicName ?? "");
       setFPicEmail(editing.virtualPicEmail ?? "");
@@ -137,6 +139,7 @@ export default function VirtualPhaseTab() {
       await setEmpConfigMutation.mutateAsync({
         employerBookingId: editingId,
         isParticipating: fIkut,
+        isAcceptingApplications: fTerima,
         mechanism: fMech,
         externalUrl: fUrl.trim(),
         virtualPicName: fPicName.trim(),
@@ -177,6 +180,7 @@ export default function VirtualPhaseTab() {
       await setEmpConfigMutation.mutateAsync({
         employerBookingId: editingId,
         isParticipating: false,
+        isAcceptingApplications: true,
         mechanism: "",
         externalUrl: "",
         virtualPicName: "",
@@ -285,7 +289,13 @@ export default function VirtualPhaseTab() {
                       <span style={{ fontWeight: 600 }}>{emp.companyName}</span>
                     </div>
                   </td>
-                  <td style={vs.td}>{emp.isParticipating ? <span style={vs.badge("#34d399")}>✓ Ikut</span> : <span style={vs.badge("#64748b")}>—</span>}</td>
+                  <td style={vs.td}>
+                    {emp.isParticipating
+                      ? (emp.isAcceptingApplications
+                          ? <span style={vs.badge("#34d399")}>✓ Ikut</span>
+                          : <span style={vs.badge("#f87171")} title="Saklar Terima Lamaran sedang OFF">✓ Ikut · 🔴 Tutup</span>)
+                      : <span style={vs.badge("#64748b")}>—</span>}
+                  </td>
                   <td style={vs.td}>{emp.mechanism ? <span style={vs.badge(MECH_COLOR[emp.mechanism])}>{MECH_LABEL[emp.mechanism]}</span> : <span style={{ color: "#475569" }}>belum diset</span>}</td>
                   <td style={vs.td}>{emp.positionCount}</td>
                   <td style={vs.td}>{emp.totalApplicants}{emp.newApplicants > 0 && <span style={{ ...vs.badge("#f87171"), marginLeft: 6 }}>{emp.newApplicants} baru</span>}</td>
@@ -305,6 +315,10 @@ export default function VirtualPhaseTab() {
               <div>
                 <label style={vs.label}>Ikut Virtual Phase</label>
                 <button onClick={() => setFIkut(v => !v)} style={{ ...vs.btn(fIkut ? "gold" : "ghost"), width: "100%" }}>{fIkut ? "✓ Ikut" : "Tidak Ikut"}</button>
+              </div>
+              <div>
+                <label style={vs.label}>Terima Lamaran</label>
+                <button onClick={() => setFTerima(v => !v)} style={{ ...vs.btn(fTerima ? "gold" : "danger"), width: "100%" }} title="Saklar buka/tutup pendaftaran. Posisi tetap tampil di gallery, tapi tombol Apply nonaktif saat ditutup.">{fTerima ? "🟢 Buka" : "🔴 Tutup Sementara"}</button>
               </div>
               <div>
                 <label style={vs.label}>Mekanisme Apply</label>
