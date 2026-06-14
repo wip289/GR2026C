@@ -1261,6 +1261,7 @@ export const eventRouter = router({
         industry: emp.industry,
         city: emp.city,
         logoUrl: emp.logoUrl,
+        isAcceptingApplications: cfg.isAcceptingApplications,
         mechanism: cfg.mechanism,
         externalUrl: cfg.externalUrl,
         virtualPicName: cfg.virtualPicName,
@@ -1319,6 +1320,11 @@ export const eventRouter = router({
       // 5. Mekanisme employer
       const [empCfg] = await db.select().from(virtualPhaseEmployerConfig)
         .where(eq(virtualPhaseEmployerConfig.employerBookingId, input.employerBookingId)).limit(1);
+
+      // 5b. Saklar terima lamaran per employer
+      if (empCfg && !empCfg.isAcceptingApplications) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Employer ini sementara tidak menerima lamaran." });
+      }
 
       // 6. Insert — unique constraint (jobseekerId, positionId) cegah double apply
       try {
@@ -1435,6 +1441,7 @@ export const eventRouter = router({
         .where(eq(virtualPhaseEmployerConfig.employerBookingId, emp.bookingId)).limit(1);
       return {
         isParticipating: cfg?.isParticipating ?? false,
+        isAcceptingApplications: cfg?.isAcceptingApplications ?? true,
         mechanism: cfg?.mechanism ?? null,
       };
     }),
@@ -1461,6 +1468,7 @@ export const eventRouter = router({
     .input(z.object({
       employerBookingId: z.string(),
       isParticipating: z.boolean(),
+      isAcceptingApplications: z.boolean().optional(),
       mechanism: z.enum(["A", "B", "C"]).or(z.literal("")).optional(),
       externalUrl: z.string().optional(),
       virtualPicName: z.string().optional(),
@@ -1479,6 +1487,7 @@ export const eventRouter = router({
       };
       const vals = {
         isParticipating: input.isParticipating,
+        isAcceptingApplications: input.isAcceptingApplications ?? true,
         mechanism: input.mechanism ? input.mechanism : null,
         externalUrl: clean(input.externalUrl),
         virtualPicName: clean(input.virtualPicName),
@@ -1570,6 +1579,7 @@ export const eventRouter = router({
         companyName: emp.companyName,
         logoUrl: emp.logoUrl,
         isParticipating: cfg?.isParticipating ?? false,
+        isAcceptingApplications: cfg?.isAcceptingApplications ?? true,
         mechanism: cfg?.mechanism ?? null,
         virtualPicName: cfg?.virtualPicName ?? null,
         virtualPicEmail: cfg?.virtualPicEmail ?? null,

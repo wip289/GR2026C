@@ -360,6 +360,7 @@ export const virtualPhaseEmployerConfig = mysqlTable("virtualPhaseEmployerConfig
   id:                 int("id").autoincrement().primaryKey(),
   employerBookingId:  varchar("employerBookingId", { length: 50 }).notNull().unique(),
   isParticipating:    boolean("isParticipating").default(true).notNull(),
+  isAcceptingApplications: boolean("isAcceptingApplications").default(true).notNull(),
   mechanism:          varchar("mechanism", { length: 1 }),         // 'A' | 'B' | 'C'
   externalUrl:        varchar("externalUrl", { length: 500 }),
   virtualPicName:     varchar("virtualPicName", { length: 255 }),
