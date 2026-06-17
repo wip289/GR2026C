@@ -1274,6 +1274,7 @@ export const eventRouter = router({
             headcount: p.headcount,
             location: p.location,
             requirements: p.requirements,
+            isPlaceholder: p.isPlaceholder,
             applicantCount: countMap[p.id] ?? 0,
           })),
       };
@@ -1497,6 +1498,16 @@ export const eventRouter = router({
       await db.insert(virtualPhaseEmployerConfig)
         .values({ employerBookingId: input.employerBookingId, ...vals })
         .onDuplicateKeyUpdate({ set: vals });
+      // Bersihkan posisi placeholder kalau employer pindah dari Opsi C ke A/B/(none) —
+      // placeholder hanya relevan untuk Opsi C.
+      if (vals.mechanism !== "C") {
+        await db.update(virtualPhasePositions)
+          .set({ isActive: false })
+          .where(and(
+            eq(virtualPhasePositions.employerBookingId, input.employerBookingId),
+            eq(virtualPhasePositions.isPlaceholder, true),
+          ));
+      }
       return { success: true };
     }),
 
@@ -1526,8 +1537,24 @@ export const eventRouter = router({
             location: p.location,
             requirements: p.requirements ?? null,
             isActive: true,
+            isPlaceholder: false,
           })),
         );
+      }
+      // Auto-create posisi placeholder kalau Opsi C tanpa posisi normal —
+      // supaya card di gallery tetap punya cara apply (redirect ke externalUrl).
+      const [empCfg] = await db.select().from(virtualPhaseEmployerConfig)
+        .where(eq(virtualPhaseEmployerConfig.employerBookingId, input.employerBookingId)).limit(1);
+      if (empCfg && empCfg.mechanism === "C" && empCfg.externalUrl && input.positions.length === 0) {
+        await db.insert(virtualPhasePositions).values({
+          employerBookingId: input.employerBookingId,
+          positionName: "Lamar via Website Resmi Perusahaan",
+          headcount: 1,
+          location: "Lihat detail di website",
+          requirements: "Anda akan diteruskan ke halaman resmi perusahaan untuk menyelesaikan proses lamaran. Klik tombol 'Kirim CV' untuk lanjut, atau 'Batal' untuk kembali.",
+          isActive: true,
+          isPlaceholder: true,
+        });
       }
       return { success: true };
     }),
@@ -1548,6 +1575,7 @@ export const eventRouter = router({
         .where(and(
           eq(virtualPhasePositions.employerBookingId, input.employerBookingId),
           eq(virtualPhasePositions.isActive, true),
+          eq(virtualPhasePositions.isPlaceholder, false),
         ));
     }),
 

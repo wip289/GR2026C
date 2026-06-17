@@ -292,7 +292,14 @@ export default function VirtualGallery() {
                         {[emp.industry, emp.city].filter(Boolean).join(" · ") || "—"}
                       </div>
                       <div style={{ fontSize: "0.76rem", color: GOLD, marginTop: 2 }}>
-                        {(emp.positions ?? []).length} posisi dibuka
+                        {(() => {
+                          const positions = emp.positions ?? [];
+                          const normalCount = positions.filter((p: any) => !p.isPlaceholder).length;
+                          const hasPlaceholder = positions.some((p: any) => p.isPlaceholder);
+                          if (normalCount > 0) return `${normalCount} posisi dibuka`;
+                          if (hasPlaceholder) return "Lamar via website resmi";
+                          return "Belum ada posisi";
+                        })()}
                       </div>
                       {emp.isAcceptingApplications === false && (
                         <div style={{ fontSize: "0.72rem", color: "#f87171", marginTop: 4, padding: "3px 8px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, display: "inline-block" }}>
@@ -309,21 +316,36 @@ export default function VirtualGallery() {
                       {(emp.positions ?? []).length === 0 ? (
                         <p style={{ padding: "1rem 1.1rem", color: "#64748b", fontSize: "0.85rem" }}>Belum ada posisi terdaftar.</p>
                       ) : emp.positions.map((pos: any) => (
-                        <div key={pos.id} style={{ padding: "1rem 1.1rem", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", justifyContent: "space-between" }}>
-                          <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{pos.positionName}</div>
-                            <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2 }}>
-                              Butuh {pos.headcount} orang · 📍 {pos.location}
-                              {pos.applicantCount > 0 && <span style={{ color: GOLD }}> · {pos.applicantCount} pelamar</span>}
+                        pos.isPlaceholder ? (
+                          <div key={pos.id} style={{ padding: "1.25rem 1.1rem", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(212,160,23,0.03)" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.5rem" }}>
+                              <span style={{ fontSize: "1.1rem" }}>🔗</span>
+                              <div style={{ fontWeight: 700, fontSize: "0.92rem", color: GOLD }}>{pos.positionName}</div>
                             </div>
                             {pos.requirements && (
-                              <div style={{ fontSize: "0.8rem", color: "#cbd5e1", marginTop: "0.4rem", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                              <div style={{ fontSize: "0.82rem", color: "#cbd5e1", marginBottom: "0.85rem", lineHeight: 1.55 }}>
                                 {pos.requirements}
                               </div>
                             )}
+                            <div>{renderApplyButton(emp, pos)}</div>
                           </div>
-                          <div style={{ flexShrink: 0 }}>{renderApplyButton(emp, pos)}</div>
-                        </div>
+                        ) : (
+                          <div key={pos.id} style={{ padding: "1rem 1.1rem", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{pos.positionName}</div>
+                              <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2 }}>
+                                Butuh {pos.headcount} orang · 📍 {pos.location}
+                                {pos.applicantCount > 0 && <span style={{ color: GOLD }}> · {pos.applicantCount} pelamar</span>}
+                              </div>
+                              {pos.requirements && (
+                                <div style={{ fontSize: "0.8rem", color: "#cbd5e1", marginTop: "0.4rem", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+                                  {pos.requirements}
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ flexShrink: 0 }}>{renderApplyButton(emp, pos)}</div>
+                          </div>
+                        )
                       ))}
                     </div>
                   )}

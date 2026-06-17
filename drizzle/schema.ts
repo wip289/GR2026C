@@ -380,6 +380,7 @@ export const virtualPhasePositions = mysqlTable("virtualPhasePositions", {
   location:          varchar("location", { length: 255 }).notNull(),
   requirements:      text("requirements"),
   isActive:          boolean("isActive").default(true).notNull(),
+  isPlaceholder:     boolean("isPlaceholder").default(false).notNull(),
   createdAt:         timestamp("createdAt").defaultNow(),
   updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
