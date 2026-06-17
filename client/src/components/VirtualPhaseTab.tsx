@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import AllApplicationsSection from "./AllApplicationsSection";
 
 // ── Styles (senada dengan BossPanel) ─────────────────────────
 const vs = {
@@ -402,6 +403,9 @@ export default function VirtualPhaseTab() {
         </div>
         {lastReport && <div style={{ marginTop: "0.75rem", fontSize: "0.78rem", color: "#64748b" }}>Terakhir: {lastReport}</div>}
       </div>
+
+      {/* ── SECTION D: SEMUA LAMARAN (LINTAS EMPLOYER) ── */}
+      <AllApplicationsSection employerOptions={(employers ?? []).map(e => ({ bookingId: e.bookingId, companyName: e.companyName }))} />
     </div>
   );
 }

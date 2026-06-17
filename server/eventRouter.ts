@@ -1808,4 +1808,73 @@ export const eventRouter = router({
       }
     }),
 
+  // ─── PANITIA: SEMUA LAMARAN VIRTUAL (LINTAS EMPLOYER) ───
+  // Untuk tab "Semua Lamaran" di Boss Panel — listing + filter + Hapus/Restore
+  getAllVirtualApplications: panitiaProcedure
+    .input(z.object({
+      includeDeleted: z.boolean().optional(),
+      employerBookingId: z.string().optional(),
+      status: z.enum(["new", "viewed", "contacted", "not_relevant", "deleted"]).optional(),
+      mechanism: z.enum(["A", "B", "C"]).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const includeDeleted = input?.includeDeleted ?? false;
+      const filters: any[] = [];
+      if (!includeDeleted) filters.push(ne(virtualPhaseApplications.status, "deleted"));
+      if (input?.employerBookingId) filters.push(eq(virtualPhaseApplications.employerBookingId, input.employerBookingId));
+      if (input?.status) filters.push(eq(virtualPhaseApplications.status, input.status));
+      if (input?.mechanism) filters.push(eq(virtualPhaseApplications.mechanism, input.mechanism));
+
+      const rows = await db.select({
+        id: virtualPhaseApplications.id,
+        createdAt: virtualPhaseApplications.createdAt,
+        updatedAt: virtualPhaseApplications.updatedAt,
+        status: virtualPhaseApplications.status,
+        mechanism: virtualPhaseApplications.mechanism,
+        positionId: virtualPhaseApplications.positionId,
+        positionName: virtualPhaseApplications.positionName,
+        employerBookingId: virtualPhaseApplications.employerBookingId,
+        // Jobseeker fields
+        jobseekerId: jobseekers.id,
+        jobseekerRegId: jobseekers.registrationId,
+        namaLengkap: jobseekers.namaLengkap,
+        email: jobseekers.email,
+        whatsapp: jobseekers.whatsapp,
+        institusi: jobseekers.institusi,
+        jurusan: jobseekers.jurusan,
+        tahunLulus: jobseekers.tahunLulus,
+        cvUrl: jobseekers.cvUrl,
+        fotoUrl: jobseekers.fotoUrl,
+        // Employer fields
+        companyName: employerBookings.companyName,
+      })
+        .from(virtualPhaseApplications)
+        .innerJoin(jobseekers, eq(virtualPhaseApplications.jobseekerId, jobseekers.id))
+        .leftJoin(employerBookings, eq(virtualPhaseApplications.employerBookingId, employerBookings.bookingId))
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(virtualPhaseApplications.createdAt));
+
+      return rows;
+    }),
+
+  // PANITIA: Hapus/Restore lamaran (massal atau satu)
+  bulkUpdateVirtualApplicationStatus: panitiaProcedure
+    .input(z.object({
+      applicationIds: z.array(z.number()).min(1),
+      status: z.enum(["new", "viewed", "contacted", "not_relevant", "deleted"]),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const result = await db.update(virtualPhaseApplications)
+        .set({ status: input.status })
+        .where(inArray(virtualPhaseApplications.id, input.applicationIds));
+
+      return { success: true, count: input.applicationIds.length };
+    }),
+
 });
