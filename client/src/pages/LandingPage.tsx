@@ -186,7 +186,7 @@ export default function LandingPage() {
     ref.current?.scrollIntoView({ behavior: "smooth" });
 
   const orbs = [
-    { icon: "🎓", role: t.jobRole,      color: "#D4A017", url: "/jobseeker/register", cta: t.ctaBtn1 },
+    { icon: "🎓", role: t.jobRole,      color: "#D4A017", url: "/virtual/register", cta: t.ctaBtn1 },
     { icon: "🏢", role: t.employerRole, color: "#14b8a6", url: "/employer/register",  cta: t.ctaBtn2 },
     { icon: "🌟", role: t.sponsorRole,  color: "#818cf8", url: "/sponsor",            cta: t.ctaBtn3 },
   ];
@@ -196,7 +196,7 @@ export default function LandingPage() {
       color: "#D4A017",
       label: t.jobLabel, role: t.jobRole, headline: t.jobHeadline, body: t.jobBody,
       points: [t.jobPoint1, t.jobPoint2, t.jobPoint3],
-      url: "/jobseeker/register", cta: t.ctaBtn1,
+      url: "/virtual/register", cta: t.ctaBtn1,
     },
     {
       color: "#14b8a6",
@@ -398,7 +398,7 @@ export default function LandingPage() {
 
           {/* CTA buttons */}
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "3rem" }}>
-            <button onClick={() => navigate("/jobseeker/register")}
+            <button onClick={() => navigate("/virtual/register")}
               style={{ background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 99, padding: "0.85rem 2rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 24px rgba(212,160,23,0.35)" }}>
               {t.ctaPrimary}
             </button>
@@ -625,7 +625,7 @@ export default function LandingPage() {
           <h2 style={{ fontSize: "clamp(1.6rem,4vw,2.5rem)", fontWeight: 800, marginBottom: "1rem" }}>{t.ctaTitle}</h2>
           <p style={{ color: "#64748b", fontSize: "1rem", lineHeight: 1.8, marginBottom: "2.5rem", maxWidth: 560, margin: "0 auto 2.5rem" }}>{t.ctaBody}</p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => navigate("/jobseeker/register")}
+            <button onClick={() => navigate("/virtual/register")}
               style={{ background: "linear-gradient(135deg,#D4A017,#B8860B)", border: "none", color: "#fff", borderRadius: 99, padding: "0.85rem 1.75rem", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 0 20px rgba(212,160,23,0.3)" }}>
               🎓 {t.ctaBtn1}
             </button>
@@ -658,7 +658,7 @@ export default function LandingPage() {
 
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", margin: "1.25rem 0" }}>
           <a href="/employer/register"  style={{ color: "#14b8a6", fontSize: "0.82rem", textDecoration: "none" }}>Daftar Employer</a>
-          <a href="/jobseeker/register" style={{ color: "#D4A017",  fontSize: "0.82rem", textDecoration: "none" }}>Daftar Jobseeker</a>
+          <a href="/virtual/register" style={{ color: "#D4A017",  fontSize: "0.82rem", textDecoration: "none" }}>Daftar Jobseeker</a>
           <a href="/sponsor"            style={{ color: "#818cf8",  fontSize: "0.82rem", textDecoration: "none" }}>Sponsorship</a>
         </div>
 

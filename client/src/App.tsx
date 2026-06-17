@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { EventProvider } from "./contexts/EventContext";
@@ -52,7 +52,7 @@ function Router() {
       <Route path={"/employer/booth-map"} component={BoothMap} />
       <Route path={"/employer/login"} component={EmployerLogin} />
       <Route path={"/employer/dashboard"} component={EmployerDashboard} />
-      <Route path={"/jobseeker/register"} component={JobseekerRegister} />
+      <Route path={"/jobseeker/register"}>{() => <Redirect to="/virtual/register" />}</Route>
       <Route path={"/jobseeker/login"} component={JobseekerLogin} />
       <Route path={"/jobseeker/dashboard"} component={JobseekerDashboard} />
       <Route path={"/virtual"} component={VirtualGallery} />

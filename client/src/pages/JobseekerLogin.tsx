@@ -93,7 +93,7 @@ export default function JobseekerLogin() {
               💡 <strong style={{ color: "#f1f5f9" }}>Belum punya Registration ID?</strong><br/>
               Daftarkan diri Anda terlebih dahulu — pendaftaran <strong style={{ color: "#D4A017" }}>GRATIS!</strong>
             </p>
-            <button onClick={() => navigate("/jobseeker/register")}
+            <button onClick={() => navigate("/virtual/register")}
               style={{ marginTop: "0.75rem", background: "transparent", border: "1px solid rgba(212,160,23,0.3)", color: "#D4A017", borderRadius: 8, padding: "0.5rem 1rem", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
               Daftar Sekarang →
             </button>
